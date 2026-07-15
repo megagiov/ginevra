@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>START UP® — Marchio Registrato Internazionale · Programma di Licenza</title>
+<meta name="description" content="START UP® — marchio registrato internazionale che concede licenze d'uso a royalty. Programma di licenza per licenziatari, buyer e investitori B2B.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..600&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#E6DEC6;
+  --paper-2:#EDE7D4;
+  --paper-edge:#DAD0B4;
+  --ink:#1C2117;
+  --ink-soft:#3A4133;
+  --brass:#9A7B4F;
+  --brass-soft:#B49A72;
+  --pine:#2D4A32;
+  --pine-soft:#3B6041;
+  --hair:rgba(28,33,23,0.18);
+  --hair-strong:rgba(28,33,23,0.34);
+  --font-serif:"Fraunces",Georgia,"Times New Roman",serif;
+  --font-mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  --font-sans:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+
+*{margin:0;padding:0;box-sizing:border-box}
+
+html,body{height:100%}
+body{
+  background:#0f120c;
+  color:var(--ink);
+  font-family:var(--font-sans);
+  overflow:hidden;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* ============ DECK / 16:9 ============ */
+.progress-bar{
+  position:fixed;top:0;left:0;height:2px;width:0;
+  background:var(--brass);z-index:1000;transition:width .35s ease;
+}
+.slide-deck{
+  position:absolute;inset:0;margin:auto;
+  width:100vw;height:100vh;overflow:hidden;
+}
+@media (min-width:769px){
+  .slide-deck{
+    max-width:calc(100vh * 16 / 9);
+    max-height:calc(100vw * 9 / 16);
+    box-shadow:0 40px 120px rgba(0,0,0,.55);
+  }
+}
+
+.slide{
+  position:absolute;inset:0;
+  display:flex;flex-direction:column;
+  padding:clamp(28px,4.4vw,72px) clamp(34px,6vw,104px);
+  background:
+    radial-gradient(120% 120% at 12% 8%, var(--paper-2), var(--paper) 46%, var(--paper-edge) 100%);
+  opacity:0;visibility:hidden;
+  transition:opacity .5s ease;
+  overflow:hidden;
+}
+.slide.active{opacity:1;visibility:visible}
+
+/* subtle paper grain + hairline frame */
+.slide::before{
+  content:"";position:absolute;inset:clamp(14px,1.6vw,26px);
+  border:1px solid var(--hair);
+  pointer-events:none;
+}
+.slide::after{
+  content:"";position:absolute;inset:0;pointer-events:none;
+  opacity:.5;mix-blend-mode:multiply;
+  background-image:
+    repeating-linear-gradient(0deg, rgba(28,33,23,.012) 0 2px, transparent 2px 4px);
+}
+
+.slide-content{
+  position:relative;z-index:2;
+  width:100%;height:100%;
+  display:flex;flex-direction:column;
+}
+
+/* ============ SHARED CHROME ============ */
+.slide-head{
+  display:flex;justify-content:space-between;align-items:baseline;
+  padding-bottom:clamp(10px,1.4vw,18px);
+  border-bottom:1px solid var(--hair);
+  margin-bottom:clamp(18px,3vw,44px);
+}
+.eyebrow{
+  font-family:var(--font-mono);
+  font-size:clamp(9px,.86vw,12px);
+  letter-spacing:.32em;text-transform:uppercase;
+  color:var(--brass);
+}
+.eyebrow .sep{color:var(--hair-strong);margin:0 .55em}
+.folio{
+  font-family:var(--font-mono);
+  font-size:clamp(9px,.82vw,11px);
+  letter-spacing:.24em;color:var(--ink-soft);
+  text-transform:uppercase;
+}
+.section-label{
+  font-family:var(--font-mono);
+  font-size:clamp(9px,.86vw,12px);
+  letter-spacing:.3em;text-transform:uppercase;
+  color:var(--brass);
+  display:flex;align-items:center;gap:.9em;
+}
+.section-label .num{color:var(--ink);font-weight:600}
+
+.slide-title{
+  font-family:var(--font-serif);
+  font-weight:340;
+  font-optical-sizing:auto;
+  line-height:1.02;
+  letter-spacing:-.012em;
+  color:var(--ink);
+}
+
+.rule{height:1px;background:var(--hair);border:0}
+.rule-brass{height:1px;background:var(--brass);border:0;opacity:.55}
+
+/* ============ SLIDE 1 · COVER ============ */
+.cover{align-items:center;justify-content:center;text-align:center}
+.cover .slide-head{position:absolute;top:clamp(30px,4.4vw,60px);left:clamp(48px,7vw,120px);right:clamp(48px,7vw,120px);border-bottom:none}
+.cover-mark{margin-bottom:clamp(20px,3vw,40px)}
+.seal-line{
+  font-family:var(--font-mono);
+  font-size:clamp(8.5px,.82vw,11px);
+  letter-spacing:.34em;text-transform:uppercase;
+  color:var(--brass);
+  display:inline-flex;align-items:center;gap:1em;
+  margin-bottom:clamp(20px,2.6vw,34px);
+}
+.seal-line::before,.seal-line::after{
+  content:"";width:clamp(28px,5vw,72px);height:1px;background:var(--brass);opacity:.6;
+}
+.cover-title{
+  font-family:var(--font-serif);
+  font-weight:320;
+  font-size:clamp(34px,6.6vw,86px);
+  line-height:1.0;letter-spacing:-.02em;
+  color:var(--ink);
+  max-width:16ch;
+}
+.cover-title em{font-style:italic;color:var(--pine)}
+.cover-sub{
+  margin-top:clamp(20px,2.6vw,34px);
+  font-family:var(--font-mono);
+  font-size:clamp(10px,1.06vw,14px);
+  letter-spacing:.22em;text-transform:uppercase;
+  color:var(--ink-soft);
+}
+.cover-sub .dot{color:var(--brass);margin:0 .7em}
+.cover-foot{
+  position:absolute;bottom:clamp(30px,4.4vw,60px);left:0;right:0;
+  display:flex;justify-content:center;gap:clamp(14px,2.4vw,40px);
+  font-family:var(--font-mono);
+  font-size:clamp(9px,.82vw,11px);
+  letter-spacing:.26em;color:var(--ink-soft);text-transform:uppercase;
+}
+.cover-foot span{position:relative}
+.cover-foot span+span::before{content:"";position:absolute;left:calc(-1 * clamp(7px,1.2vw,20px));top:50%;width:1px;height:11px;background:var(--hair-strong);transform:translateY(-50%)}
+
+/* ============ LOGO (circular) ============ */
+.logo-circular{display:block}
+.logo-circular text{
+  font-family:var(--font-mono);
+  font-size:15px;
+  letter-spacing:5.4px;
+  fill:var(--ink);
+  font-weight:500;
+  text-transform:uppercase;
+}
+.logo-circular .ring{fill:none;stroke:var(--ink);stroke-width:1.3}
+.logo-circular .ring-inner{fill:none;stroke:var(--brass);stroke-width:1}
+.logo-arrow{fill:var(--ink)}
+
+/* ============ SLIDE 2 · NUMBERS ============ */
+.numbers-grid{
+  flex:1;display:grid;grid-template-columns:repeat(3,1fr);
+  align-items:center;
+}
+.num-cell{
+  padding:clamp(10px,2vw,34px) clamp(14px,2.4vw,40px);
+  display:flex;flex-direction:column;align-items:flex-start;gap:.4em;
+  position:relative;
+}
+.num-cell + .num-cell{border-left:1px solid var(--hair)}
+.num-big{
+  font-family:var(--font-serif);
+  font-weight:300;
+  font-size:clamp(58px,11vw,150px);
+  line-height:.9;letter-spacing:-.03em;
+  color:var(--ink);
+}
+.num-big .r{
+  font-size:.42em;vertical-align:top;color:var(--brass);
+  font-family:var(--font-mono);font-weight:500;margin-left:.06em;
+}
+.num-label{
+  font-family:var(--font-mono);
+  font-size:clamp(10px,1vw,13px);
+  letter-spacing:.2em;text-transform:uppercase;
+  color:var(--ink-soft);
+}
+.num-tag{
+  font-family:var(--font-mono);
+  font-size:clamp(8.5px,.8vw,10.5px);
+  letter-spacing:.2em;color:var(--brass);
+  margin-top:.3em;
+}
+
+/* ============ SLIDE 3 · PROTECTION ============ */
+.grid-4{
+  flex:1;display:grid;grid-template-columns:repeat(4,1fr);gap:clamp(12px,1.8vw,26px);
+  align-content:center;
+}
+.prot-card{
+  border:1px solid var(--brass);
+  padding:clamp(16px,2.2vw,32px) clamp(14px,1.8vw,26px);
+  display:flex;flex-direction:column;justify-content:space-between;
+  min-height:clamp(180px,26vh,290px);
+  background:linear-gradient(180deg, rgba(255,255,255,.08), transparent);
+  position:relative;
+}
+.prot-card .idx{
+  font-family:var(--font-mono);
+  font-size:clamp(10px,.94vw,12px);letter-spacing:.2em;color:var(--brass);
+}
+.prot-flag{
+  font-family:var(--font-serif);
+  font-size:clamp(20px,2.6vw,34px);font-weight:360;
+  line-height:1.05;color:var(--ink);margin-top:auto;
+}
+.prot-office{
+  font-family:var(--font-mono);
+  font-size:clamp(10px,1vw,13px);letter-spacing:.16em;
+  color:var(--pine);margin-top:.7em;
+  display:flex;align-items:center;gap:.6em;
+}
+.prot-office .tick{
+  width:6px;height:6px;background:var(--pine);border-radius:50%;
+  display:inline-block;flex-shrink:0;
+}
+.prot-note{
+  margin-top:clamp(16px,2.4vw,34px);
+  font-family:var(--font-mono);
+  font-size:clamp(9.5px,.9vw,12px);letter-spacing:.14em;
+  color:var(--ink-soft);text-transform:uppercase;
+  text-align:center;
+}
+
+/* ============ SLIDE 4 · LEDGER / CLASSES ============ */
+.ledger{flex:1;display:flex;flex-direction:column;justify-content:center}
+.ledger-row{
+  display:grid;
+  grid-template-columns:clamp(72px,9vw,132px) 1fr auto;
+  align-items:center;
+  gap:clamp(14px,2.4vw,40px);
+  padding:clamp(10px,1.5vw,20px) clamp(4px,1vw,14px);
+  border-bottom:1px solid var(--hair);
+}
+.ledger-row:first-child{border-top:1px solid var(--hair-strong)}
+.ledger-row:last-child{border-bottom:1px solid var(--hair-strong)}
+.led-class{
+  font-family:var(--font-serif);
+  font-weight:300;
+  font-size:clamp(30px,4.6vw,62px);
+  line-height:.9;color:var(--brass);letter-spacing:-.02em;
+}
+.led-body{display:flex;flex-direction:column;gap:.24em}
+.led-name{
+  font-family:var(--font-serif);
+  font-size:clamp(15px,1.8vw,24px);font-weight:420;color:var(--ink);
+  letter-spacing:-.005em;
+}
+.led-desc{
+  font-family:var(--font-mono);
+  font-size:clamp(9px,.9vw,11.5px);letter-spacing:.1em;
+  color:var(--ink-soft);text-transform:uppercase;
+}
+.badge{
+  font-family:var(--font-mono);
+  font-size:clamp(8.5px,.82vw,11px);letter-spacing:.16em;text-transform:uppercase;
+  color:var(--pine);
+  border:1px solid var(--pine-soft);
+  padding:.42em .9em;white-space:nowrap;
+  display:inline-flex;align-items:center;gap:.55em;
+  background:rgba(45,74,50,.05);
+}
+.badge .tick{width:5px;height:5px;border-radius:50%;background:var(--pine)}
+
+/* ============ SLIDE 5 · MODEL ============ */
+.phases{flex:1;display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(14px,2vw,34px);align-content:center}
+.phase{
+  display:flex;flex-direction:column;gap:clamp(10px,1.4vw,18px);
+  padding-top:clamp(12px,1.6vw,22px);
+  border-top:2px solid var(--ink);
+}
+.phase .p-num{
+  font-family:var(--font-mono);
+  font-size:clamp(11px,1vw,13px);letter-spacing:.24em;color:var(--brass);
+}
+.phase .p-title{
+  font-family:var(--font-serif);
+  font-size:clamp(19px,2.3vw,32px);font-weight:380;color:var(--ink);
+  line-height:1.05;letter-spacing:-.01em;
+}
+.phase .p-desc{
+  font-family:var(--font-sans);
+  font-size:clamp(11px,1.05vw,14.5px);line-height:1.55;color:var(--ink-soft);
+  font-weight:400;
+}
+.phase .p-meta{
+  margin-top:auto;
+  font-family:var(--font-mono);
+  font-size:clamp(9px,.86vw,11px);letter-spacing:.14em;
+  color:var(--pine);text-transform:uppercase;
+  padding-top:clamp(8px,1.2vw,14px);
+}
+.model-note{
+  margin-top:clamp(18px,2.6vw,38px);
+  align-self:center;
+  font-family:var(--font-mono);
+  font-size:clamp(10px,1vw,13px);letter-spacing:.14em;text-transform:uppercase;
+  color:var(--ink);
+  border:1px solid var(--brass);
+  padding:.7em 1.4em;
+  background:rgba(154,123,79,.08);
+  display:inline-flex;align-items:center;gap:.7em;
+}
+.model-note .mark{color:var(--brass);font-size:1.15em;line-height:1}
+
+/* ============ SLIDE 6 · CONTACT ============ */
+.contact-grid{
+  flex:1;display:grid;grid-template-columns:1.15fr .85fr;
+  gap:clamp(30px,5vw,90px);align-items:center;
+}
+.contact-title{
+  font-family:var(--font-serif);
+  font-weight:320;
+  font-size:clamp(30px,4.6vw,66px);line-height:1.0;letter-spacing:-.02em;
+  color:var(--ink);max-width:14ch;
+}
+.contact-title em{font-style:italic;color:var(--pine)}
+.contact-fields{
+  margin-top:clamp(20px,2.6vw,36px);
+  display:flex;flex-direction:column;
+}
+.c-field{
+  display:flex;justify-content:space-between;align-items:baseline;
+  gap:1.5em;
+  padding:clamp(9px,1.2vw,15px) 0;
+  border-bottom:1px solid var(--hair);
+}
+.c-field:first-child{border-top:1px solid var(--hair)}
+.c-key{
+  font-family:var(--font-mono);
+  font-size:clamp(9.5px,.94vw,12px);letter-spacing:.2em;text-transform:uppercase;
+  color:var(--brass);
+}
+.c-val{
+  font-family:var(--font-sans);
+  font-size:clamp(11px,1.06vw,14.5px);color:var(--ink-soft);text-align:right;
+}
+.contact-side{
+  display:flex;flex-direction:column;align-items:center;text-align:center;
+  gap:clamp(16px,2.4vw,30px);
+}
+.cta{
+  font-family:var(--font-mono);
+  font-size:clamp(11px,1.1vw,15px);letter-spacing:.2em;text-transform:uppercase;
+  color:var(--paper);
+  background:var(--pine);
+  border:1px solid var(--pine);
+  padding:clamp(13px,1.6vw,20px) clamp(24px,3.2vw,48px);
+  text-decoration:none;
+  display:inline-flex;align-items:center;gap:.8em;
+  transition:background .25s ease,transform .25s ease;
+}
+.cta:hover{background:var(--pine-soft);transform:translateY(-1px)}
+.cta .arw{font-size:1.1em}
+.contact-offices{
+  font-family:var(--font-mono);
+  font-size:clamp(9px,.86vw,11.5px);letter-spacing:.2em;
+  color:var(--ink-soft);text-transform:uppercase;
+  display:flex;flex-wrap:wrap;justify-content:center;gap:.5em 1em;
+}
+.contact-offices b{color:var(--ink);font-weight:600}
+
+/* ============ NAV ============ */
+.nav-controls{
+  position:fixed;bottom:clamp(14px,2.4vw,26px);left:50%;transform:translateX(-50%);
+  display:flex;align-items:center;gap:16px;z-index:1000;
+  background:rgba(230,222,198,.9);
+  border:1px solid var(--hair-strong);
+  padding:6px 10px;
+  backdrop-filter:blur(6px);
+}
+.nav-btn{
+  background:transparent;border:none;color:var(--ink);
+  width:30px;height:30px;cursor:pointer;font-size:15px;
+  font-family:var(--font-mono);
+  transition:color .2s;
+}
+.nav-btn:hover{color:var(--brass)}
+.slide-counter{
+  font-family:var(--font-mono);
+  font-size:11px;letter-spacing:.16em;color:var(--ink-soft);
+}
+.slide-counter #current{color:var(--ink);font-weight:600}
+
+/* ============ ANIMATION ============ */
+.slide.active .anim{animation:fadeUp .7s cubic-bezier(.2,.7,.2,1) both}
+.slide.active .anim-2{animation:fadeUp .7s cubic-bezier(.2,.7,.2,1) .08s both}
+.slide.active .stagger > *{opacity:0;animation:fadeUp .6s cubic-bezier(.2,.7,.2,1) both}
+.slide.active .stagger > *:nth-child(1){animation-delay:.06s}
+.slide.active .stagger > *:nth-child(2){animation-delay:.16s}
+.slide.active .stagger > *:nth-child(3){animation-delay:.26s}
+.slide.active .stagger > *:nth-child(4){animation-delay:.36s}
+.slide.active .stagger > *:nth-child(5){animation-delay:.46s}
+.slide.active .stagger > *:nth-child(6){animation-delay:.56s}
+@keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+
+/* ============ MOBILE ============ */
+@media (max-width:768px){
+  body{overflow:auto}
+  .slide-deck{position:relative;width:100%;height:auto}
+  .slide{position:relative;min-height:100vh;padding:56px 22px}
+  .numbers-grid{grid-template-columns:1fr;gap:8px}
+  .num-cell + .num-cell{border-left:none;border-top:1px solid var(--hair)}
+  .num-cell{padding:22px 6px}
+  .grid-4{grid-template-columns:1fr 1fr;gap:12px}
+  .phases{grid-template-columns:1fr;gap:22px}
+  .contact-grid{grid-template-columns:1fr;gap:34px}
+  .ledger-row{grid-template-columns:60px 1fr;gap:14px;row-gap:8px}
+  .badge{grid-column:2;justify-self:start}
+  .cover-title{font-size:clamp(30px,9vw,44px)}
+}
+</style>
+</head>
+<body>
+<div class="progress-bar" id="progressBar"></div>
+
+<!-- reusable circular logo defined once via <symbol> -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="startupMark" viewBox="0 0 200 200">
+      <circle cx="100" cy="100" r="95" fill="none" stroke="#1C2117" stroke-width="1.3"/>
+      <circle cx="100" cy="100" r="58" fill="none" stroke="#9A7B4F" stroke-width="1"/>
+      <path id="markCircle" d="M100,22 a78,78 0 1,1 -0.1,0" fill="none"/>
+      <text fill="#1C2117" font-family="'IBM Plex Mono',monospace" font-size="14.5" font-weight="500" letter-spacing="5.2" style="text-transform:uppercase">
+        <textPath href="#markCircle" startOffset="0">STARTUP&#160;·&#160;STARTUP&#160;·&#160;STARTUP&#160;·&#160;</textPath>
+      </text>
+      <!-- double arrow -->
+      <g fill="#1C2117" transform="translate(100,100)">
+        <path d="M-26,-16 L-2,0 L-26,16 Z"/>
+        <path d="M2,-16 L26,0 L2,16 Z"/>
+      </g>
+    </symbol>
+  </defs>
+</svg>
+
+<div class="slide-deck">
+
+  <!-- ==================== SLIDE 1 · COVER ==================== -->
+  <section class="slide cover active">
+    <div class="slide-content" style="justify-content:center;align-items:center;text-align:center">
+      <div class="slide-head" style="justify-content:space-between">
+        <span class="eyebrow">START&nbsp;UP<span style="color:var(--brass)">®</span></span>
+        <span class="folio">Atto di Registrazione · MMXXVI</span>
+      </div>
+
+      <div class="cover-mark anim">
+        <svg class="logo-circular" width="clamp(120px,15vw,190px)" height="clamp(120px,15vw,190px)" viewBox="0 0 200 200" style="width:clamp(120px,15vw,188px);height:clamp(120px,15vw,188px)">
+          <use href="#startupMark"/>
+        </svg>
+      </div>
+
+      <div class="seal-line anim-2">Marchio Registrato Internazionale</div>
+      <h1 class="cover-title anim-2">Un nome che <em>vale già</em> sul mercato.</h1>
+      <p class="cover-sub anim-2">Marchio Registrato Internazionale <span class="dot">·</span> Programma di Licenza</p>
+
+      <div class="cover-foot">
+        <span>UIBM</span><span>EUIPO</span><span>UKIPO</span><span>CNIPA</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== SLIDE 2 · NUMBERS ==================== -->
+  <section class="slide">
+    <div class="slide-content">
+      <div class="slide-head">
+        <span class="section-label"><span class="num">01</span> Il Marchio in Numeri</span>
+        <span class="folio">START UP® · Sintesi</span>
+      </div>
+
+      <div class="numbers-grid stagger">
+        <div class="num-cell">
+          <div class="num-big">04</div>
+          <div class="num-label">Mercati Tutelati</div>
+          <div class="num-tag">4 uffici IP · 4 giurisdizioni</div>
+        </div>
+        <div class="num-cell">
+          <div class="num-big">06</div>
+          <div class="num-label">Classi Disponibili</div>
+          <div class="num-tag">Classi di Nizza · concedibili</div>
+        </div>
+        <div class="num-cell">
+          <div class="num-big"><span class="r">®</span></div>
+          <div class="num-label">Marchio Registrato</div>
+          <div class="num-tag">Titolo pieno · esclusivo</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== SLIDE 3 · PROTECTION ==================== -->
+  <section class="slide">
+    <div class="slide-content">
+      <div class="slide-head">
+        <span class="section-label"><span class="num">02</span> Protezione Internazionale</span>
+        <span class="folio">Depositi · 01–04</span>
+      </div>
+
+      <div class="grid-4 stagger">
+        <div class="prot-card">
+          <span class="idx">01</span>
+          <div>
+            <div class="prot-flag">Italia</div>
+            <div class="prot-office"><span class="tick"></span>UIBM</div>
+          </div>
+        </div>
+        <div class="prot-card">
+          <span class="idx">02</span>
+          <div>
+            <div class="prot-flag">Unione<br>Europea</div>
+            <div class="prot-office"><span class="tick"></span>EUIPO</div>
+          </div>
+        </div>
+        <div class="prot-card">
+          <span class="idx">03</span>
+          <div>
+            <div class="prot-flag">Regno<br>Unito</div>
+            <div class="prot-office"><span class="tick"></span>UKIPO</div>
+          </div>
+        </div>
+        <div class="prot-card">
+          <span class="idx">04</span>
+          <div>
+            <div class="prot-flag">Cina</div>
+            <div class="prot-office"><span class="tick"></span>CNIPA</div>
+          </div>
+        </div>
+      </div>
+
+      <p class="prot-note anim-2">Depositato presso quattro uffici di proprietà intellettuale.</p>
+    </div>
+  </section>
+
+  <!-- ==================== SLIDE 4 · LEDGER / CLASSES ==================== -->
+  <section class="slide">
+    <div class="slide-content">
+      <div class="slide-head">
+        <span class="section-label"><span class="num">03</span> Sei Classi Merceologiche</span>
+        <span class="folio">Registro · Classi di Nizza</span>
+      </div>
+
+      <div class="ledger stagger">
+        <div class="ledger-row">
+          <div class="led-class">25</div>
+          <div class="led-body">
+            <div class="led-name">Fashion &amp; Footwear</div>
+            <div class="led-desc">Abbigliamento · Calzature · Beachwear</div>
+          </div>
+          <span class="badge"><span class="tick"></span>Disponibile</span>
+        </div>
+        <div class="ledger-row">
+          <div class="led-class">18</div>
+          <div class="led-body">
+            <div class="led-name">Bags &amp; Leather</div>
+            <div class="led-desc">Borse · Valigeria · Accessori in pelle</div>
+          </div>
+          <span class="badge"><span class="tick"></span>Disponibile</span>
+        </div>
+        <div class="ledger-row">
+          <div class="led-class">03</div>
+          <div class="led-body">
+            <div class="led-name">Beauty &amp; Cosmetics</div>
+            <div class="led-desc">Profumi · Cosmetici · Cura persona</div>
+          </div>
+          <span class="badge"><span class="tick"></span>Disponibile</span>
+        </div>
+        <div class="ledger-row">
+          <div class="led-class">09</div>
+          <div class="led-body">
+            <div class="led-name">Tech &amp; Eyewear</div>
+            <div class="led-desc">Occhiali · Accessori tech · Smart device</div>
+          </div>
+          <span class="badge"><span class="tick"></span>Disponibile</span>
+        </div>
+        <div class="ledger-row">
+          <div class="led-class">16</div>
+          <div class="led-body">
+            <div class="led-name">Stationery &amp; Publishing</div>
+            <div class="led-desc">Cancelleria · Editoria</div>
+          </div>
+          <span class="badge"><span class="tick"></span>Disponibile</span>
+        </div>
+        <div class="ledger-row">
+          <div class="led-class">35</div>
+          <div class="led-body">
+            <div class="led-name">Advertising &amp; Business</div>
+            <div class="led-desc">Servizi commerciali · Retail · Pubblicità</div>
+          </div>
+          <span class="badge"><span class="tick"></span>Disponibile</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== SLIDE 5 · MODEL ==================== -->
+  <section class="slide">
+    <div class="slide-content">
+      <div class="slide-head">
+        <span class="section-label"><span class="num">04</span> Come Funziona il Modello di Licenza</span>
+        <span class="folio">Iter · 01–03</span>
+      </div>
+
+      <div class="phases stagger">
+        <div class="phase">
+          <span class="p-num">01</span>
+          <div class="p-title">Richiesta &amp; Qualifica</div>
+          <p class="p-desc">Valutazione del profilo, del settore e dei canali distributivi del candidato licenziatario.</p>
+          <div class="p-meta">Risposta entro 72h</div>
+        </div>
+        <div class="phase">
+          <span class="p-num">02</span>
+          <div class="p-title">Accordo &amp; Termini</div>
+          <p class="p-desc">Definizione dei termini di licenza: royalty percentuale sulle vendite e minimo garantito annuale.</p>
+          <div class="p-meta">Royalty % + minimo garantito</div>
+        </div>
+        <div class="phase">
+          <span class="p-num">03</span>
+          <div class="p-title">Lancio &amp; Crescita</div>
+          <p class="p-desc">Avvio della produzione a marchio e supporto continuo lungo tutto il ciclo di vita della licenza.</p>
+          <div class="p-meta">Avvio produzione · Supporto continuo</div>
+        </div>
+      </div>
+
+      <div class="model-note anim-2"><span class="mark">✦</span> Nessuna quota fissa d'ingresso.</div>
+    </div>
+  </section>
+
+  <!-- ==================== SLIDE 6 · CONTACT ==================== -->
+  <section class="slide">
+    <div class="slide-content">
+      <div class="slide-head">
+        <span class="section-label"><span class="num">05</span> Contatti</span>
+        <span class="folio">Proposta di Licenza</span>
+      </div>
+
+      <div class="contact-grid">
+        <div class="anim">
+          <h2 class="contact-title">Componi la tua <em>proposta</em> di licenza.</h2>
+          <div class="contact-fields">
+            <div class="c-field"><span class="c-key">Settore</span><span class="c-val">La categoria merceologica di interesse</span></div>
+            <div class="c-field"><span class="c-key">Mercato</span><span class="c-val">Le giurisdizioni di distribuzione</span></div>
+            <div class="c-field"><span class="c-key">Canali</span><span class="c-val">Wholesale · E-commerce · GDO · Retail monomarca</span></div>
+          </div>
+        </div>
+
+        <div class="contact-side anim-2">
+          <svg class="logo-circular" viewBox="0 0 200 200" style="width:clamp(88px,10vw,120px);height:clamp(88px,10vw,120px)">
+            <use href="#startupMark"/>
+          </svg>
+          <a class="cta" href="mailto:license@startup-brand.com?subject=Richiesta%20Licenza%20START%20UP%C2%AE">Richiedi Licenza <span class="arw">→</span></a>
+          <div class="contact-offices">
+            <b>UIBM</b><span>·</span><b>EUIPO</b><span>·</span><b>UKIPO</b><span>·</span><b>CNIPA</b>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div><!-- /.slide-deck -->
+
+<div class="nav-controls">
+  <button class="nav-btn" onclick="prevSlide()" aria-label="Precedente">←</button>
+  <span class="slide-counter"><span id="current">1</span> / <span id="total">6</span></span>
+  <button class="nav-btn" onclick="nextSlide()" aria-label="Successiva">→</button>
+</div>
+
+<script>
+  let current = 1;
+  const slides = document.querySelectorAll('.slide');
+  const total = slides.length;
+  document.getElementById('total').textContent = String(total).padStart(2,'0');
+  const isDesktop = () => window.matchMedia('(min-width:769px)').matches;
+
+  function showSlide(n){
+    if(n < 1) n = 1;
+    if(n > total) n = total;
+    current = n;
+    slides.forEach((s,i)=>s.classList.toggle('active', i === n-1));
+    document.getElementById('current').textContent = String(n).padStart(2,'0');
+    document.getElementById('progressBar').style.width = (n/total*100)+'%';
+  }
+  function nextSlide(){ showSlide(current+1); }
+  function prevSlide(){ showSlide(current-1); }
+
+  document.addEventListener('keydown',(e)=>{
+    if(e.key==='ArrowRight'||e.key===' '){ e.preventDefault(); nextSlide(); }
+    if(e.key==='ArrowLeft'){ e.preventDefault(); prevSlide(); }
+  });
+  // click-to-advance only on desktop (single-slide mode); mobile scrolls
+  document.addEventListener('click',(e)=>{
+    if(!isDesktop()) return;
+    if(e.target.closest('.nav-controls')||e.target.closest('a')) return;
+    nextSlide();
+  });
+
+  showSlide(1);
+</script>
+</body>
+</html>
