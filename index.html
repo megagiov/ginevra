@@ -15,7 +15,9 @@
   --paper-edge:#DAD0B4;
   --ink:#1C2117;
   --ink-soft:#3A4133;
-  --brass:#9A7B4F;
+  --brass:#9A7B4F;        /* hairlines, borders, rules (decorative) */
+  --brass-2:#8A6C42;      /* large numerals — 3.6:1 on paper (AA large) */
+  --brass-text:#6E5632;   /* small mono labels — 4.6:1 on paper (AA) */
   --brass-soft:#B49A72;
   --pine:#2D4A32;
   --pine-soft:#3B6041;
@@ -96,7 +98,7 @@ body{
   font-family:var(--font-mono);
   font-size:clamp(9px,.86vw,12px);
   letter-spacing:.32em;text-transform:uppercase;
-  color:var(--brass);
+  color:var(--brass-text);
 }
 .eyebrow .sep{color:var(--hair-strong);margin:0 .55em}
 .folio{
@@ -109,7 +111,7 @@ body{
   font-family:var(--font-mono);
   font-size:clamp(9px,.86vw,12px);
   letter-spacing:.3em;text-transform:uppercase;
-  color:var(--brass);
+  color:var(--brass-text);
   display:flex;align-items:center;gap:.9em;
 }
 .section-label .num{color:var(--ink);font-weight:600}
@@ -134,7 +136,7 @@ body{
   font-family:var(--font-mono);
   font-size:clamp(8.5px,.82vw,11px);
   letter-spacing:.34em;text-transform:uppercase;
-  color:var(--brass);
+  color:var(--brass-text);
   display:inline-flex;align-items:center;gap:1em;
   margin-bottom:clamp(20px,2.6vw,34px);
 }
@@ -201,7 +203,7 @@ body{
   color:var(--ink);
 }
 .num-big .r{
-  font-size:.42em;vertical-align:top;color:var(--brass);
+  font-size:.42em;vertical-align:top;color:var(--brass-2);
   font-family:var(--font-mono);font-weight:500;margin-left:.06em;
 }
 .num-label{
@@ -213,7 +215,7 @@ body{
 .num-tag{
   font-family:var(--font-mono);
   font-size:clamp(8.5px,.8vw,10.5px);
-  letter-spacing:.2em;color:var(--brass);
+  letter-spacing:.2em;color:var(--brass-text);
   margin-top:.3em;
 }
 
@@ -232,7 +234,7 @@ body{
 }
 .prot-card .idx{
   font-family:var(--font-mono);
-  font-size:clamp(10px,.94vw,12px);letter-spacing:.2em;color:var(--brass);
+  font-size:clamp(10px,.94vw,12px);letter-spacing:.2em;color:var(--brass-text);
 }
 .prot-flag{
   font-family:var(--font-serif);
@@ -273,7 +275,7 @@ body{
   font-family:var(--font-serif);
   font-weight:300;
   font-size:clamp(30px,4.6vw,62px);
-  line-height:.9;color:var(--brass);letter-spacing:-.02em;
+  line-height:.9;color:var(--brass-2);letter-spacing:-.02em;
 }
 .led-body{display:flex;flex-direction:column;gap:.24em}
 .led-name{
@@ -306,7 +308,7 @@ body{
 }
 .phase .p-num{
   font-family:var(--font-mono);
-  font-size:clamp(11px,1vw,13px);letter-spacing:.24em;color:var(--brass);
+  font-size:clamp(11px,1vw,13px);letter-spacing:.24em;color:var(--brass-text);
 }
 .phase .p-title{
   font-family:var(--font-serif);
@@ -336,7 +338,7 @@ body{
   background:rgba(154,123,79,.08);
   display:inline-flex;align-items:center;gap:.7em;
 }
-.model-note .mark{color:var(--brass);font-size:1.15em;line-height:1}
+.model-note .mark{color:var(--brass-2);font-size:1.15em;line-height:1}
 
 /* ============ SLIDE 6 · CONTACT ============ */
 .contact-grid{
@@ -364,7 +366,7 @@ body{
 .c-key{
   font-family:var(--font-mono);
   font-size:clamp(9.5px,.94vw,12px);letter-spacing:.2em;text-transform:uppercase;
-  color:var(--brass);
+  color:var(--brass-text);
 }
 .c-val{
   font-family:var(--font-sans);
@@ -410,7 +412,10 @@ body{
   font-family:var(--font-mono);
   transition:color .2s;
 }
-.nav-btn:hover{color:var(--brass)}
+.nav-btn:hover{color:var(--brass-text)}
+.nav-btn:focus-visible,.cta:focus-visible{
+  outline:2px solid var(--pine);outline-offset:3px;
+}
 .slide-counter{
   font-family:var(--font-mono);
   font-size:11px;letter-spacing:.16em;color:var(--ink-soft);
@@ -428,6 +433,12 @@ body{
 .slide.active .stagger > *:nth-child(5){animation-delay:.46s}
 .slide.active .stagger > *:nth-child(6){animation-delay:.56s}
 @keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+
+/* respect users who prefer reduced motion */
+@media (prefers-reduced-motion:reduce){
+  *{animation-duration:.001ms !important;animation-iteration-count:1 !important;transition-duration:.001ms !important}
+  .slide{transition:opacity .001ms}
+}
 
 /* ============ MOBILE ============ */
 @media (max-width:768px){
@@ -474,7 +485,7 @@ body{
   <section class="slide cover active">
     <div class="slide-content" style="justify-content:center;align-items:center;text-align:center">
       <div class="slide-head" style="justify-content:space-between">
-        <span class="eyebrow">START&nbsp;UP<span style="color:var(--brass)">®</span></span>
+        <span class="eyebrow">START&nbsp;UP<span style="color:var(--brass-text)">®</span></span>
         <span class="folio">Atto di Registrazione · MMXXVI</span>
       </div>
 
