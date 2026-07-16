@@ -11,520 +11,410 @@
 <style>
 :root{
   --paper:#E6DEC6;
-  --paper-2:#EDE7D4;
-  --paper-edge:#DAD0B4;
+  --paper-2:#EFE9D8;
+  --paper-edge:#DBD1B6;
+  --paper-card:#EBE4D0;
   --ink:#1C2117;
   --ink-soft:#3A4133;
   --brass:#9A7B4F;        /* hairlines, borders, rules (decorative) */
-  --brass-2:#8A6C42;      /* large numerals — 3.6:1 on paper (AA large) */
-  --brass-text:#6E5632;   /* small mono labels — 4.6:1 on paper (AA) */
-  --brass-soft:#B49A72;
+  --brass-2:#8A6C42;      /* large numerals — AA large on paper */
+  --brass-text:#6E5632;   /* small mono labels — AA on paper */
   --pine:#2D4A32;
   --pine-soft:#3B6041;
-  --hair:rgba(28,33,23,0.18);
-  --hair-strong:rgba(28,33,23,0.34);
+  --hair:rgba(28,33,23,0.16);
+  --hair-strong:rgba(28,33,23,0.32);
+  --shadow:0 24px 60px -28px rgba(28,33,23,.45);
   --font-serif:"Fraunces",Georgia,"Times New Roman",serif;
   --font-mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
   --font-sans:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --container:1180px;
+  --header-h:66px;
 }
 
 *{margin:0;padding:0;box-sizing:border-box}
-
-html,body{height:100%}
+html{scroll-behavior:smooth}
 body{
-  background:#0f120c;
-  color:var(--ink);
   font-family:var(--font-sans);
-  overflow:hidden;
+  color:var(--ink);
+  background-color:var(--paper);
+  background-image:radial-gradient(140% 100% at 15% -10%, var(--paper-2), var(--paper) 45%, var(--paper-edge) 100%);
+  background-attachment:fixed;
   -webkit-font-smoothing:antialiased;
+  line-height:1.6;
+  overflow-x:hidden;
 }
+::selection{background:var(--pine);color:var(--paper)}
 
-/* ============ DECK / 16:9 ============ */
-.progress-bar{
-  position:fixed;top:0;left:0;height:2px;width:0;
-  background:var(--brass);z-index:1000;transition:width .35s ease;
-}
-.slide-deck{
-  position:absolute;inset:0;margin:auto;
-  width:100vw;height:100vh;overflow:hidden;
-}
-@media (min-width:769px){
-  .slide-deck{
-    max-width:calc(100vh * 16 / 9);
-    max-height:calc(100vw * 9 / 16);
-    box-shadow:0 40px 120px rgba(0,0,0,.55);
-  }
-}
+a{color:inherit;text-decoration:none}
+img,svg{display:block}
 
-.slide{
-  position:absolute;inset:0;
-  display:flex;flex-direction:column;
-  padding:clamp(28px,4.4vw,72px) clamp(34px,6vw,104px);
-  background:
-    radial-gradient(120% 120% at 12% 8%, var(--paper-2), var(--paper) 46%, var(--paper-edge) 100%);
-  opacity:0;visibility:hidden;
-  transition:opacity .5s ease;
-  overflow:hidden;
-}
-.slide.active{opacity:1;visibility:visible}
+.wrap{max-width:var(--container);margin:0 auto;padding:0 clamp(20px,5vw,56px)}
 
-/* subtle paper grain + hairline frame */
-.slide::before{
-  content:"";position:absolute;inset:clamp(14px,1.6vw,26px);
-  border:1px solid var(--hair);
-  pointer-events:none;
-}
-.slide::after{
-  content:"";position:absolute;inset:0;pointer-events:none;
-  opacity:.5;mix-blend-mode:multiply;
-  background-image:
-    repeating-linear-gradient(0deg, rgba(28,33,23,.012) 0 2px, transparent 2px 4px);
-}
-
-.slide-content{
-  position:relative;z-index:2;
-  width:100%;height:100%;
-  display:flex;flex-direction:column;
-}
-
-/* ============ SHARED CHROME ============ */
-.slide-head{
-  display:flex;justify-content:space-between;align-items:baseline;
-  padding-bottom:clamp(10px,1.4vw,18px);
-  border-bottom:1px solid var(--hair);
-  margin-bottom:clamp(18px,3vw,44px);
-}
+/* labels / eyebrows */
 .eyebrow{
   font-family:var(--font-mono);
-  font-size:clamp(9px,.86vw,12px);
-  letter-spacing:.32em;text-transform:uppercase;
-  color:var(--brass-text);
-}
-.eyebrow .sep{color:var(--hair-strong);margin:0 .55em}
-.folio{
-  font-family:var(--font-mono);
-  font-size:clamp(9px,.82vw,11px);
-  letter-spacing:.24em;color:var(--ink-soft);
-  text-transform:uppercase;
-}
-.section-label{
-  font-family:var(--font-mono);
-  font-size:clamp(9px,.86vw,12px);
+  font-size:clamp(10px,.9vw,12px);
   letter-spacing:.3em;text-transform:uppercase;
   color:var(--brass-text);
-  display:flex;align-items:center;gap:.9em;
-}
-.section-label .num{color:var(--ink);font-weight:600}
-
-.slide-title{
-  font-family:var(--font-serif);
-  font-weight:340;
-  font-optical-sizing:auto;
-  line-height:1.02;
-  letter-spacing:-.012em;
-  color:var(--ink);
-}
-
-.rule{height:1px;background:var(--hair);border:0}
-.rule-brass{height:1px;background:var(--brass);border:0;opacity:.55}
-
-/* ============ SLIDE 1 · COVER ============ */
-.cover{align-items:center;justify-content:center;text-align:center}
-.cover .slide-head{position:absolute;top:clamp(30px,4.4vw,60px);left:clamp(48px,7vw,120px);right:clamp(48px,7vw,120px);border-bottom:none}
-.cover-mark{margin-bottom:clamp(20px,3vw,40px)}
-.seal-line{
-  font-family:var(--font-mono);
-  font-size:clamp(8.5px,.82vw,11px);
-  letter-spacing:.34em;text-transform:uppercase;
-  color:var(--brass-text);
-  display:inline-flex;align-items:center;gap:1em;
-  margin-bottom:clamp(20px,2.6vw,34px);
-}
-.seal-line::before,.seal-line::after{
-  content:"";width:clamp(28px,5vw,72px);height:1px;background:var(--brass);opacity:.6;
-}
-.cover-title{
-  font-family:var(--font-serif);
-  font-weight:320;
-  font-size:clamp(34px,6.6vw,86px);
-  line-height:1.0;letter-spacing:-.02em;
-  color:var(--ink);
-  max-width:16ch;
-}
-.cover-title em{font-style:italic;color:var(--pine)}
-.cover-sub{
-  margin-top:clamp(20px,2.6vw,34px);
-  font-family:var(--font-mono);
-  font-size:clamp(10px,1.06vw,14px);
-  letter-spacing:.22em;text-transform:uppercase;
-  color:var(--ink-soft);
-}
-.cover-sub .dot{color:var(--brass);margin:0 .7em}
-.cover-foot{
-  position:absolute;bottom:clamp(30px,4.4vw,60px);left:0;right:0;
-  display:flex;justify-content:center;gap:clamp(14px,2.4vw,40px);
-  font-family:var(--font-mono);
-  font-size:clamp(9px,.82vw,11px);
-  letter-spacing:.26em;color:var(--ink-soft);text-transform:uppercase;
-}
-.cover-foot span{position:relative}
-.cover-foot span+span::before{content:"";position:absolute;left:calc(-1 * clamp(7px,1.2vw,20px));top:50%;width:1px;height:11px;background:var(--hair-strong);transform:translateY(-50%)}
-
-/* ============ LOGO (circular) ============ */
-.logo-circular{display:block}
-.logo-circular text{
-  font-family:var(--font-mono);
-  font-size:15px;
-  letter-spacing:5.4px;
-  fill:var(--ink);
-  font-weight:500;
-  text-transform:uppercase;
-}
-.logo-circular .ring{fill:none;stroke:var(--ink);stroke-width:1.3}
-.logo-circular .ring-inner{fill:none;stroke:var(--brass);stroke-width:1}
-.logo-arrow{fill:var(--ink)}
-
-/* ============ SLIDE 2 · NUMBERS ============ */
-.numbers-grid{
-  flex:1;display:grid;grid-template-columns:repeat(3,1fr);
-  align-items:center;
-}
-.num-cell{
-  padding:clamp(10px,2vw,34px) clamp(14px,2.4vw,40px);
-  display:flex;flex-direction:column;align-items:flex-start;gap:.4em;
-  position:relative;
-}
-.num-cell + .num-cell{border-left:1px solid var(--hair)}
-.num-big{
-  font-family:var(--font-serif);
-  font-weight:300;
-  font-size:clamp(58px,11vw,150px);
-  line-height:.9;letter-spacing:-.03em;
-  color:var(--ink);
-}
-.num-big .r{
-  font-size:.42em;vertical-align:top;color:var(--brass-2);
-  font-family:var(--font-mono);font-weight:500;margin-left:.06em;
-}
-.num-label{
-  font-family:var(--font-mono);
-  font-size:clamp(10px,1vw,13px);
-  letter-spacing:.2em;text-transform:uppercase;
-  color:var(--ink-soft);
-}
-.num-tag{
-  font-family:var(--font-mono);
-  font-size:clamp(8.5px,.8vw,10.5px);
-  letter-spacing:.2em;color:var(--brass-text);
-  margin-top:.3em;
-}
-
-/* ============ SLIDE 3 · PROTECTION ============ */
-.grid-4{
-  flex:1;display:grid;grid-template-columns:repeat(4,1fr);gap:clamp(12px,1.8vw,26px);
-  align-content:center;
-}
-.prot-card{
-  border:1px solid var(--brass);
-  padding:clamp(16px,2.2vw,32px) clamp(14px,1.8vw,26px);
-  display:flex;flex-direction:column;justify-content:space-between;
-  min-height:clamp(180px,26vh,290px);
-  background:linear-gradient(180deg, rgba(255,255,255,.08), transparent);
-  position:relative;
-}
-.prot-card .idx{
-  font-family:var(--font-mono);
-  font-size:clamp(10px,.94vw,12px);letter-spacing:.2em;color:var(--brass-text);
-}
-.prot-flag{
-  font-family:var(--font-serif);
-  font-size:clamp(20px,2.6vw,34px);font-weight:360;
-  line-height:1.05;color:var(--ink);margin-top:auto;
-}
-.prot-office{
-  font-family:var(--font-mono);
-  font-size:clamp(10px,1vw,13px);letter-spacing:.16em;
-  color:var(--pine);margin-top:.7em;
-  display:flex;align-items:center;gap:.6em;
-}
-.prot-office .tick{
-  width:6px;height:6px;background:var(--pine);border-radius:50%;
-  display:inline-block;flex-shrink:0;
-}
-.prot-note{
-  margin-top:clamp(16px,2.4vw,34px);
-  font-family:var(--font-mono);
-  font-size:clamp(9.5px,.9vw,12px);letter-spacing:.14em;
-  color:var(--ink-soft);text-transform:uppercase;
-  text-align:center;
-}
-
-/* ============ SLIDE 4 · LEDGER / CLASSES ============ */
-.ledger{flex:1;display:flex;flex-direction:column;justify-content:center}
-.ledger-row{
-  display:grid;
-  grid-template-columns:clamp(72px,9vw,132px) 1fr auto;
-  align-items:center;
-  gap:clamp(14px,2.4vw,40px);
-  padding:clamp(10px,1.5vw,20px) clamp(4px,1vw,14px);
-  border-bottom:1px solid var(--hair);
-}
-.ledger-row:first-child{border-top:1px solid var(--hair-strong)}
-.ledger-row:last-child{border-bottom:1px solid var(--hair-strong)}
-.led-class{
-  font-family:var(--font-serif);
-  font-weight:300;
-  font-size:clamp(30px,4.6vw,62px);
-  line-height:.9;color:var(--brass-2);letter-spacing:-.02em;
-}
-.led-body{display:flex;flex-direction:column;gap:.24em}
-.led-name{
-  font-family:var(--font-serif);
-  font-size:clamp(15px,1.8vw,24px);font-weight:420;color:var(--ink);
-  letter-spacing:-.005em;
-}
-.led-desc{
-  font-family:var(--font-mono);
-  font-size:clamp(9px,.9vw,11.5px);letter-spacing:.1em;
-  color:var(--ink-soft);text-transform:uppercase;
-}
-.badge{
-  font-family:var(--font-mono);
-  font-size:clamp(8.5px,.82vw,11px);letter-spacing:.16em;text-transform:uppercase;
-  color:var(--pine);
-  border:1px solid var(--pine-soft);
-  padding:.42em .9em;white-space:nowrap;
-  display:inline-flex;align-items:center;gap:.55em;
-  background:rgba(45,74,50,.05);
-}
-.badge .tick{width:5px;height:5px;border-radius:50%;background:var(--pine)}
-
-/* ============ SLIDE 5 · MODEL ============ */
-.phases{flex:1;display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(14px,2vw,34px);align-content:center}
-.phase{
-  display:flex;flex-direction:column;gap:clamp(10px,1.4vw,18px);
-  padding-top:clamp(12px,1.6vw,22px);
-  border-top:2px solid var(--ink);
-}
-.phase .p-num{
-  font-family:var(--font-mono);
-  font-size:clamp(11px,1vw,13px);letter-spacing:.24em;color:var(--brass-text);
-}
-.phase .p-title{
-  font-family:var(--font-serif);
-  font-size:clamp(19px,2.3vw,32px);font-weight:380;color:var(--ink);
-  line-height:1.05;letter-spacing:-.01em;
-}
-.phase .p-desc{
-  font-family:var(--font-sans);
-  font-size:clamp(11px,1.05vw,14.5px);line-height:1.55;color:var(--ink-soft);
-  font-weight:400;
-}
-.phase .p-meta{
-  margin-top:auto;
-  font-family:var(--font-mono);
-  font-size:clamp(9px,.86vw,11px);letter-spacing:.14em;
-  color:var(--pine);text-transform:uppercase;
-  padding-top:clamp(8px,1.2vw,14px);
-}
-.model-note{
-  margin-top:clamp(18px,2.6vw,38px);
-  align-self:center;
-  font-family:var(--font-mono);
-  font-size:clamp(10px,1vw,13px);letter-spacing:.14em;text-transform:uppercase;
-  color:var(--ink);
-  border:1px solid var(--brass);
-  padding:.7em 1.4em;
-  background:rgba(154,123,79,.08);
-  display:inline-flex;align-items:center;gap:.7em;
-}
-.model-note .mark{color:var(--brass-2);font-size:1.15em;line-height:1}
-
-/* ============ SLIDE 6 · CONTACT ============ */
-.contact-grid{
-  flex:1;display:grid;grid-template-columns:1.15fr .85fr;
-  gap:clamp(30px,5vw,90px);align-items:center;
-}
-.contact-title{
-  font-family:var(--font-serif);
-  font-weight:320;
-  font-size:clamp(30px,4.6vw,66px);line-height:1.0;letter-spacing:-.02em;
-  color:var(--ink);max-width:14ch;
-}
-.contact-title em{font-style:italic;color:var(--pine)}
-.contact-fields{
-  margin-top:clamp(20px,2.6vw,36px);
-  display:flex;flex-direction:column;
-}
-.c-field{
-  display:flex;justify-content:space-between;align-items:baseline;
-  gap:1.5em;
-  padding:clamp(9px,1.2vw,15px) 0;
-  border-bottom:1px solid var(--hair);
-}
-.c-field:first-child{border-top:1px solid var(--hair)}
-.c-key{
-  font-family:var(--font-mono);
-  font-size:clamp(9.5px,.94vw,12px);letter-spacing:.2em;text-transform:uppercase;
-  color:var(--brass-text);
-}
-.c-val{
-  font-family:var(--font-sans);
-  font-size:clamp(11px,1.06vw,14.5px);color:var(--ink-soft);text-align:right;
-}
-.contact-side{
-  display:flex;flex-direction:column;align-items:center;text-align:center;
-  gap:clamp(16px,2.4vw,30px);
-}
-.cta{
-  font-family:var(--font-mono);
-  font-size:clamp(11px,1.1vw,15px);letter-spacing:.2em;text-transform:uppercase;
-  color:var(--paper);
-  background:var(--pine);
-  border:1px solid var(--pine);
-  padding:clamp(13px,1.6vw,20px) clamp(24px,3.2vw,48px);
-  text-decoration:none;
   display:inline-flex;align-items:center;gap:.8em;
-  transition:background .25s ease,transform .25s ease;
 }
-.cta:hover{background:var(--pine-soft);transform:translateY(-1px)}
-.cta .arw{font-size:1.1em}
-.contact-offices{
-  font-family:var(--font-mono);
-  font-size:clamp(9px,.86vw,11.5px);letter-spacing:.2em;
-  color:var(--ink-soft);text-transform:uppercase;
-  display:flex;flex-wrap:wrap;justify-content:center;gap:.5em 1em;
-}
-.contact-offices b{color:var(--ink);font-weight:600}
+.eyebrow .n{color:var(--ink);font-weight:600}
+.eyebrow::before{content:"";width:26px;height:1px;background:var(--brass)}
 
-/* ============ NAV ============ */
-.nav-controls{
-  position:fixed;bottom:clamp(14px,2.4vw,26px);left:50%;transform:translateX(-50%);
-  display:flex;align-items:center;gap:16px;z-index:1000;
-  background:rgba(230,222,198,.9);
-  border:1px solid var(--hair-strong);
-  padding:6px 10px;
-  backdrop-filter:blur(6px);
+/* ============ READING PROGRESS ============ */
+.progress{
+  position:fixed;top:0;left:0;height:2px;width:0;
+  background:var(--brass);z-index:120;transition:width .1s linear;
 }
-.nav-btn{
-  background:transparent;border:none;color:var(--ink);
-  width:30px;height:30px;cursor:pointer;font-size:15px;
+
+/* ============ HEADER ============ */
+header{
+  position:sticky;top:0;z-index:100;
+  height:var(--header-h);
+  display:flex;align-items:center;
+  border-bottom:1px solid transparent;
+  transition:background .35s ease,border-color .35s ease,backdrop-filter .35s ease;
+}
+header.scrolled{
+  background:rgba(235,228,208,.82);
+  backdrop-filter:blur(10px) saturate(1.1);
+  border-bottom:1px solid var(--hair);
+}
+.header-inner{
+  width:100%;max-width:var(--container);margin:0 auto;
+  padding:0 clamp(20px,5vw,56px);
+  display:flex;align-items:center;justify-content:space-between;gap:24px;
+}
+.brand{
   font-family:var(--font-mono);
-  transition:color .2s;
+  font-size:13px;letter-spacing:.24em;text-transform:uppercase;
+  color:var(--ink);font-weight:500;
+  display:inline-flex;align-items:center;gap:.5em;
 }
-.nav-btn:hover{color:var(--brass-text)}
-.nav-btn:focus-visible,.cta:focus-visible{
+.brand .r{color:var(--brass-text);font-size:.8em;vertical-align:top}
+nav.primary{display:flex;align-items:center;gap:clamp(14px,2vw,32px)}
+nav.primary a{
+  font-family:var(--font-mono);
+  font-size:11px;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--ink-soft);
+  position:relative;padding:4px 0;
+  transition:color .25s ease;
+}
+nav.primary a::after{
+  content:"";position:absolute;left:0;right:0;bottom:-2px;height:1px;
+  background:var(--brass);transform:scaleX(0);transform-origin:left;
+  transition:transform .3s ease;
+}
+nav.primary a:hover,nav.primary a.active{color:var(--ink)}
+nav.primary a:hover::after,nav.primary a.active::after{transform:scaleX(1)}
+nav.primary a.nav-cta{display:none}
+.menu-toggle{display:none}
+
+@media (max-width:820px){
+  nav.primary a:not(.nav-cta){display:none}
+  nav.primary a.nav-cta{
+    display:inline-flex;align-items:center;
+    color:var(--pine);border:1px solid var(--pine);
+    padding:8px 16px;
+  }
+  nav.primary a.nav-cta::after{display:none}
+}
+
+/* ============ BUTTONS ============ */
+.btn{
+  font-family:var(--font-mono);
+  font-size:clamp(11px,1vw,14px);letter-spacing:.18em;text-transform:uppercase;
+  display:inline-flex;align-items:center;gap:.7em;cursor:pointer;
+  border:1px solid var(--pine);background:var(--pine);color:var(--paper);
+  padding:clamp(13px,1.4vw,17px) clamp(22px,2.4vw,34px);
+  transition:background .25s ease,transform .18s ease,box-shadow .25s ease;
+  will-change:transform;
+}
+.btn:hover{background:var(--pine-soft);box-shadow:0 12px 30px -14px rgba(45,74,50,.7)}
+.btn .arw{transition:transform .25s ease}
+.btn:hover .arw{transform:translateX(4px)}
+.btn.ghost{background:transparent;color:var(--pine);border-color:var(--brass)}
+.btn.ghost:hover{background:rgba(45,74,50,.06);box-shadow:none}
+.btn:focus-visible,nav.primary a:focus-visible,.chip:focus-visible{
   outline:2px solid var(--pine);outline-offset:3px;
 }
-.slide-counter{
+
+/* ============ HERO ============ */
+.hero{
+  position:relative;
+  min-height:calc(100svh - var(--header-h));
+  display:grid;place-items:center;
+  text-align:center;padding:clamp(40px,6vh,80px) 0 clamp(60px,8vh,100px);
+  overflow:hidden;
+}
+.hero-inner{position:relative;z-index:2;max-width:900px;margin:0 auto;padding:0 clamp(20px,5vw,56px)}
+.seal{
+  width:clamp(120px,15vw,176px);height:clamp(120px,15vw,176px);
+  margin:0 auto clamp(22px,3vw,38px);
+  will-change:transform;
+}
+.seal .rotor{transform-box:fill-box;transform-origin:center;animation:spin 44s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.seal-mono{
   font-family:var(--font-mono);
-  font-size:11px;letter-spacing:.16em;color:var(--ink-soft);
+  font-size:clamp(9px,.9vw,11.5px);letter-spacing:.32em;text-transform:uppercase;
+  color:var(--brass-text);
+  display:inline-flex;align-items:center;gap:1em;margin-bottom:clamp(18px,2.4vw,30px);
 }
-.slide-counter #current{color:var(--ink);font-weight:600}
+.seal-mono::before,.seal-mono::after{content:"";width:clamp(24px,5vw,60px);height:1px;background:var(--brass);opacity:.65}
+.hero h1{
+  font-family:var(--font-serif);
+  font-weight:320;font-optical-sizing:auto;
+  font-size:clamp(38px,6.4vw,88px);
+  line-height:1.02;letter-spacing:-.02em;
+  text-wrap:balance;color:var(--ink);
+}
+.hero h1 em{font-style:italic;color:var(--pine)}
+.hero .sub{
+  margin-top:clamp(20px,2.6vw,34px);
+  font-family:var(--font-mono);
+  font-size:clamp(11px,1.1vw,15px);letter-spacing:.2em;text-transform:uppercase;
+  color:var(--ink-soft);
+}
+.hero .sub .dot{color:var(--brass-text);margin:0 .6em}
+.hero-actions{margin-top:clamp(30px,4vw,48px);display:flex;gap:16px;justify-content:center;flex-wrap:wrap}
+.scroll-cue{
+  position:absolute;left:50%;bottom:24px;transform:translateX(-50%);
+  font-family:var(--font-mono);font-size:10px;letter-spacing:.24em;text-transform:uppercase;
+  color:var(--ink-soft);display:flex;flex-direction:column;align-items:center;gap:8px;z-index:2;
+}
+.scroll-cue .line{width:1px;height:34px;background:var(--hair-strong);position:relative;overflow:hidden}
+.scroll-cue .line::after{content:"";position:absolute;top:-34px;left:0;width:1px;height:34px;background:var(--brass);animation:drop 2.2s ease-in-out infinite}
+@keyframes drop{0%{top:-34px}60%,100%{top:34px}}
 
-/* ============ ANIMATION ============ */
-.slide.active .anim{animation:fadeUp .7s cubic-bezier(.2,.7,.2,1) both}
-.slide.active .anim-2{animation:fadeUp .7s cubic-bezier(.2,.7,.2,1) .08s both}
-.slide.active .stagger > *{opacity:0;animation:fadeUp .6s cubic-bezier(.2,.7,.2,1) both}
-.slide.active .stagger > *:nth-child(1){animation-delay:.06s}
-.slide.active .stagger > *:nth-child(2){animation-delay:.16s}
-.slide.active .stagger > *:nth-child(3){animation-delay:.26s}
-.slide.active .stagger > *:nth-child(4){animation-delay:.36s}
-.slide.active .stagger > *:nth-child(5){animation-delay:.46s}
-.slide.active .stagger > *:nth-child(6){animation-delay:.56s}
-@keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+/* ============ SECTION SHELL ============ */
+section.band{padding:clamp(72px,12vh,148px) 0;border-top:1px solid var(--hair);scroll-margin-top:var(--header-h)}
+.band-head{display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:12px;margin-bottom:clamp(36px,6vw,72px)}
+.band-head .folio{font-family:var(--font-mono);font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--ink-soft)}
+.section-title{
+  font-family:var(--font-serif);font-weight:340;
+  font-size:clamp(26px,3.6vw,46px);line-height:1.08;letter-spacing:-.014em;
+  color:var(--ink);text-wrap:balance;margin-top:.5em;max-width:20ch;
+}
 
-/* respect users who prefer reduced motion */
+/* ============ NUMBERS ============ */
+.numbers{display:grid;grid-template-columns:repeat(3,1fr)}
+.num-cell{padding:clamp(16px,2vw,30px) clamp(16px,2.4vw,40px);display:flex;flex-direction:column;gap:.35em}
+.num-cell+.num-cell{border-left:1px solid var(--hair)}
+.num-big{
+  font-family:var(--font-serif);font-weight:300;
+  font-size:clamp(64px,10vw,148px);line-height:.86;letter-spacing:-.03em;color:var(--ink);
+  font-variant-numeric:tabular-nums;
+}
+.num-big .r{font-family:var(--font-mono);font-weight:500;font-size:.4em;vertical-align:top;color:var(--brass-2);margin-left:.05em}
+.num-label{font-family:var(--font-mono);font-size:clamp(10px,1vw,13px);letter-spacing:.2em;text-transform:uppercase;color:var(--ink-soft)}
+.num-tag{font-family:var(--font-mono);font-size:clamp(9px,.85vw,11px);letter-spacing:.16em;color:var(--brass-text)}
+@media (max-width:720px){
+  .numbers{grid-template-columns:1fr}
+  .num-cell+.num-cell{border-left:none;border-top:1px solid var(--hair)}
+}
+
+/* ============ PROTECTION ============ */
+.prot-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:clamp(14px,1.8vw,24px)}
+.prot-card{
+  position:relative;overflow:hidden;
+  border:1px solid var(--brass);background:var(--paper-card);
+  padding:clamp(20px,2.2vw,30px);
+  min-height:clamp(190px,24vh,260px);
+  display:flex;flex-direction:column;justify-content:space-between;
+  transition:transform .3s ease,box-shadow .3s ease,border-color .3s ease;
+}
+.prot-card::after{
+  content:"";position:absolute;left:0;right:0;bottom:0;height:0;
+  background:linear-gradient(180deg,transparent,rgba(45,74,50,.07));
+  transition:height .35s ease;
+}
+.prot-card:hover{transform:translateY(-6px);box-shadow:var(--shadow);border-color:var(--pine)}
+.prot-card:hover::after{height:100%}
+.prot-card .idx{font-family:var(--font-mono);font-size:clamp(10px,.9vw,12px);letter-spacing:.2em;color:var(--brass-text);position:relative;z-index:1}
+.prot-flag{font-family:var(--font-serif);font-weight:360;font-size:clamp(21px,2.4vw,32px);line-height:1.04;color:var(--ink);margin-top:auto;position:relative;z-index:1}
+.prot-office{font-family:var(--font-mono);font-size:clamp(10px,1vw,13px);letter-spacing:.16em;color:var(--pine);margin-top:.6em;display:flex;align-items:center;gap:.55em;position:relative;z-index:1}
+.prot-office .tick{width:6px;height:6px;border-radius:50%;background:var(--pine)}
+.prot-note{margin-top:clamp(22px,3vw,40px);font-family:var(--font-mono);font-size:clamp(10px,.95vw,12px);letter-spacing:.14em;text-transform:uppercase;color:var(--ink-soft);text-align:center}
+@media (max-width:820px){.prot-grid{grid-template-columns:1fr 1fr}}
+@media (max-width:460px){.prot-grid{grid-template-columns:1fr}}
+
+/* ============ LEDGER / CLASSES ============ */
+.ledger{border-top:1px solid var(--hair-strong)}
+.ledger-row{
+  display:grid;grid-template-columns:clamp(80px,10vw,150px) 1fr auto;align-items:center;
+  gap:clamp(16px,3vw,48px);
+  padding:clamp(16px,2vw,26px) clamp(6px,1.5vw,22px);
+  border-bottom:1px solid var(--hair);
+  position:relative;cursor:default;
+  transition:background .3s ease,padding-left .3s ease;
+}
+.ledger-row::before{content:"";position:absolute;left:0;top:0;bottom:0;width:2px;background:var(--brass);transform:scaleY(0);transform-origin:top;transition:transform .3s ease}
+.ledger-row:hover{background:rgba(154,123,79,.08);padding-left:clamp(16px,2vw,30px)}
+.ledger-row:hover::before{transform:scaleY(1)}
+.led-class{font-family:var(--font-serif);font-weight:300;font-size:clamp(34px,4.4vw,60px);line-height:.9;color:var(--brass-2);letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.led-name{font-family:var(--font-serif);font-weight:420;font-size:clamp(17px,1.9vw,25px);color:var(--ink);letter-spacing:-.005em}
+.led-desc{font-family:var(--font-mono);font-size:clamp(9px,.9vw,11.5px);letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft);margin-top:.3em}
+.badge{
+  font-family:var(--font-mono);font-size:clamp(9px,.82vw,11px);letter-spacing:.16em;text-transform:uppercase;
+  color:var(--pine);border:1px solid var(--pine-soft);background:rgba(45,74,50,.05);
+  padding:.45em .9em;white-space:nowrap;display:inline-flex;align-items:center;gap:.55em;
+}
+.badge .tick{width:5px;height:5px;border-radius:50%;background:var(--pine)}
+@media (max-width:640px){
+  .ledger-row{grid-template-columns:56px 1fr;gap:14px 16px}
+  .badge{grid-column:2;justify-self:start;margin-top:2px}
+}
+
+/* ============ MODEL ============ */
+.phases{display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(20px,3vw,44px)}
+.phase{border-top:2px solid var(--ink);padding-top:clamp(16px,1.8vw,24px);display:flex;flex-direction:column;gap:clamp(10px,1.2vw,16px);transition:border-color .3s ease}
+.phase:hover{border-color:var(--pine)}
+.phase .p-num{font-family:var(--font-mono);font-size:clamp(11px,1vw,13px);letter-spacing:.24em;color:var(--brass-text)}
+.phase .p-title{font-family:var(--font-serif);font-weight:380;font-size:clamp(20px,2.2vw,30px);line-height:1.06;color:var(--ink)}
+.phase .p-desc{font-size:clamp(13px,1.05vw,15px);color:var(--ink-soft)}
+.phase .p-meta{margin-top:auto;padding-top:clamp(10px,1.4vw,16px);font-family:var(--font-mono);font-size:clamp(9px,.86vw,11px);letter-spacing:.14em;text-transform:uppercase;color:var(--pine)}
+.model-note{margin-top:clamp(28px,4vw,52px);display:flex;justify-content:center}
+.model-note span{
+  font-family:var(--font-mono);font-size:clamp(11px,1vw,14px);letter-spacing:.14em;text-transform:uppercase;color:var(--ink);
+  border:1px solid var(--brass);background:rgba(154,123,79,.08);padding:.8em 1.5em;display:inline-flex;align-items:center;gap:.7em;
+}
+.model-note .mark{color:var(--brass-2);font-size:1.15em;line-height:1}
+@media (max-width:760px){.phases{grid-template-columns:1fr}}
+
+/* ============ CONTACT / COMPOSER ============ */
+.compose{display:grid;grid-template-columns:1.05fr .95fr;gap:clamp(32px,5vw,80px);align-items:start}
+.compose h2{font-family:var(--font-serif);font-weight:320;font-size:clamp(30px,4.2vw,58px);line-height:1.02;letter-spacing:-.02em;color:var(--ink);text-wrap:balance;max-width:14ch}
+.compose h2 em{font-style:italic;color:var(--pine)}
+.compose .lead{margin-top:1em;color:var(--ink-soft);max-width:44ch}
+.field-group{margin-top:clamp(22px,3vw,34px)}
+.field-group h3{font-family:var(--font-mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--brass-text);margin-bottom:12px;display:flex;align-items:center;gap:.6em}
+.field-group h3 .req{color:var(--ink-soft);font-size:.85em;letter-spacing:.1em}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{
+  font-family:var(--font-mono);font-size:12px;letter-spacing:.08em;
+  border:1px solid var(--hair-strong);background:transparent;color:var(--ink-soft);
+  padding:8px 14px;cursor:pointer;
+  transition:background .2s ease,color .2s ease,border-color .2s ease,transform .15s ease;
+}
+.chip:hover{border-color:var(--brass);color:var(--ink);transform:translateY(-1px)}
+.chip[aria-pressed="true"]{background:var(--pine);color:var(--paper);border-color:var(--pine)}
+.chip .x{opacity:0;margin-left:.4em}
+.chip[aria-pressed="true"] .x{opacity:1}
+
+/* proposal preview panel */
+.panel{
+  position:sticky;top:calc(var(--header-h) + 24px);
+  border:1px solid var(--brass);background:var(--paper-card);
+  padding:clamp(24px,3vw,38px);box-shadow:var(--shadow);
+}
+.panel .p-eyebrow{font-family:var(--font-mono);font-size:10px;letter-spacing:.26em;text-transform:uppercase;color:var(--brass-text);display:flex;justify-content:space-between;align-items:center}
+.panel .stamp{width:34px;height:34px;opacity:.8}
+.panel .p-title{font-family:var(--font-serif);font-weight:360;font-size:clamp(19px,2vw,26px);color:var(--ink);margin:14px 0 clamp(16px,2vw,22px);line-height:1.1}
+.summary{display:flex;flex-direction:column;border-top:1px solid var(--hair)}
+.sum-row{display:grid;grid-template-columns:auto 1fr;gap:14px;padding:12px 0;border-bottom:1px solid var(--hair);align-items:baseline}
+.sum-key{font-family:var(--font-mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--brass-text)}
+.sum-val{font-size:13.5px;color:var(--ink);text-align:right}
+.sum-val.empty{color:var(--ink-soft);font-style:italic;opacity:.65}
+.panel .btn{width:100%;justify-content:center;margin-top:clamp(18px,2.4vw,26px)}
+.panel .hint{margin-top:12px;font-family:var(--font-mono);font-size:10px;letter-spacing:.08em;color:var(--ink-soft);text-align:center}
+@media (max-width:860px){
+  .compose{grid-template-columns:1fr}
+  .panel{position:relative;top:0}
+}
+
+/* ============ FOOTER ============ */
+footer{border-top:1px solid var(--hair-strong);padding:clamp(40px,6vw,64px) 0}
+.foot-inner{display:flex;justify-content:space-between;align-items:center;gap:24px;flex-wrap:wrap}
+.foot-brand{display:flex;align-items:center;gap:16px}
+.foot-brand .fseal{width:52px;height:52px}
+.foot-brand .ft{font-family:var(--font-mono);font-size:12px;letter-spacing:.22em;text-transform:uppercase;color:var(--ink)}
+.foot-brand .ft small{display:block;color:var(--ink-soft);font-size:10px;letter-spacing:.16em;margin-top:4px}
+.foot-offices{font-family:var(--font-mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-soft);display:flex;gap:.6em 1em;flex-wrap:wrap}
+.foot-offices b{color:var(--ink);font-weight:600}
+
+/* ============ SEAL SVG COLORS ============ */
+.mark circle.ring{fill:none;stroke:var(--ink);stroke-width:1.3}
+.mark circle.ring-i{fill:none;stroke:var(--brass);stroke-width:1}
+.mark text{fill:var(--ink);font-family:var(--font-mono);font-size:14.5px;font-weight:500;letter-spacing:5px}
+.mark .arrow{fill:var(--ink)}
+
+/* ============ REVEAL ============ */
+.reveal{opacity:0;transform:translateY(22px);transition:opacity .7s cubic-bezier(.2,.7,.2,1),transform .7s cubic-bezier(.2,.7,.2,1)}
+.reveal.in{opacity:1;transform:none}
+.reveal.d1{transition-delay:.08s}.reveal.d2{transition-delay:.16s}.reveal.d3{transition-delay:.24s}
+.reveal.d4{transition-delay:.32s}.reveal.d5{transition-delay:.40s}.reveal.d6{transition-delay:.48s}
+
 @media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
   *{animation-duration:.001ms !important;animation-iteration-count:1 !important;transition-duration:.001ms !important}
-  .slide{transition:opacity .001ms}
-}
-
-/* ============ MOBILE ============ */
-@media (max-width:768px){
-  body{overflow:auto}
-  .slide-deck{position:relative;width:100%;height:auto}
-  .slide{position:relative;min-height:100vh;padding:56px 22px}
-  .numbers-grid{grid-template-columns:1fr;gap:8px}
-  .num-cell + .num-cell{border-left:none;border-top:1px solid var(--hair)}
-  .num-cell{padding:22px 6px}
-  .grid-4{grid-template-columns:1fr 1fr;gap:12px}
-  .phases{grid-template-columns:1fr;gap:22px}
-  .contact-grid{grid-template-columns:1fr;gap:34px}
-  .ledger-row{grid-template-columns:60px 1fr;gap:14px;row-gap:8px}
-  .badge{grid-column:2;justify-self:start}
-  .cover-title{font-size:clamp(30px,9vw,44px)}
+  .reveal{opacity:1;transform:none}
+  .seal .rotor{animation:none}
+  .scroll-cue .line::after{display:none}
 }
 </style>
 </head>
 <body>
-<div class="progress-bar" id="progressBar"></div>
+<div class="progress" id="progress"></div>
 
-<!-- reusable circular logo defined once via <symbol> -->
-<svg width="0" height="0" style="position:absolute" aria-hidden="true">
-  <defs>
-    <symbol id="startupMark" viewBox="0 0 200 200">
-      <circle cx="100" cy="100" r="95" fill="none" stroke="#1C2117" stroke-width="1.3"/>
-      <circle cx="100" cy="100" r="58" fill="none" stroke="#9A7B4F" stroke-width="1"/>
-      <path id="markCircle" d="M100,22 a78,78 0 1,1 -0.1,0" fill="none"/>
-      <text fill="#1C2117" font-family="'IBM Plex Mono',monospace" font-size="14.5" font-weight="500" letter-spacing="5.2" style="text-transform:uppercase">
-        <textPath href="#markCircle" startOffset="0">STARTUP&#160;·&#160;STARTUP&#160;·&#160;STARTUP&#160;·&#160;</textPath>
-      </text>
-      <!-- double arrow -->
-      <g fill="#1C2117" transform="translate(100,100)">
-        <path d="M-26,-16 L-2,0 L-26,16 Z"/>
-        <path d="M2,-16 L26,0 L2,16 Z"/>
-      </g>
-    </symbol>
-  </defs>
-</svg>
+<header id="header">
+  <div class="header-inner">
+    <a class="brand" href="#top" aria-label="START UP, torna in cima">START&nbsp;UP<span class="r">®</span></a>
+    <nav class="primary" aria-label="Navigazione principale">
+      <a href="#numeri">Numeri</a>
+      <a href="#tutele">Tutele</a>
+      <a href="#classi">Classi</a>
+      <a href="#licenza">Licenza</a>
+      <a href="#contatti">Contatti</a>
+      <a href="#contatti" class="nav-cta">Richiedi</a>
+    </nav>
+  </div>
+</header>
 
-<div class="slide-deck">
+<main id="top">
 
-  <!-- ==================== SLIDE 1 · COVER ==================== -->
-  <section class="slide cover active">
-    <div class="slide-content" style="justify-content:center;align-items:center;text-align:center">
-      <div class="slide-head" style="justify-content:space-between">
-        <span class="eyebrow">START&nbsp;UP<span style="color:var(--brass-text)">®</span></span>
-        <span class="folio">Atto di Registrazione · MMXXVI</span>
-      </div>
-
-      <div class="cover-mark anim">
-        <svg class="logo-circular" width="clamp(120px,15vw,190px)" height="clamp(120px,15vw,190px)" viewBox="0 0 200 200" style="width:clamp(120px,15vw,188px);height:clamp(120px,15vw,188px)">
-          <use href="#startupMark"/>
-        </svg>
-      </div>
-
-      <div class="seal-line anim-2">Marchio Registrato Internazionale</div>
-      <h1 class="cover-title anim-2">Un nome che <em>vale già</em> sul mercato.</h1>
-      <p class="cover-sub anim-2">Marchio Registrato Internazionale <span class="dot">·</span> Programma di Licenza</p>
-
-      <div class="cover-foot">
-        <span>UIBM</span><span>EUIPO</span><span>UKIPO</span><span>CNIPA</span>
+  <!-- ===== HERO ===== -->
+  <section class="hero" id="hero" aria-label="Introduzione">
+    <div class="hero-inner">
+      <svg class="mark seal" id="seal" viewBox="0 0 200 200" aria-label="Marchio START UP">
+        <g class="rotor">
+          <circle class="ring" cx="100" cy="100" r="95"/>
+          <circle class="ring-i" cx="100" cy="100" r="57"/>
+          <path id="mc-hero" d="M100,22 a78,78 0 1,1 -0.1,0" fill="none"/>
+          <text><textPath href="#mc-hero" startOffset="0">STARTUP&#160;·&#160;STARTUP&#160;·&#160;STARTUP&#160;·&#160;</textPath></text>
+        </g>
+        <g class="arrow" transform="translate(100,100)"><path d="M-26,-16 L-2,0 L-26,16 Z"/><path d="M2,-16 L26,0 L2,16 Z"/></g>
+      </svg>
+      <div class="seal-mono">Marchio Registrato Internazionale</div>
+      <h1>Un nome che <em>vale già</em> sul mercato.</h1>
+      <p class="sub">Marchio Registrato Internazionale <span class="dot">·</span> Programma di Licenza</p>
+      <div class="hero-actions">
+        <a href="#contatti" class="btn magnetic">Richiedi Licenza <span class="arw">→</span></a>
+        <a href="#classi" class="btn ghost magnetic">Vedi le Classi</a>
       </div>
     </div>
+    <div class="scroll-cue" aria-hidden="true"><span>Scorri</span><span class="line"></span></div>
   </section>
 
-  <!-- ==================== SLIDE 2 · NUMBERS ==================== -->
-  <section class="slide">
-    <div class="slide-content">
-      <div class="slide-head">
-        <span class="section-label"><span class="num">01</span> Il Marchio in Numeri</span>
+  <!-- ===== NUMBERS ===== -->
+  <section class="band" id="numeri" aria-label="Il marchio in numeri">
+    <div class="wrap">
+      <div class="band-head reveal">
+        <span class="eyebrow"><span class="n">01</span> Il Marchio in Numeri</span>
         <span class="folio">START UP® · Sintesi</span>
       </div>
-
-      <div class="numbers-grid stagger">
-        <div class="num-cell">
-          <div class="num-big">04</div>
+      <div class="numbers">
+        <div class="num-cell reveal d1">
+          <div class="num-big" data-count="4" data-pad="2">00</div>
           <div class="num-label">Mercati Tutelati</div>
           <div class="num-tag">4 uffici IP · 4 giurisdizioni</div>
         </div>
-        <div class="num-cell">
-          <div class="num-big">06</div>
+        <div class="num-cell reveal d2">
+          <div class="num-big" data-count="6" data-pad="2">00</div>
           <div class="num-label">Classi Disponibili</div>
           <div class="num-tag">Classi di Nizza · concedibili</div>
         </div>
-        <div class="num-cell">
+        <div class="num-cell reveal d3">
           <div class="num-big"><span class="r">®</span></div>
           <div class="num-label">Marchio Registrato</div>
           <div class="num-tag">Titolo pieno · esclusivo</div>
@@ -533,212 +423,271 @@ body{
     </div>
   </section>
 
-  <!-- ==================== SLIDE 3 · PROTECTION ==================== -->
-  <section class="slide">
-    <div class="slide-content">
-      <div class="slide-head">
-        <span class="section-label"><span class="num">02</span> Protezione Internazionale</span>
+  <!-- ===== PROTECTION ===== -->
+  <section class="band" id="tutele" aria-label="Protezione internazionale">
+    <div class="wrap">
+      <div class="band-head reveal">
+        <div>
+          <span class="eyebrow"><span class="n">02</span> Protezione Internazionale</span>
+          <h2 class="section-title">Depositato presso quattro uffici di proprietà intellettuale.</h2>
+        </div>
         <span class="folio">Depositi · 01–04</span>
       </div>
-
-      <div class="grid-4 stagger">
-        <div class="prot-card">
-          <span class="idx">01</span>
-          <div>
-            <div class="prot-flag">Italia</div>
-            <div class="prot-office"><span class="tick"></span>UIBM</div>
-          </div>
-        </div>
-        <div class="prot-card">
-          <span class="idx">02</span>
-          <div>
-            <div class="prot-flag">Unione<br>Europea</div>
-            <div class="prot-office"><span class="tick"></span>EUIPO</div>
-          </div>
-        </div>
-        <div class="prot-card">
-          <span class="idx">03</span>
-          <div>
-            <div class="prot-flag">Regno<br>Unito</div>
-            <div class="prot-office"><span class="tick"></span>UKIPO</div>
-          </div>
-        </div>
-        <div class="prot-card">
-          <span class="idx">04</span>
-          <div>
-            <div class="prot-flag">Cina</div>
-            <div class="prot-office"><span class="tick"></span>CNIPA</div>
-          </div>
-        </div>
+      <div class="prot-grid">
+        <article class="prot-card reveal d1"><span class="idx">01</span><div><div class="prot-flag">Italia</div><div class="prot-office"><span class="tick"></span>UIBM</div></div></article>
+        <article class="prot-card reveal d2"><span class="idx">02</span><div><div class="prot-flag">Unione<br>Europea</div><div class="prot-office"><span class="tick"></span>EUIPO</div></div></article>
+        <article class="prot-card reveal d3"><span class="idx">03</span><div><div class="prot-flag">Regno<br>Unito</div><div class="prot-office"><span class="tick"></span>UKIPO</div></div></article>
+        <article class="prot-card reveal d4"><span class="idx">04</span><div><div class="prot-flag">Cina</div><div class="prot-office"><span class="tick"></span>CNIPA</div></div></article>
       </div>
-
-      <p class="prot-note anim-2">Depositato presso quattro uffici di proprietà intellettuale.</p>
     </div>
   </section>
 
-  <!-- ==================== SLIDE 4 · LEDGER / CLASSES ==================== -->
-  <section class="slide">
-    <div class="slide-content">
-      <div class="slide-head">
-        <span class="section-label"><span class="num">03</span> Sei Classi Merceologiche</span>
+  <!-- ===== CLASSES / LEDGER ===== -->
+  <section class="band" id="classi" aria-label="Sei classi merceologiche">
+    <div class="wrap">
+      <div class="band-head reveal">
+        <div>
+          <span class="eyebrow"><span class="n">03</span> Sei Classi Merceologiche</span>
+          <h2 class="section-title">Un registro di categorie pronte alla concessione.</h2>
+        </div>
         <span class="folio">Registro · Classi di Nizza</span>
       </div>
-
-      <div class="ledger stagger">
-        <div class="ledger-row">
-          <div class="led-class">25</div>
-          <div class="led-body">
-            <div class="led-name">Fashion &amp; Footwear</div>
-            <div class="led-desc">Abbigliamento · Calzature · Beachwear</div>
-          </div>
-          <span class="badge"><span class="tick"></span>Disponibile</span>
-        </div>
-        <div class="ledger-row">
-          <div class="led-class">18</div>
-          <div class="led-body">
-            <div class="led-name">Bags &amp; Leather</div>
-            <div class="led-desc">Borse · Valigeria · Accessori in pelle</div>
-          </div>
-          <span class="badge"><span class="tick"></span>Disponibile</span>
-        </div>
-        <div class="ledger-row">
-          <div class="led-class">03</div>
-          <div class="led-body">
-            <div class="led-name">Beauty &amp; Cosmetics</div>
-            <div class="led-desc">Profumi · Cosmetici · Cura persona</div>
-          </div>
-          <span class="badge"><span class="tick"></span>Disponibile</span>
-        </div>
-        <div class="ledger-row">
-          <div class="led-class">09</div>
-          <div class="led-body">
-            <div class="led-name">Tech &amp; Eyewear</div>
-            <div class="led-desc">Occhiali · Accessori tech · Smart device</div>
-          </div>
-          <span class="badge"><span class="tick"></span>Disponibile</span>
-        </div>
-        <div class="ledger-row">
-          <div class="led-class">16</div>
-          <div class="led-body">
-            <div class="led-name">Stationery &amp; Publishing</div>
-            <div class="led-desc">Cancelleria · Editoria</div>
-          </div>
-          <span class="badge"><span class="tick"></span>Disponibile</span>
-        </div>
-        <div class="ledger-row">
-          <div class="led-class">35</div>
-          <div class="led-body">
-            <div class="led-name">Advertising &amp; Business</div>
-            <div class="led-desc">Servizi commerciali · Retail · Pubblicità</div>
-          </div>
-          <span class="badge"><span class="tick"></span>Disponibile</span>
-        </div>
+      <div class="ledger">
+        <div class="ledger-row reveal"><div class="led-class">25</div><div><div class="led-name">Fashion &amp; Footwear</div><div class="led-desc">Abbigliamento · Calzature · Beachwear</div></div><span class="badge"><span class="tick"></span>Disponibile</span></div>
+        <div class="ledger-row reveal"><div class="led-class">18</div><div><div class="led-name">Bags &amp; Leather</div><div class="led-desc">Borse · Valigeria · Accessori in pelle</div></div><span class="badge"><span class="tick"></span>Disponibile</span></div>
+        <div class="ledger-row reveal"><div class="led-class">03</div><div><div class="led-name">Beauty &amp; Cosmetics</div><div class="led-desc">Profumi · Cosmetici · Cura persona</div></div><span class="badge"><span class="tick"></span>Disponibile</span></div>
+        <div class="ledger-row reveal"><div class="led-class">09</div><div><div class="led-name">Tech &amp; Eyewear</div><div class="led-desc">Occhiali · Accessori tech · Smart device</div></div><span class="badge"><span class="tick"></span>Disponibile</span></div>
+        <div class="ledger-row reveal"><div class="led-class">16</div><div><div class="led-name">Stationery &amp; Publishing</div><div class="led-desc">Cancelleria · Editoria</div></div><span class="badge"><span class="tick"></span>Disponibile</span></div>
+        <div class="ledger-row reveal"><div class="led-class">35</div><div><div class="led-name">Advertising &amp; Business</div><div class="led-desc">Servizi commerciali · Retail · Pubblicità</div></div><span class="badge"><span class="tick"></span>Disponibile</span></div>
       </div>
     </div>
   </section>
 
-  <!-- ==================== SLIDE 5 · MODEL ==================== -->
-  <section class="slide">
-    <div class="slide-content">
-      <div class="slide-head">
-        <span class="section-label"><span class="num">04</span> Come Funziona il Modello di Licenza</span>
+  <!-- ===== MODEL ===== -->
+  <section class="band" id="licenza" aria-label="Modello di licenza">
+    <div class="wrap">
+      <div class="band-head reveal">
+        <div>
+          <span class="eyebrow"><span class="n">04</span> Come Funziona il Modello di Licenza</span>
+          <h2 class="section-title">Tre fasi, dalla qualifica alla crescita.</h2>
+        </div>
         <span class="folio">Iter · 01–03</span>
       </div>
-
-      <div class="phases stagger">
-        <div class="phase">
-          <span class="p-num">01</span>
-          <div class="p-title">Richiesta &amp; Qualifica</div>
-          <p class="p-desc">Valutazione del profilo, del settore e dei canali distributivi del candidato licenziatario.</p>
-          <div class="p-meta">Risposta entro 72h</div>
-        </div>
-        <div class="phase">
-          <span class="p-num">02</span>
-          <div class="p-title">Accordo &amp; Termini</div>
-          <p class="p-desc">Definizione dei termini di licenza: royalty percentuale sulle vendite e minimo garantito annuale.</p>
-          <div class="p-meta">Royalty % + minimo garantito</div>
-        </div>
-        <div class="phase">
-          <span class="p-num">03</span>
-          <div class="p-title">Lancio &amp; Crescita</div>
-          <p class="p-desc">Avvio della produzione a marchio e supporto continuo lungo tutto il ciclo di vita della licenza.</p>
-          <div class="p-meta">Avvio produzione · Supporto continuo</div>
-        </div>
+      <div class="phases">
+        <div class="phase reveal d1"><span class="p-num">01</span><div class="p-title">Richiesta &amp; Qualifica</div><p class="p-desc">Valutazione del profilo, del settore e dei canali distributivi del candidato licenziatario.</p><div class="p-meta">Risposta entro 72h</div></div>
+        <div class="phase reveal d2"><span class="p-num">02</span><div class="p-title">Accordo &amp; Termini</div><p class="p-desc">Definizione dei termini: royalty percentuale sulle vendite e minimo garantito annuale.</p><div class="p-meta">Royalty % + minimo garantito</div></div>
+        <div class="phase reveal d3"><span class="p-num">03</span><div class="p-title">Lancio &amp; Crescita</div><p class="p-desc">Avvio della produzione a marchio e supporto continuo lungo tutto il ciclo di licenza.</p><div class="p-meta">Avvio produzione · Supporto continuo</div></div>
       </div>
-
-      <div class="model-note anim-2"><span class="mark">✦</span> Nessuna quota fissa d'ingresso.</div>
+      <div class="model-note reveal d2"><span><span class="mark-x">✦</span> Nessuna quota fissa d'ingresso.</span></div>
     </div>
   </section>
 
-  <!-- ==================== SLIDE 6 · CONTACT ==================== -->
-  <section class="slide">
-    <div class="slide-content">
-      <div class="slide-head">
-        <span class="section-label"><span class="num">05</span> Contatti</span>
+  <!-- ===== CONTACT / COMPOSER ===== -->
+  <section class="band" id="contatti" aria-label="Contatti e proposta di licenza">
+    <div class="wrap">
+      <div class="band-head reveal">
+        <span class="eyebrow"><span class="n">05</span> Contatti</span>
         <span class="folio">Proposta di Licenza</span>
       </div>
+      <div class="compose">
+        <div class="reveal">
+          <h2>Componi la tua <em>proposta</em> di licenza.</h2>
+          <p class="lead">Seleziona le voci che ti interessano: comporremo insieme la richiesta e la invieremo in un clic. Risposta qualificata entro 72 ore.</p>
 
-      <div class="contact-grid">
-        <div class="anim">
-          <h2 class="contact-title">Componi la tua <em>proposta</em> di licenza.</h2>
-          <div class="contact-fields">
-            <div class="c-field"><span class="c-key">Settore</span><span class="c-val">La categoria merceologica di interesse</span></div>
-            <div class="c-field"><span class="c-key">Mercato</span><span class="c-val">Le giurisdizioni di distribuzione</span></div>
-            <div class="c-field"><span class="c-key">Canali</span><span class="c-val">Wholesale · E-commerce · GDO · Retail monomarca</span></div>
+          <div class="field-group">
+            <h3>Settore <span class="req">— seleziona una o più classi</span></h3>
+            <div class="chips" data-group="Settore">
+              <button class="chip" aria-pressed="false">Fashion &amp; Footwear<span class="x">×</span></button>
+              <button class="chip" aria-pressed="false">Bags &amp; Leather<span class="x">×</span></button>
+              <button class="chip" aria-pressed="false">Beauty &amp; Cosmetics<span class="x">×</span></button>
+              <button class="chip" aria-pressed="false">Tech &amp; Eyewear<span class="x">×</span></button>
+              <button class="chip" aria-pressed="false">Stationery &amp; Publishing<span class="x">×</span></button>
+              <button class="chip" aria-pressed="false">Advertising &amp; Business<span class="x">×</span></button>
+            </div>
+          </div>
+
+          <div class="field-group">
+            <h3>Mercato <span class="req">— giurisdizioni</span></h3>
+            <div class="chips" data-group="Mercato">
+              <button class="chip" aria-pressed="false">Italia<span class="x">×</span></button>
+              <button class="chip" aria-pressed="false">Unione Europea<span class="x">×</span></button>
+              <button class="chip" aria-pressed="false">Regno Unito<span class="x">×</span></button>
+              <button class="chip" aria-pressed="false">Cina<span class="x">×</span></button>
+            </div>
+          </div>
+
+          <div class="field-group">
+            <h3>Canali distributivi</h3>
+            <div class="chips" data-group="Canali">
+              <button class="chip" aria-pressed="false">Wholesale<span class="x">×</span></button>
+              <button class="chip" aria-pressed="false">E-commerce<span class="x">×</span></button>
+              <button class="chip" aria-pressed="false">GDO<span class="x">×</span></button>
+              <button class="chip" aria-pressed="false">Retail monomarca<span class="x">×</span></button>
+            </div>
           </div>
         </div>
 
-        <div class="contact-side anim-2">
-          <svg class="logo-circular" viewBox="0 0 200 200" style="width:clamp(88px,10vw,120px);height:clamp(88px,10vw,120px)">
-            <use href="#startupMark"/>
-          </svg>
-          <a class="cta" href="mailto:license@startup-brand.com?subject=Richiesta%20Licenza%20START%20UP%C2%AE">Richiedi Licenza <span class="arw">→</span></a>
-          <div class="contact-offices">
-            <b>UIBM</b><span>·</span><b>EUIPO</b><span>·</span><b>UKIPO</b><span>·</span><b>CNIPA</b>
+        <aside class="panel reveal d1" aria-live="polite">
+          <div class="p-eyebrow"><span>Bozza di Proposta</span>
+            <svg class="mark stamp" viewBox="0 0 200 200" aria-hidden="true">
+              <circle class="ring" cx="100" cy="100" r="95"/>
+              <circle class="ring-i" cx="100" cy="100" r="57"/>
+              <path id="mc-panel" d="M100,22 a78,78 0 1,1 -0.1,0" fill="none"/>
+              <text><textPath href="#mc-panel" startOffset="0">STARTUP&#160;·&#160;STARTUP&#160;·&#160;STARTUP&#160;·&#160;</textPath></text>
+              <g class="arrow" transform="translate(100,100)"><path d="M-26,-16 L-2,0 L-26,16 Z"/><path d="M2,-16 L26,0 L2,16 Z"/></g>
+            </svg>
           </div>
-        </div>
+          <div class="p-title">START UP® · Licenza d'Uso</div>
+          <div class="summary">
+            <div class="sum-row"><span class="sum-key">Settore</span><span class="sum-val empty" data-sum="Settore">Da selezionare</span></div>
+            <div class="sum-row"><span class="sum-key">Mercato</span><span class="sum-val empty" data-sum="Mercato">Da selezionare</span></div>
+            <div class="sum-row"><span class="sum-key">Canali</span><span class="sum-val empty" data-sum="Canali">Da selezionare</span></div>
+          </div>
+          <a class="btn magnetic" id="submit" href="mailto:license@startup-brand.com?subject=Richiesta%20Licenza%20START%20UP%C2%AE">Richiedi Licenza <span class="arw">→</span></a>
+          <div class="hint">Nessuna quota fissa d'ingresso · Royalty sulle vendite</div>
+        </aside>
       </div>
     </div>
   </section>
+</main>
 
-</div><!-- /.slide-deck -->
-
-<div class="nav-controls">
-  <button class="nav-btn" onclick="prevSlide()" aria-label="Precedente">←</button>
-  <span class="slide-counter"><span id="current">1</span> / <span id="total">6</span></span>
-  <button class="nav-btn" onclick="nextSlide()" aria-label="Successiva">→</button>
-</div>
+<footer>
+  <div class="wrap foot-inner">
+    <div class="foot-brand">
+      <svg class="mark fseal" viewBox="0 0 200 200" aria-hidden="true">
+        <circle class="ring" cx="100" cy="100" r="95"/>
+        <circle class="ring-i" cx="100" cy="100" r="57"/>
+        <path id="mc-foot" d="M100,22 a78,78 0 1,1 -0.1,0" fill="none"/>
+        <text><textPath href="#mc-foot" startOffset="0">STARTUP&#160;·&#160;STARTUP&#160;·&#160;STARTUP&#160;·&#160;</textPath></text>
+        <g class="arrow" transform="translate(100,100)"><path d="M-26,-16 L-2,0 L-26,16 Z"/><path d="M2,-16 L26,0 L2,16 Z"/></g>
+      </svg>
+      <div class="ft">START UP®<small>Marchio Registrato Internazionale</small></div>
+    </div>
+    <div class="foot-offices"><b>UIBM</b><span>·</span><b>EUIPO</b><span>·</span><b>UKIPO</b><span>·</span><b>CNIPA</b></div>
+  </div>
+</footer>
 
 <script>
-  let current = 1;
-  const slides = document.querySelectorAll('.slide');
-  const total = slides.length;
-  document.getElementById('total').textContent = String(total).padStart(2,'0');
-  const isDesktop = () => window.matchMedia('(min-width:769px)').matches;
+(function(){
+  var reduce = window.matchMedia('(prefers-reduced-motion:reduce)').matches;
 
-  function showSlide(n){
-    if(n < 1) n = 1;
-    if(n > total) n = total;
-    current = n;
-    slides.forEach((s,i)=>s.classList.toggle('active', i === n-1));
-    document.getElementById('current').textContent = String(n).padStart(2,'0');
-    document.getElementById('progressBar').style.width = (n/total*100)+'%';
+  /* reading progress + sticky header */
+  var progress = document.getElementById('progress');
+  var header = document.getElementById('header');
+  function onScroll(){
+    var st = window.scrollY || document.documentElement.scrollTop;
+    var h = document.documentElement.scrollHeight - window.innerHeight;
+    progress.style.width = (h>0 ? (st/h*100) : 0) + '%';
+    header.classList.toggle('scrolled', st > 24);
   }
-  function nextSlide(){ showSlide(current+1); }
-  function prevSlide(){ showSlide(current-1); }
+  window.addEventListener('scroll', onScroll, {passive:true}); onScroll();
 
-  document.addEventListener('keydown',(e)=>{
-    if(e.key==='ArrowRight'||e.key===' '){ e.preventDefault(); nextSlide(); }
-    if(e.key==='ArrowLeft'){ e.preventDefault(); prevSlide(); }
-  });
-  // click-to-advance only on desktop (single-slide mode); mobile scrolls
-  document.addEventListener('click',(e)=>{
-    if(!isDesktop()) return;
-    if(e.target.closest('.nav-controls')||e.target.closest('a')) return;
-    nextSlide();
-  });
+  /* scroll reveal */
+  var revs = document.querySelectorAll('.reveal');
+  if('IntersectionObserver' in window && !reduce){
+    var ro = new IntersectionObserver(function(es){
+      es.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('in'); ro.unobserve(e.target);} });
+    }, {threshold:.12, rootMargin:'0px 0px -8% 0px'});
+    revs.forEach(function(el){ ro.observe(el); });
+  } else { revs.forEach(function(el){ el.classList.add('in'); }); }
 
-  showSlide(1);
+  /* count-up */
+  function countUp(el){
+    var target = +el.getAttribute('data-count');
+    var pad = +(el.getAttribute('data-pad')||0);
+    if(reduce){ el.textContent = String(target).padStart(pad,'0'); return; }
+    var dur = 1100, t0 = null;
+    function step(ts){
+      if(!t0) t0 = ts; var p = Math.min((ts-t0)/dur, 1);
+      var eased = 1 - Math.pow(1-p, 3);
+      el.textContent = String(Math.round(eased*target)).padStart(pad,'0');
+      if(p<1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  }
+  var counters = document.querySelectorAll('[data-count]');
+  if('IntersectionObserver' in window){
+    var co = new IntersectionObserver(function(es){
+      es.forEach(function(e){ if(e.isIntersecting){ countUp(e.target); co.unobserve(e.target);} });
+    }, {threshold:.6});
+    counters.forEach(function(el){ co.observe(el); });
+  } else { counters.forEach(countUp); }
+
+  /* nav active state */
+  var links = Array.prototype.slice.call(document.querySelectorAll('nav.primary a[href^="#"]'));
+  var map = {};
+  links.forEach(function(a){ var id=a.getAttribute('href').slice(1); if(document.getElementById(id)) map[id]=a; });
+  var sects = Object.keys(map).map(function(id){ return document.getElementById(id); });
+  if('IntersectionObserver' in window){
+    var so = new IntersectionObserver(function(es){
+      es.forEach(function(e){
+        if(e.isIntersecting){
+          links.forEach(function(l){ l.classList.remove('active'); });
+          if(map[e.target.id]) map[e.target.id].classList.add('active');
+        }
+      });
+    }, {rootMargin:'-45% 0px -50% 0px'});
+    sects.forEach(function(s){ so.observe(s); });
+  }
+
+  /* hero seal parallax on mouse */
+  var seal = document.getElementById('seal');
+  var hero = document.getElementById('hero');
+  if(seal && hero && !reduce && matchMedia('(pointer:fine)').matches){
+    hero.addEventListener('mousemove', function(ev){
+      var r = hero.getBoundingClientRect();
+      var dx = (ev.clientX - (r.left+r.width/2)) / r.width;
+      var dy = (ev.clientY - (r.top+r.height/2)) / r.height;
+      seal.style.transform = 'translate('+(dx*18).toFixed(1)+'px,'+(dy*18).toFixed(1)+'px)';
+    });
+    hero.addEventListener('mouseleave', function(){ seal.style.transform=''; });
+  }
+
+  /* magnetic buttons */
+  if(!reduce && matchMedia('(pointer:fine)').matches){
+    document.querySelectorAll('.magnetic').forEach(function(btn){
+      btn.addEventListener('mousemove', function(ev){
+        var r = btn.getBoundingClientRect();
+        var mx = ev.clientX - (r.left+r.width/2);
+        var my = ev.clientY - (r.top+r.height/2);
+        btn.style.transform = 'translate('+(mx*.18).toFixed(1)+'px,'+(my*.28).toFixed(1)+'px)';
+      });
+      btn.addEventListener('mouseleave', function(){ btn.style.transform=''; });
+    });
+  }
+
+  /* interactive proposal composer */
+  var state = {Settore:[], Mercato:[], Canali:[]};
+  document.querySelectorAll('.chips').forEach(function(group){
+    var name = group.getAttribute('data-group');
+    group.querySelectorAll('.chip').forEach(function(chip){
+      chip.addEventListener('click', function(){
+        var on = chip.getAttribute('aria-pressed') === 'true';
+        chip.setAttribute('aria-pressed', on ? 'false' : 'true');
+        var label = chip.textContent.replace('×','').trim();
+        var arr = state[name];
+        var i = arr.indexOf(label);
+        if(on){ if(i>-1) arr.splice(i,1); } else { if(i<0) arr.push(label); }
+        render();
+      });
+    });
+  });
+  var submit = document.getElementById('submit');
+  function render(){
+    ['Settore','Mercato','Canali'].forEach(function(k){
+      var el = document.querySelector('[data-sum="'+k+'"]');
+      if(state[k].length){ el.textContent = state[k].join(' · '); el.classList.remove('empty'); }
+      else { el.textContent = (k==='Canali'?'Facoltativo':'Da selezionare'); el.classList.add('empty'); }
+    });
+    var body = 'Richiesta di licenza per il marchio START UP®.%0D%0A%0D%0A'
+      + 'Settore: ' + (state.Settore.join(', ') || '—') + '%0D%0A'
+      + 'Mercato: ' + (state.Mercato.join(', ') || '—') + '%0D%0A'
+      + 'Canali distributivi: ' + (state.Canali.join(', ') || '—') + '%0D%0A%0D%0A'
+      + 'Referente:%0D%0AAzienda:%0D%0A';
+    submit.setAttribute('href','mailto:license@startup-brand.com?subject=Richiesta%20Licenza%20START%20UP%C2%AE&body='+body);
+  }
+  render();
+})();
 </script>
 </body>
 </html>
