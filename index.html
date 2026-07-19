@@ -398,6 +398,92 @@
   }
   .eyebrow.visible::before{ width:26px; }
 
+  /* ============ CUSTOM CURSOR ============ */
+  .cursor-dot, .cursor-ring{
+    position:fixed; top:0; left:0; z-index:9999;
+    pointer-events:none; border-radius:50%;
+    mix-blend-mode:multiply; display:none;
+    transform:translate(-50%,-50%);
+  }
+  .cursor-dot{ width:7px; height:7px; background:var(--brass-deep); }
+  .cursor-ring{
+    width:34px; height:34px; border:1px solid var(--brass-deep); opacity:.55;
+    transition:width .25s cubic-bezier(.22,1,.36,1), height .25s cubic-bezier(.22,1,.36,1),
+               opacity .25s ease, background .25s ease, border-color .25s ease;
+  }
+  .cursor-ring.is-hovering{
+    width:58px; height:58px; opacity:1;
+    background:rgba(147,113,44,0.08); border-color:var(--brass);
+  }
+  @media (hover:hover) and (pointer:fine){
+    body.cursor-on{ cursor:none; }
+    body.cursor-on a, body.cursor-on button,
+    body.cursor-on input, body.cursor-on select, body.cursor-on textarea{ cursor:none; }
+  }
+
+  /* ============ TERRITORY FLAGS + 3D TILT + SPOTLIGHT ============ */
+  .terr-grid{ perspective:1000px; }
+  .terr-cell{
+    transform-style:preserve-3d; will-change:transform;
+    transition:background .3s ease, box-shadow .35s ease,
+               transform .5s cubic-bezier(.22,1,.36,1);
+  }
+  .terr-cell.tilting{ transition:box-shadow .35s ease, background .3s ease; }
+  .terr-cell .spotlight{
+    position:absolute; inset:0; z-index:0; pointer-events:none; opacity:0;
+    transition:opacity .3s ease;
+    background:radial-gradient(180px circle at var(--mx,50%) var(--my,50%),
+               rgba(147,113,44,0.16), transparent 62%);
+  }
+  .terr-cell:hover{ box-shadow:0 14px 34px -18px rgba(28,33,23,0.45); }
+  .terr-cell:hover .spotlight{ opacity:1; }
+  .terr-emblem, .terr-cell h3, .terr-cell .code{ position:relative; z-index:1; }
+
+  .terr-emblem{
+    position:relative; width:66px; height:66px; margin:0 auto 18px;
+    display:flex; align-items:center; justify-content:center;
+    transform:translateZ(24px);
+  }
+  .terr-emblem .seal{ position:absolute; inset:0; width:66px; height:66px; margin:0; }
+  .terr-flag{
+    position:relative; z-index:1; width:34px; height:23px; display:block;
+    border:1px solid rgba(28,33,23,0.28); border-radius:1.5px; overflow:hidden;
+    box-shadow:0 2px 5px rgba(28,33,23,0.28);
+    transition:transform .4s cubic-bezier(.34,1.56,.64,1), box-shadow .3s ease;
+  }
+  .terr-flag .flag{ display:block; width:100%; height:100%; }
+  .terr-cell:hover .terr-flag{
+    transform:scale(1.12);
+    box-shadow:0 5px 12px rgba(28,33,23,0.34);
+  }
+  .terr-cell h3, .terr-cell .code{ transform:translateZ(14px); }
+
+  /* certificate spotlight + tilt */
+  .certificate{ transform-style:preserve-3d; }
+  .certificate .spotlight{
+    position:absolute; inset:0; z-index:0; pointer-events:none; opacity:0;
+    transition:opacity .3s ease; border-radius:2px;
+    background:radial-gradient(240px circle at var(--mx,50%) var(--my,50%),
+               rgba(147,113,44,0.14), transparent 60%);
+  }
+  .certificate:hover .spotlight{ opacity:1; }
+  .certificate > *:not(.spotlight){ position:relative; z-index:1; }
+
+  /* magnetic buttons */
+  .btn-primary, .cta-btn{ will-change:transform; }
+
+  /* flag select swatch */
+  .mercato-wrap{ position:relative; }
+  .mercato-flag{
+    position:absolute; left:12px; top:50%; transform:translateY(-50%);
+    width:22px; height:15px; border:1px solid rgba(28,33,23,0.22);
+    border-radius:1px; overflow:hidden; pointer-events:none;
+    box-shadow:0 1px 2px rgba(28,33,23,0.2); display:none;
+  }
+  .mercato-flag.show{ display:block; }
+  .mercato-flag .flag{ width:100%; height:100%; display:block; }
+  .mercato-wrap select.has-flag{ padding-left:44px; }
+
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation:none !important; transition:none !important; }
   }
@@ -415,6 +501,14 @@
 </style>
 </head>
 <body>
+
+<!-- shared 5-point star for EU / CN flags -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <path id="s5" d="M0,-1 L0.235,-0.324 L0.951,-0.309 L0.363,0.118 L0.588,0.809 L0,0.4 L-0.588,0.809 L-0.363,0.118 L-0.951,-0.309 L-0.235,-0.324 Z"/>
+</defs></svg>
+
+<div class="cursor-dot" aria-hidden="true"></div>
+<div class="cursor-ring" aria-hidden="true"></div>
 
 <div id="progress-bar"></div>
 <header>
@@ -447,6 +541,7 @@
       </div>
 
       <div class="certificate reveal" style="transition-delay:.18s">
+        <span class="spotlight"></span>
         <div class="cert-label">Estratto dal Registro — Titolare</div>
         <div class="mono" style="font-size:13px;">G.M.I. S.r.l. · Napoli, IT</div>
         <div class="cert-mark"><img src="data:image/png;base64,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" alt="START UP®" style="width:110px;height:auto;display:block;margin:0 auto;filter:sepia(0.1);-webkit-text-fill-color:initial;background:none;"></div>
@@ -467,38 +562,98 @@
 
       <div class="terr-grid stagger">
         <div class="terr-cell">
-          <svg class="seal" viewBox="0 0 64 64" fill="none" stroke="currentColor" style="color:var(--brass-deep)">
-            <circle cx="32" cy="32" r="27" stroke-width="1.3"/>
-            <circle cx="32" cy="32" r="20" stroke-width="1"/>
-            <text x="32" y="37" text-anchor="middle" font-family="IBM Plex Mono" font-size="13" fill="currentColor" stroke="none">IT</text>
-          </svg>
+          <span class="spotlight"></span>
+          <div class="terr-emblem">
+            <svg class="seal" viewBox="0 0 64 64" fill="none" stroke="currentColor" style="color:var(--brass-deep)">
+              <circle cx="32" cy="32" r="30" stroke-width="1.3"/>
+              <circle cx="32" cy="32" r="25" stroke-width="1"/>
+            </svg>
+            <span class="terr-flag" title="Italia">
+              <svg class="flag" viewBox="0 0 60 40" preserveAspectRatio="none">
+                <rect width="20" height="40" fill="#008C45"/>
+                <rect x="20" width="20" height="40" fill="#F4F5F0"/>
+                <rect x="40" width="20" height="40" fill="#CD212A"/>
+              </svg>
+            </span>
+          </div>
           <h3>Italia</h3>
           <div class="code">UIBM</div>
         </div>
         <div class="terr-cell">
-          <svg class="seal" viewBox="0 0 64 64" fill="none" stroke="currentColor" style="color:var(--brass-deep)">
-            <circle cx="32" cy="32" r="27" stroke-width="1.3"/>
-            <circle cx="32" cy="32" r="20" stroke-width="1"/>
-            <text x="32" y="37" text-anchor="middle" font-family="IBM Plex Mono" font-size="13" fill="currentColor" stroke="none">EU</text>
-          </svg>
+          <span class="spotlight"></span>
+          <div class="terr-emblem">
+            <svg class="seal" viewBox="0 0 64 64" fill="none" stroke="currentColor" style="color:var(--brass-deep)">
+              <circle cx="32" cy="32" r="30" stroke-width="1.3"/>
+              <circle cx="32" cy="32" r="25" stroke-width="1"/>
+            </svg>
+            <span class="terr-flag" title="Unione Europea">
+              <svg class="flag" viewBox="0 0 60 40" preserveAspectRatio="none">
+                <rect width="60" height="40" fill="#003399"/>
+                <g fill="#FFCC00">
+                  <use href="#s5" transform="translate(30.00 7.00) scale(1.7)"/>
+                  <use href="#s5" transform="translate(36.50 8.74) scale(1.7)"/>
+                  <use href="#s5" transform="translate(41.26 13.50) scale(1.7)"/>
+                  <use href="#s5" transform="translate(43.00 20.00) scale(1.7)"/>
+                  <use href="#s5" transform="translate(41.26 26.50) scale(1.7)"/>
+                  <use href="#s5" transform="translate(36.50 31.26) scale(1.7)"/>
+                  <use href="#s5" transform="translate(30.00 33.00) scale(1.7)"/>
+                  <use href="#s5" transform="translate(23.50 31.26) scale(1.7)"/>
+                  <use href="#s5" transform="translate(18.74 26.50) scale(1.7)"/>
+                  <use href="#s5" transform="translate(17.00 20.00) scale(1.7)"/>
+                  <use href="#s5" transform="translate(18.74 13.50) scale(1.7)"/>
+                  <use href="#s5" transform="translate(23.50 8.74) scale(1.7)"/>
+                </g>
+              </svg>
+            </span>
+          </div>
           <h3>Unione Europea</h3>
           <div class="code">EUIPO</div>
         </div>
         <div class="terr-cell">
-          <svg class="seal" viewBox="0 0 64 64" fill="none" stroke="currentColor" style="color:var(--brass-deep)">
-            <circle cx="32" cy="32" r="27" stroke-width="1.3"/>
-            <circle cx="32" cy="32" r="20" stroke-width="1"/>
-            <text x="32" y="37" text-anchor="middle" font-family="IBM Plex Mono" font-size="13" fill="currentColor" stroke="none">UK</text>
-          </svg>
+          <span class="spotlight"></span>
+          <div class="terr-emblem">
+            <svg class="seal" viewBox="0 0 64 64" fill="none" stroke="currentColor" style="color:var(--brass-deep)">
+              <circle cx="32" cy="32" r="30" stroke-width="1.3"/>
+              <circle cx="32" cy="32" r="25" stroke-width="1"/>
+            </svg>
+            <span class="terr-flag" title="Regno Unito">
+              <svg class="flag" viewBox="0 0 60 40" preserveAspectRatio="none">
+                <clipPath id="ukClip"><rect width="60" height="40"/></clipPath>
+                <g clip-path="url(#ukClip)">
+                  <rect width="60" height="40" fill="#012169"/>
+                  <path d="M0,0 L60,40 M60,0 L0,40" stroke="#FFFFFF" stroke-width="8"/>
+                  <path d="M0,0 L60,40 M60,0 L0,40" stroke="#C8102E" stroke-width="3.2"/>
+                  <rect x="24" width="12" height="40" fill="#FFFFFF"/>
+                  <rect y="14" width="60" height="12" fill="#FFFFFF"/>
+                  <rect x="26.5" width="7" height="40" fill="#C8102E"/>
+                  <rect y="16.5" width="60" height="7" fill="#C8102E"/>
+                </g>
+              </svg>
+            </span>
+          </div>
           <h3>Regno Unito</h3>
           <div class="code">UKIPO</div>
         </div>
         <div class="terr-cell">
-          <svg class="seal" viewBox="0 0 64 64" fill="none" stroke="currentColor" style="color:var(--brass-deep)">
-            <circle cx="32" cy="32" r="27" stroke-width="1.3"/>
-            <circle cx="32" cy="32" r="20" stroke-width="1"/>
-            <text x="32" y="37" text-anchor="middle" font-family="IBM Plex Mono" font-size="13" fill="currentColor" stroke="none">WO</text>
-          </svg>
+          <span class="spotlight"></span>
+          <div class="terr-emblem">
+            <svg class="seal" viewBox="0 0 64 64" fill="none" stroke="currentColor" style="color:var(--brass-deep)">
+              <circle cx="32" cy="32" r="30" stroke-width="1.3"/>
+              <circle cx="32" cy="32" r="25" stroke-width="1"/>
+            </svg>
+            <span class="terr-flag" title="Cina (designazione WIPO)">
+              <svg class="flag" viewBox="0 0 60 40" preserveAspectRatio="none">
+                <rect width="60" height="40" fill="#EE1C25"/>
+                <g fill="#FFDE00">
+                  <use href="#s5" transform="translate(11 11) scale(6.5)"/>
+                  <use href="#s5" transform="translate(22 4.5) scale(2.1) rotate(23)"/>
+                  <use href="#s5" transform="translate(26.5 9) scale(2.1) rotate(46)"/>
+                  <use href="#s5" transform="translate(26.5 15.5) scale(2.1) rotate(70)"/>
+                  <use href="#s5" transform="translate(22 20) scale(2.1) rotate(23)"/>
+                </g>
+              </svg>
+            </span>
+          </div>
           <h3>Internazionale</h3>
           <div class="code">WIPO — designazione Cina</div>
         </div>
@@ -682,14 +837,17 @@
             </div>
             <div class="field">
               <label for="mercato">Mercato Geografico Target *</label>
-              <select id="mercato" name="mercato" required>
-                <option value="" disabled selected>Seleziona un mercato…</option>
-                <option value="IT">Italia</option>
-                <option value="EU">Unione Europea</option>
-                <option value="UK">Regno Unito</option>
-                <option value="CN">Cina</option>
-                <option value="MULTI">Più mercati</option>
-              </select>
+              <div class="mercato-wrap">
+                <span class="mercato-flag" id="mercatoFlag" aria-hidden="true"></span>
+                <select id="mercato" name="mercato" required>
+                  <option value="" disabled selected>Seleziona un mercato…</option>
+                  <option value="IT">🇮🇹 Italia</option>
+                  <option value="EU">🇪🇺 Unione Europea</option>
+                  <option value="UK">🇬🇧 Regno Unito</option>
+                  <option value="CN">🇨🇳 Cina</option>
+                  <option value="MULTI">🌐 Più mercati</option>
+                </select>
+              </div>
             </div>
             <div class="field">
               <label for="progetto">Progetto e Canali Distributivi *</label>
@@ -808,6 +966,109 @@
       el.classList.add('visible');
     });
   });
+
+  /* ===== POINTER-DRIVEN INTERACTIONS =====
+     Enabled only for fine pointers (mouse/trackpad) and when the user
+     has not requested reduced motion. Touch devices keep the clean base UX. */
+  const finePointer = window.matchMedia('(hover:hover) and (pointer:fine)').matches;
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  if (finePointer && !reduceMotion) {
+
+    /* --- Custom editorial cursor (brass dot + trailing ring) --- */
+    const dot  = document.querySelector('.cursor-dot');
+    const ring = document.querySelector('.cursor-ring');
+    document.body.classList.add('cursor-on');
+    dot.style.display = ring.style.display = 'block';
+
+    let mx = window.innerWidth / 2, my = window.innerHeight / 2;
+    let rx = mx, ry = my;
+    window.addEventListener('mousemove', (e) => {
+      mx = e.clientX; my = e.clientY;
+      dot.style.left = mx + 'px';
+      dot.style.top  = my + 'px';
+    }, { passive: true });
+
+    (function trail(){
+      rx += (mx - rx) * 0.18;
+      ry += (my - ry) * 0.18;
+      ring.style.left = rx + 'px';
+      ring.style.top  = ry + 'px';
+      requestAnimationFrame(trail);
+    })();
+
+    const hoverTargets = 'a, button, .cta-btn, .btn-primary, .btn-ghost, .terr-cell, .ledger-row, input, select, textarea';
+    document.querySelectorAll(hoverTargets).forEach(el => {
+      el.addEventListener('mouseenter', () => ring.classList.add('is-hovering'));
+      el.addEventListener('mouseleave', () => ring.classList.remove('is-hovering'));
+    });
+    window.addEventListener('mouseout', (e) => {
+      if (!e.relatedTarget) { dot.style.opacity = ring.style.opacity = '0'; }
+    });
+    window.addEventListener('mouseover', () => { dot.style.opacity = '1'; ring.style.opacity = ''; });
+
+    /* --- 3D tilt + spotlight that follow the cursor --- */
+    function setupTilt(el, maxDeg, liftZ, usePerspective){
+      el.addEventListener('mousemove', (e) => {
+        const r = el.getBoundingClientRect();
+        const px = (e.clientX - r.left) / r.width;   // 0..1
+        const py = (e.clientY - r.top)  / r.height;  // 0..1
+        const rotY = (px - 0.5) *  2 * maxDeg;
+        const rotX = (py - 0.5) * -2 * maxDeg;
+        el.style.transition = 'transform .12s ease-out, box-shadow .3s ease';
+        el.style.transform =
+          (usePerspective ? 'perspective(900px) ' : '') +
+          `rotateX(${rotX.toFixed(2)}deg) rotateY(${rotY.toFixed(2)}deg) translateZ(${liftZ}px)`;
+        el.style.setProperty('--mx', (px * 100).toFixed(1) + '%');
+        el.style.setProperty('--my', (py * 100).toFixed(1) + '%');
+      });
+      el.addEventListener('mouseleave', () => {
+        el.style.transition = 'transform .55s cubic-bezier(.22,1,.36,1), box-shadow .35s ease';
+        el.style.transform = '';
+      });
+    }
+    document.querySelectorAll('.terr-cell').forEach(el => setupTilt(el, 9, 12, false));
+    const cert = document.querySelector('.certificate');
+    if (cert) setupTilt(cert, 4, 0, true);
+
+    /* --- Magnetic pull on primary calls-to-action (clamped) --- */
+    document.querySelectorAll('.btn-primary, .cta-btn').forEach(btn => {
+      btn.addEventListener('mousemove', (e) => {
+        const r = btn.getBoundingClientRect();
+        const dx = (e.clientX - r.left - r.width / 2) * 0.28;
+        const dy = (e.clientY - r.top  - r.height / 2) * 0.28;
+        btn.style.transition = 'transform .15s ease-out';
+        btn.style.transform = `translate(${dx.toFixed(1)}px, ${dy.toFixed(1)}px)`;
+      });
+      btn.addEventListener('mouseleave', () => {
+        btn.style.transition = 'transform .45s cubic-bezier(.34,1.56,.64,1)';
+        btn.style.transform = '';
+      });
+    });
+  }
+
+  /* ===== LIVE FLAG SWATCH ON MARKET SELECT (all pointers) ===== */
+  (function(){
+    const sel = document.getElementById('mercato');
+    const swatch = document.getElementById('mercatoFlag');
+    if (!sel || !swatch) return;
+    const cellFlags = document.querySelectorAll('.terr-cell .flag');
+    const flagMap = {
+      IT: cellFlags[0], EU: cellFlags[1], UK: cellFlags[2], CN: cellFlags[3]
+    };
+    sel.addEventListener('change', () => {
+      const src = flagMap[sel.value];
+      if (src) {
+        swatch.innerHTML = src.outerHTML;
+        swatch.classList.add('show');
+        sel.classList.add('has-flag');
+      } else {
+        swatch.innerHTML = '';
+        swatch.classList.remove('show');
+        sel.classList.remove('has-flag');
+      }
+    });
+  })();
 </script>
 </body>
 </html>
