@@ -21,6 +21,55 @@ Aggiornare questo file ogni volta che si scopre qualcosa di nuovo.
 leve sono **durata** e **risoluzione**. Il 1080p costa cinque volte il 480p: per
 Instagram e TikTok, che ricomprimono comunque, il 480p e' sufficiente.
 
+### La risoluzione e' un'impostazione, non un modello
+
+Verificato leggendo la configurazione del modello (chiamata di sola lettura, non
+spende nulla): Nano Banana 2 espone `resolution` come menu a quattro gradini —
+**512px, 1K, 2K, 4K** — e il **default e' 2K**. I 130 crediti annotati qui sopra
+erano quindi al default, non a un prezzo unico del modello.
+
+Stessa configurazione: `num_images` da 1 a 5 per chiamata, fino a 14 immagini di
+riferimento.
+
+**I prezzi degli altri tre gradini non sono misurati.** Non si possono leggere
+dalla configurazione, e non si possono nemmeno far dichiarare al gate: sotto
+soglia il gate non scatta e la generazione parte pagando. L'unico modo per
+saperli e' spenderli.
+
+**Protocollo per misurarli senza sorprese:** leggere il saldo, lanciare **una**
+generazione al gradino da misurare, rileggere il saldo. La differenza e' il
+prezzo esatto di quel gradino. Tetto di spesa per mappare i tre gradini ignoti:
+390 crediti, cioe' il caso assurdo in cui 512px, 1K e 4K costassero tutti quanto
+il 2K.
+
+### Quale gradino serve davvero
+
+Il numero di pixel utili lo decide il formato di stampa, non il modello.
+`catalogo/genera.py --finestre` stampa l'inventario delle finestre del catalogo
+con la misura richiesta a 300 dpi e il gradino minimo che la copre. Il risultato
+al momento:
+
+| Finestra | Misura | Px a 300 dpi | Gradino |
+|---|---|---|---|
+| Articoli gamma (30 su 33) | 40 × 32-41 mm | 472 × 378-484 | **512px** |
+| Articoli gamma (3 su 33) | 40 × 56 mm | 472 × 661 | **1K** |
+| Schede categoria (8) | 70 × 100 mm | 827 × 1181 | **2K** |
+| Aperture a tutta larghezza (3) | 174 × 76-92 mm | 2055 × 898-1087 | **2K** |
+
+**Niente in catalogo ha bisogno del 4K.** Le aperture a tutta larghezza chiedono
+2055 px e il gradino 2K ne da' 2048: sono 299 dpi invece di 300, uno scarto che
+in stampa non esiste. Generarle a 4K significa pagare il gradino piu' caro per
+sette pixel.
+
+Al contrario, tenere il default 2K su tutti e 33 gli articoli della gamma
+significa pagare 2048 px per finestre che ne usano 472: **diciotto volte i pixel
+che finiscono in pagina.**
+
+### L'altro fornitore non e' un'alternativa
+
+Higgsfield: piano free, **0,5 crediti**. Non ci si fa niente. Ogni conto sulle
+immagini si fa su Artlist.
+
 ### Il gate del costo, e quando non scatta
 
 Le generazioni costose restituiscono `confirmation_required` **senza spendere

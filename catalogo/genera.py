@@ -197,9 +197,14 @@ def occhiello(c, x, y, s, colore, allinea="sx"):
     scrivi(c, x, y, s.upper(), "PlexMono", 7, colore, 1.1, allinea)
 
 
+FINESTRE = []       # inventario riempito a ogni impaginazione
+
+
 def finestra_foto(c, x, y, w, h, etichetta="", percorso=""):
     """Piazza la foto se c'e'. Se manca, lascia la finestra con la misura
     esatta dello scatto che serve: il catalogo si stampa lo stesso."""
+    FINESTRE.append({"etichetta": etichetta, "mm_w": w / MM, "mm_h": h / MM,
+                     "file": percorso})
     f = FOTO / percorso if percorso else None
     if f and f.exists():
         try:
@@ -943,12 +948,68 @@ def stampa(pagine, percorso, titolo):
     print(f"  {percorso.relative_to(QUI.parent)} — {len(pagine)} pagine")
 
 
+def inventario(quali, anno):
+    """Elenca ogni finestra foto con la misura richiesta e il gradino di
+    risoluzione piu' basso che la copre. Non genera nulla e non spende nulla."""
+    import collections
+
+    # Gradini offerti dai modelli immagine, per lato lungo in pixel.
+    GRADINI = [("512px", 512), ("1K", 1024), ("2K", 2048), ("4K", 4096)]
+
+    def gradino(px_lato_lungo):
+        for nome, lato in GRADINI:
+            if lato >= px_lato_lungo:
+                return nome, lato
+        return "oltre 4K", None
+
+    for nome_doc, costruisci in quali:
+        FINESTRE.clear()
+        pagine = costruisci(anno)
+        # si impagina su un canvas buttato via: serve solo a raccogliere le misure
+        c = rlcanvas.Canvas(os.devnull, pagesize=(LARG, ALT))
+        for i, (_, disegna) in enumerate(pagine, start=1):
+            disegna(c, i)
+            c.showPage()
+
+        print(f"\n{nome_doc} — {len(FINESTRE)} finestre foto")
+        print(f"  {'misura':>14}  {'a 300 dpi':>13}  {'a 200 dpi':>13}  "
+              f"{'300dpi':>7}  {'200dpi':>7}  n.")
+        conteggio = collections.Counter()
+        for f in FINESTRE:
+            k = (round(f["mm_w"]), round(f["mm_h"]))
+            conteggio[k] += 1
+        for (mw, mh), n_volte in sorted(conteggio.items(),
+                                        key=lambda kv: -kv[0][0] * kv[0][1]):
+            for dpi in (300,):
+                pass
+            p300 = (round(mw / 25.4 * 300), round(mh / 25.4 * 300))
+            p200 = (round(mw / 25.4 * 200), round(mh / 25.4 * 200))
+            g300 = gradino(max(p300))[0]
+            g200 = gradino(max(p200))[0]
+            print(f"  {mw:>5} × {mh:<6} mm  {p300[0]:>5} × {p300[1]:<5}  "
+                  f"{p200[0]:>5} × {p200[1]:<5}  {g300:>7}  {g200:>7}  ×{n_volte}")
+        tot = collections.Counter()
+        for f in FINESTRE:
+            px = max(round(f["mm_w"] / 25.4 * 300), round(f["mm_h"] / 25.4 * 300))
+            tot[gradino(px)[0]] += 1
+        print("  totale per gradino a 300 dpi:",
+              ", ".join(f"{k} ×{v}" for k, v in tot.items()))
+
+
 def main():
     argomenti = [a for a in sys.argv[1:] if not a.startswith("--")]
     anno = date.today().year
     if "--anno" in sys.argv:
         anno = int(sys.argv[sys.argv.index("--anno") + 1])
     quali = argomenti or ["licenze", "prodotti"]
+
+    if "--finestre" in sys.argv:
+        carica_font()
+        FOTO.mkdir(exist_ok=True)
+        print("START UP® — inventario delle finestre foto")
+        inventario([("catalogo-licenze", costruisci_licenze),
+                    ("catalogo-prodotti", costruisci_prodotti)], anno)
+        return
 
     print("START UP® — genero il catalogo")
     carica_font()
