@@ -101,3 +101,47 @@ vanno allineati a quei valori.
   per la pubblicazione va sostituito con un brano su licenza.
 - Prezzo e taglie sono quelli letti dalla scheda al momento del montaggio e
   vanno riverificati prima di ogni pubblicazione.
+
+## Sostituire il parlato di un video generato (`align.py` + `finish.py`)
+
+I modelli video generativi pronunciano male l'italiano: nel primo spot in
+negozio storpiavano "venduto" in "venditi", "finiture" in "finituri" e
+"sfuggire" in "sfiggere". Questi due script rimpiazzano la traccia con una voce
+italiana corretta, senza rigenerare il video e senza spendere crediti.
+
+Verifica del difetto prima di intervenire: si trascrive l'audio generato **e**
+una voce italiana di controllo con lo stesso riconoscitore. Se la controprova
+esce corretta e il generato no, l'errore e' nel parlato, non nella misura.
+
+```bash
+pip install faster-whisper scipy
+# 1. tempi di parola del parlato generato -> gen_words.json
+# 2. una battuta per file con piper -> out/nat0..3.wav, tempi -> my_words.json
+python3 align.py     # deforma parola per parola sui tempi di lei
+python3 finish.py    # fondo sala + trattamento voce + mix
+ffmpeg -i video.mp4 -i out/mix_finale.wav -map 0:v -map 1:a -c:v copy -c:a aac out.mp4
+```
+
+Come funziona l'allineamento:
+
+- i punti di taglio stanno sugli **attacchi di parola**, non sui silenzi, e ogni
+  segmento viene portato alla durata del corrispondente con `atempo` (che
+  preserva l'intonazione, a differenza del ricampionamento);
+- la durata totale di ogni frase viene **forzata sulla campata di lei** dopo il
+  montaggio dei segmenti: senza questo passo le dissolvenze ai giunti
+  accorciano la frase e l'errore si accumula (da 68 ms a 162 ms di scarto);
+- resta una correzione costante per frase, misurata sul risultato e reiniettata
+  in `corr.json`: una seconda passata porta lo scarto medio da 68 a 53 ms.
+
+Risultato misurato sullo spot in negozio: **scarto medio 53 ms, mediano 30 ms,
+23 parole su 24 entro 150 ms**. Lo standard di trasmissione ITU-R BT.1359
+considera impercettibile una desincronizzazione tra -125 e +45 ms.
+
+`finish.py` ricostruisce anche il fondo sala: stima lo spettro medio del 10% di
+fotogrammi piu' silenziosi dell'audio originale e ne sintetizza rumore della
+stessa forma. Senza, la voce sostituita suona staccata dalla stanza. Poi
+passa-alto a 85 Hz, taglio degli acuti da microfono di telefono, compressione
+morbida e un riverbero corto al 11%.
+
+Nota: agganciare la frase all'attacco di energia invece che al tempo di parola
+peggiora le cose (162 ms contro 103 ms) — provato e scartato.
