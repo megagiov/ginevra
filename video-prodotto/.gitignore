@@ -1,0 +1,9 @@
+frames/
+out/
+fonts/
+voices/
+*.mp4
+*.wav
+*.png
+*.jpg
+page.html
