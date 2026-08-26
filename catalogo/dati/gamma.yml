@@ -1,0 +1,411 @@
+# START UP® — gamma tipo per classe
+#
+# ATTENZIONE, QUESTO FILE E' DIVERSO DAGLI ALTRI.
+#
+# `categorie.yml` e `prodotti.yml` contengono solo fatti verificati presi dalle
+# pagine pubblicate. Questo file no: e' una PROPOSTA DI SVILUPPO. Gli articoli
+# qui dentro non sono in produzione e non sono mai stati venduti.
+#
+# Per questo il catalogo li stampa in una sezione separata, intestata "Gamma
+# tipo", che dichiara la cosa in chiaro. Non spostare questi articoli in
+# `prodotti.yml`: quello e' il file della produzione reale.
+#
+# Cosa resta comunque vincolato ai fatti:
+#   - la forma e i materiali restano dentro quello che la classe dichiara su
+#     startupmoda.com (jersey, denim/chino/felpa, pelle o tessuto tecnico,
+#     cuoio pieno fiore e sintetici, quarzo e automatici, acetato e metallo);
+#   - il punto di applicazione del marchio e' quello scritto in categorie.yml;
+#   - `prezzo` resta VUOTO. Un prezzo su un articolo mai prodotto e' un numero
+#     inventato, e in un catalogo che gira tra i buyer diventa una trattativa
+#     sbagliata.
+#
+# Codice: SU-<classe>-<sigla categoria>-<progressivo>.
+
+intro:
+  titolo: Gamma tipo
+  sottotitolo: La linea da cui parte il campionario
+  testo: >-
+    Le pagine che seguono sono una proposta di sviluppo, non produzione in
+    corso. Servono al licenziatario come punto di partenza per il campionario:
+    articolazione della linea, forme, e soprattutto dove va il marchio su ogni
+    pezzo. Misure, taglie e varianti colore sono indicative e si fissano in
+    fase di approvazione campioni, insieme al prototipo e al packaging.
+
+articoli:
+
+  # ---------------------------------------------------------- classe 25 --
+  - codice: SU-25-TS-01
+    categoria: t-shirt
+    nome: T-shirt stampa centrale
+    target: uomo
+    forma: Girocollo, manica corta, jersey.
+    marchio: Stampa centrale sul fronte.
+    varianti: [bianco, nero, grigio melange, blu navy]
+    taglie: S–XXL
+    prezzo: ""
+    foto: ""
+
+  - codice: SU-25-TS-02
+    categoria: t-shirt
+    nome: T-shirt ricamo cuore
+    target: uomo
+    forma: Girocollo, manica corta, jersey. Capo pulito, marchio piccolo.
+    marchio: Ricamo sul cuore.
+    varianti: [bianco, nero, verde militare]
+    taglie: S–XXL
+    prezzo: ""
+    foto: ""
+
+  - codice: SU-25-TS-03
+    categoria: t-shirt
+    nome: T-shirt stampa centrale
+    target: donna
+    forma: Girocollo, manica corta, jersey, vestibilità femminile.
+    marchio: Stampa centrale sul fronte.
+    varianti: [bianco, nero, cipria]
+    taglie: XS–XL
+    prezzo: ""
+    foto: ""
+
+  - codice: SU-25-TS-04
+    categoria: t-shirt
+    nome: T-shirt etichetta al collo
+    target: donna
+    forma: Girocollo, manica corta, jersey. Nessun marchio a vista.
+    marchio: Etichetta tessuta al collo.
+    varianti: [bianco, nero]
+    taglie: XS–XL
+    prezzo: ""
+    foto: ""
+
+  - codice: SU-25-TS-05
+    categoria: t-shirt
+    nome: T-shirt stampa centrale
+    target: bambino
+    forma: Girocollo, manica corta, jersey.
+    marchio: Stampa centrale sul fronte.
+    varianti: [bianco, nero, rosso]
+    taglie: 4–14 anni
+    prezzo: ""
+    foto: ""
+
+  - codice: SU-25-FE-01
+    categoria: felpe
+    nome: Felpa girocollo garzata
+    target: uomo
+    forma: Girocollo, felpa garzata.
+    marchio: Stampa grande sul fronte.
+    varianti: [nero, grigio melange, panna]
+    taglie: S–XXL
+    prezzo: ""
+    foto: ""
+
+  - codice: SU-25-FE-02
+    categoria: felpe
+    nome: Felpa cappuccio garzata
+    target: uomo
+    forma: Cappuccio con coulisse, tasca a marsupio, felpa garzata.
+    marchio: Stampa grande sul fronte.
+    varianti: [nero, grigio melange, blu navy]
+    taglie: S–XXL
+    prezzo: ""
+    foto: ""
+
+  - codice: SU-25-FE-03
+    categoria: felpe
+    nome: Felpa cappuccio leggera
+    target: donna
+    forma: Cappuccio, felpa leggera non garzata.
+    marchio: Ricamo sulla manica.
+    varianti: [nero, panna, cipria]
+    taglie: XS–XL
+    prezzo: ""
+    foto: ""
+
+  - codice: SU-25-FE-04
+    categoria: felpe
+    nome: Felpa girocollo leggera
+    target: bambino
+    forma: Girocollo, felpa leggera non garzata.
+    marchio: Ricamo sulla manica.
+    varianti: [grigio melange, nero]
+    taglie: 4–14 anni
+    prezzo: ""
+    foto: ""
+
+  - codice: SU-25-PA-01
+    categoria: pantaloni
+    nome: Jeans cinque tasche
+    target: uomo
+    forma: Denim, cinque tasche, gamba dritta.
+    marchio: Patch posteriore in vita e bottone inciso.
+    varianti: [denim blu, denim nero]
+    taglie: 44–56
+    prezzo: ""
+    foto: ""
+
+  - codice: SU-25-PA-02
+    categoria: pantaloni
+    nome: Chino
+    target: uomo
+    forma: Chino, due tasche laterali.
+    marchio: Bottone inciso ed etichetta interna.
+    varianti: [beige, blu navy, nero]
+    taglie: 44–56
+    prezzo: ""
+    foto: ""
+
+  - codice: SU-25-PA-03
+    categoria: pantaloni
+    nome: Pantalone felpa
+    target: unisex
+    forma: Felpa, elastico in vita, fondo con polsino.
+    marchio: Patch posteriore ed etichetta interna.
+    varianti: [nero, grigio melange]
+    taglie: S–XXL
+    prezzo: ""
+    foto: ""
+
+  - codice: SU-25-PA-04
+    categoria: pantaloni
+    nome: Short felpa
+    target: unisex
+    forma: Felpa, elastico in vita, sopra il ginocchio.
+    marchio: Patch posteriore.
+    varianti: [nero, grigio melange]
+    taglie: S–XXL
+    prezzo: ""
+    foto: ""
+
+  # ---------------------------------------------------------- classe 18 --
+  - codice: SU-18-BO-01
+    categoria: borse
+    nome: Tote tessuto tecnico
+    target: unisex
+    forma: Tote a spalla, tessuto tecnico, tasca interna.
+    marchio: Logo a secco sul fronte.
+    varianti: [nero, sabbia]
+    misure: 38 × 40 × 12 cm
+    taglie: taglia unica
+    prezzo: ""
+    foto: ""
+
+  - codice: SU-18-BO-02
+    categoria: borse
+    nome: Shopper pelle
+    target: donna
+    forma: Shopper a spalla in pelle, manici corti.
+    marchio: Placca metallica sul fronte.
+    varianti: [nero, cuoio]
+    misure: 32 × 30 × 14 cm
+    taglie: taglia unica
+    prezzo: ""
+    foto: ""
+
+  - codice: SU-18-BO-03
+    categoria: borse
+    nome: Cartella pelle
+    target: unisex
+    forma: Cartella a patta in pelle, tracolla regolabile.
+    marchio: Placca metallica sulla patta.
+    varianti: [nero, testa di moro]
+    misure: 40 × 29 × 10 cm
+    taglie: taglia unica
+    prezzo: ""
+    foto: ""
+
+  - codice: SU-18-BO-04
+    categoria: borse
+    nome: Zaino tessuto tecnico
+    target: unisex
+    forma: Zaino a due spallacci, scomparto porta computer.
+    marchio: Logo a secco sul fronte.
+    varianti: [nero, blu navy]
+    misure: 45 × 30 × 15 cm
+    taglie: taglia unica
+    prezzo: ""
+    foto: ""
+
+  - codice: SU-18-CI-01
+    categoria: cinture
+    nome: Cintura cuoio 35 mm
+    target: uomo
+    forma: Cuoio pieno fiore, altezza 35 mm.
+    marchio: Fibbia con marchio inciso.
+    varianti: [nero, cuoio, testa di moro]
+    taglie: 90–120 cm
+    prezzo: ""
+    foto: ""
+
+  - codice: SU-18-CI-02
+    categoria: cinture
+    nome: Cintura cuoio 30 mm
+    target: donna
+    forma: Cuoio pieno fiore, altezza 30 mm.
+    marchio: Fibbia con marchio inciso.
+    varianti: [nero, cuoio]
+    taglie: 80–105 cm
+    prezzo: ""
+    foto: ""
+
+  - codice: SU-18-CI-03
+    categoria: cinture
+    nome: Cintura sintetico 35 mm
+    target: uomo
+    forma: Sintetico, altezza 35 mm.
+    marchio: Fibbia con marchio inciso.
+    varianti: [nero, blu navy]
+    taglie: 90–120 cm
+    prezzo: ""
+    foto: ""
+
+  # ---------------------------------------------------------- classe 14 --
+  - codice: SU-14-OR-01
+    categoria: orologi
+    nome: Solo tempo quarzo 40 mm
+    target: uomo
+    forma: Movimento al quarzo, cassa 40 mm.
+    marchio: Marchio sul quadrante, fondello inciso.
+    varianti: [acciaio quadrante nero, acciaio quadrante bianco]
+    taglie: cassa 40 mm
+    prezzo: ""
+    foto: ""
+
+  - codice: SU-14-OR-02
+    categoria: orologi
+    nome: Cronografo quarzo 42 mm
+    target: uomo
+    forma: Movimento al quarzo, cronografo, cassa 42 mm.
+    marchio: Marchio sul quadrante, fondello inciso.
+    varianti: [acciaio quadrante nero, nero PVD]
+    taglie: cassa 42 mm
+    prezzo: ""
+    foto: ""
+
+  - codice: SU-14-OR-03
+    categoria: orologi
+    nome: Automatico 40 mm
+    target: uomo
+    forma: Movimento automatico, cassa 40 mm, fondello a vista.
+    marchio: Marchio sul quadrante, fondello inciso.
+    varianti: [acciaio quadrante blu, acciaio quadrante nero]
+    taglie: cassa 40 mm
+    prezzo: ""
+    foto: ""
+
+  - codice: SU-14-OR-04
+    categoria: orologi
+    nome: Solo tempo quarzo 34 mm
+    target: donna
+    forma: Movimento al quarzo, cassa 34 mm.
+    marchio: Marchio sul quadrante, fondello inciso.
+    varianti: [acciaio quadrante madreperla, dorato quadrante bianco]
+    taglie: cassa 34 mm
+    prezzo: ""
+    foto: ""
+
+  # ----------------------------------------------------------- classe 3 --
+  - codice: SU-03-PR-01
+    categoria: profumi
+    nome: Eau de toilette uomo
+    target: uomo
+    forma: Eau de toilette, flacone 100 ml con astuccio.
+    marchio: Etichetta e astuccio nella palette del marchio.
+    varianti: []
+    formato: 100 ml
+    taglie: ""
+    prezzo: ""
+    foto: ""
+
+  - codice: SU-03-PR-02
+    categoria: profumi
+    nome: Eau de toilette donna
+    target: donna
+    forma: Eau de toilette, flacone 100 ml con astuccio.
+    marchio: Etichetta e astuccio nella palette del marchio.
+    varianti: []
+    formato: 100 ml
+    taglie: ""
+    prezzo: ""
+    foto: ""
+
+  - codice: SU-03-PR-03
+    categoria: profumi
+    nome: Crema corpo
+    target: unisex
+    forma: Linea corpo, vaso 200 ml.
+    marchio: Etichetta nella palette del marchio.
+    varianti: []
+    formato: 200 ml
+    taglie: ""
+    prezzo: ""
+    foto: ""
+
+  - codice: SU-03-PR-04
+    categoria: profumi
+    nome: Bagno doccia
+    target: unisex
+    forma: Linea corpo, flacone 250 ml.
+    marchio: Etichetta nella palette del marchio.
+    varianti: []
+    formato: 250 ml
+    taglie: ""
+    prezzo: ""
+    foto: ""
+
+  - codice: SU-03-PR-05
+    categoria: profumi
+    nome: Tester da banco
+    target: punto vendita
+    forma: Flacone tester senza astuccio, per il banco del negozio.
+    marchio: Etichetta tester nella palette del marchio.
+    varianti: []
+    formato: 100 ml
+    taglie: ""
+    prezzo: ""
+    foto: ""
+
+  # ----------------------------------------------------------- classe 9 --
+  - codice: SU-09-OC-01
+    categoria: occhiali
+    nome: Sole acetato squadrato
+    target: unisex
+    forma: Montatura in acetato, forma squadrata, lente piena.
+    marchio: Marchio sull'asta e sulla custodia.
+    varianti: [nero lucido, havana]
+    taglie: calibro 52
+    prezzo: ""
+    foto: ""
+
+  - codice: SU-09-OC-02
+    categoria: occhiali
+    nome: Sole metallo goccia
+    target: unisex
+    forma: Montatura in metallo, forma a goccia, ponte doppio.
+    marchio: Marchio sull'asta e sulla custodia.
+    varianti: [oro, canna di fucile]
+    taglie: calibro 58
+    prezzo: ""
+    foto: ""
+
+  - codice: SU-09-OC-03
+    categoria: occhiali
+    nome: Vista acetato rettangolare
+    target: unisex
+    forma: Montatura da vista in acetato, forma rettangolare.
+    marchio: Marchio sull'asta e sulla custodia.
+    varianti: [nero opaco, havana]
+    taglie: calibro 53
+    prezzo: ""
+    foto: ""
+
+  - codice: SU-09-OC-04
+    categoria: occhiali
+    nome: Vista metallo tondo
+    target: unisex
+    forma: Montatura da vista in metallo, forma tonda.
+    marchio: Marchio sull'asta e sulla custodia.
+    varianti: [oro, canna di fucile]
+    taglie: calibro 49
+    prezzo: ""
+    foto: ""

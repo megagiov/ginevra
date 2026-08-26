@@ -5,7 +5,7 @@ Da un solo archivio di dati escono due stampati:
 | File | Cosa e' | A chi va |
 |---|---|---|
 | `out/catalogo-licenze.pdf` | 16 pagine, A4 | Aziende che possono prendere una categoria in licenza |
-| `out/catalogo-prodotti.pdf` | lookbook A4, cresce con le linee | Buyer, negozi, e-commerce |
+| `out/catalogo-prodotti.pdf` | lookbook A4, 13 pagine | Buyer, negozi, e-commerce |
 
 Gira tutto in locale: nessun servizio a pagamento, nessuna API, nessun credito.
 Il marchio finisce nel PDF come **tracciato vettoriale**, non come immagine:
@@ -32,12 +32,38 @@ I font (SIL OFL: Zilla Slab, Barlow, IBM Plex Mono) si scaricano da soli in
 | Colori, tipografia, testi ricorrenti | `dati/marchio.yml` |
 | Le otto categorie, la classe, lo stato della licenza | `dati/categorie.yml` |
 | Le linee prodotte, i dati, le referenze | `dati/prodotti.yml` |
+| I 33 articoli della gamma tipo | `dati/gamma.yml` |
 | Le foto | `foto/`, richiamate dal campo `foto:` |
 | L'impaginazione | `genera.py` |
 
 Nessun testo e' scritto dentro il codice: `genera.py` impagina, i contenuti
 stanno nei tre file YAML. Cambiare il colore d'accento in un punto solo
 ricolora tutte e venti le pagine.
+
+## Produzione reale e gamma tipo: due cose diverse
+
+Il lookbook ha due sezioni, e la distinzione non e' cosmetica.
+
+**In produzione** (`dati/prodotti.yml`) sono le linee realmente prodotte in
+licenza e realmente vendute. Oggi c'e' solo la classe 25 con le calzature mare.
+
+**Gamma tipo** (`dati/gamma.yml`) sono 33 articoli distribuiti sulle otto
+classi: una proposta di sviluppo, il punto di partenza per il campionario del
+licenziatario. Non sono in produzione, non sono mai stati venduti, e la pagina
+di apertura della sezione lo dichiara in chiaro prima degli articoli.
+
+Le due sezioni non si mescolano. Un articolo passa da `gamma.yml` a
+`prodotti.yml` solo quando esiste davvero: campionario approvato, produzione
+partita. Fino a quel momento resta una proposta, e presentarlo a un
+licenziatario come produzione in corso sarebbe un'affermazione falsa.
+
+Per lo stesso motivo il campo `prezzo` della gamma resta **vuoto**: un prezzo su
+un articolo mai prodotto e' un numero inventato, e in un catalogo che gira tra i
+buyer diventa una trattativa impostata male.
+
+Quello che invece resta ancorato ai fatti anche nella gamma: la forma e i
+materiali stanno dentro quello che la classe dichiara sul sito, e il punto di
+applicazione del marchio e' quello scritto in `categorie.yml`.
 
 ### Aggiungere una linea al lookbook
 
@@ -81,6 +107,13 @@ Valgono anche qui le regole del `CLAUDE.md` di progetto:
 - **Le pagine con pochi elementi restano vuote a meta'.** Il passo verticale
   degli elenchi si calcola sull'altezza disponibile (`passo()`), non a
   millimetri fissi.
+- **La didascalia di una finestra foto stretta deborda.** La misura richiesta
+  scritta su una riga sola usciva dai bordi della finestra e finiva sopra la
+  colonna accanto: va spezzata su due righe quando non ci sta.
+- **Un campo che scende in cascata sotto un altro sfonda la fascia.** Nelle
+  schede articolo le taglie erano appese sotto le varianti: con tre righe di
+  colori scivolavano oltre il filetto della fascia successiva. Ora sono
+  ancorate al fondo della fascia.
 - **Le foto vanno riempite e tagliate, non adattate.** Con
   `preserveAspectRatio` restano bande vuote dentro la finestra e in un catalogo
   si vedono tutte. Il ritaglio si fa con un tracciato di clip, senza toccare il

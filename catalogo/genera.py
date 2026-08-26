@@ -226,13 +226,26 @@ def finestra_foto(c, x, y, w, h, etichetta="", percorso=""):
     c.setDash(3, 3)
     c.rect(x, y, w, h, stroke=1, fill=0)
     c.setDash()
+    # La didascalia va mandata a capo dentro la finestra: su una finestra
+    # stretta una riga sola deborda sulla colonna accanto.
     px = round(w / MM / 25.4 * 300)
     py = round(h / MM / 25.4 * 300)
     cxm = x + w / 2
-    occhiello(c, cxm, y + h / 2 + 3 * MM, etichetta or "foto", GRIGIO, "centro")
-    scrivi(c, cxm, y + h / 2 - 2 * MM,
-           f"{w/MM:.0f} × {h/MM:.0f} mm · {px} × {py} px a 300 dpi",
-           "PlexMono", 6.5, GRIGIO, 0.4, "centro")
+    utile = w - 6 * MM
+    m1 = f"{w/MM:.0f} × {h/MM:.0f} mm"
+    m2 = f"{px} × {py} px a 300 dpi"
+    unica = m1 + " · " + m2
+    misure = [unica] if larg(unica, "PlexMono", 6.5, 0.4) <= utile else [m1, m2]
+    et = spezza((etichetta or "foto").upper(), "PlexMono", 7, utile, 1.1)
+    alto = len(et) * 4.2 * MM + 2 * MM + len(misure) * 3.6 * MM
+    yy = y + h / 2 + alto / 2 - 3 * MM
+    for r in et:
+        scrivi(c, cxm, yy, r, "PlexMono", 7, GRIGIO, 1.1, "centro")
+        yy -= 4.2 * MM
+    yy -= 2 * MM
+    for r in misure:
+        scrivi(c, cxm, yy, r, "PlexMono", 6.5, GRIGIO, 0.4, "centro")
+        yy -= 3.6 * MM
     c.restoreState()
     return False
 
@@ -458,7 +471,9 @@ def pag_categorie_indice(c, n, categorie, prima_pagina):
         filetto(c, MSX, y + p / 2, UTILE, FILETTO)
         scrivi(c, MSX, y, f"{i+1:02d}", "PlexMono", 8, colors.HexColor("#C9C2B7"), 0.6)
         scrivi(c, cx(1), y, cat["nome"], "Barlow-SemiBold", 12, INCHIOSTRO)
-        scrivi(c, cx(6), y, f"Classe {cat['classe']}", "PlexMono", 8, GRIGIO, 0.6)
+        scrivi(c, cx(5), y, f"Classe {cat['classe']}", "PlexMono", 8, GRIGIO, 0.6)
+        if cat.get("_articoli"):
+            scrivi(c, cx(7), y, f"{cat['_articoli']} articoli", "Barlow", 9.5, GRIGIO)
         stato = cat.get("stato", "")
         col = ACCENTO if stato == "libera" else GRIGIO
         scrivi(c, cx(9), y, stato.replace("-", " ").upper(), "PlexMono", 7, col, 1.0)
@@ -490,8 +505,10 @@ def scheda_categoria(c, cat, x, y, w, h):
         col = CARTA if stato == "libera" else INCHIOSTRO
         etichetta = "Categoria libera" if stato == "libera" else stato.replace("-", " ")
         w_past = pastiglia(c, xt, yy, etichetta, sfondo, col)
-        if cat.get("licenziatario"):
-            scrivi(c, xt + w_past + 5 * MM, yy + 1.6 * MM, cat["licenziatario"],
+        coda = cat.get("licenziatario") or (
+            f"{cat['_articoli']} articoli in gamma tipo" if cat.get("_articoli") else "")
+        if coda:
+            scrivi(c, xt + w_past + 5 * MM, yy + 1.6 * MM, coda,
                    "Barlow-Medium", 9, GRIGIO)
 
 
@@ -623,20 +640,34 @@ def pag_retro(c, n):
 
 # ---------------------------------------------------------- pagine lookbook --
 
-def pag_lookbook_indice(c, n, linee):
+def pag_lookbook_indice(c, n, linee, voci_gamma):
     y = testata(c, "Sommario") - 20 * MM
-    occhiello(c, MSX, y, "Le linee in licenza", ACCENTO)
+    occhiello(c, MSX, y, "Sommario", ACCENTO)
     y -= 14 * MM
     scrivi(c, MSX, y, M["sottotitolo_lookbook"], "ZillaSlab-Bold", 26, INCHIOSTRO)
-    y -= 18 * MM
+    y -= 20 * MM
+
+    occhiello(c, MSX, y, "In produzione", INCHIOSTRO)
+    y -= 10 * MM
     for i, l in enumerate(linee):
-        filetto(c, MSX, y + 8 * MM, UTILE, FILETTO)
-        scrivi(c, MSX, y, f"{i+1:02d}", "PlexMono", 8, colors.HexColor("#C9C2B7"), 0.6)
-        scrivi(c, cx(1), y, l["nome"], "Barlow-SemiBold", 13, INCHIOSTRO)
-        scrivi(c, cx(6), y, f"Classe {l.get('classe','')}", "PlexMono", 8, GRIGIO, 0.6)
-        scrivi(c, cx(9), y, l.get("licenziatario", ""), "Barlow", 9.5, GRIGIO)
-        scrivi(c, LARG - MDX, y, f"{n + 1 + i:02d}", "PlexMono", 8, GRIGIO, 0.6, "dx")
-        y -= 15 * MM
+        filetto(c, MSX, y + 7 * MM, UTILE, FILETTO)
+        scrivi(c, MSX, y, l["nome"], "Barlow-SemiBold", 12, INCHIOSTRO)
+        scrivi(c, cx(5), y, f"Classe {l.get('classe','')}", "PlexMono", 8, GRIGIO, 0.6)
+        scrivi(c, cx(8), y, l.get("licenziatario", ""), "Barlow", 9.5, GRIGIO)
+        scrivi(c, LARG - MDX, y, f"{n + 1 + i:02d}", "PlexMono", 8, ACCENTO, 0.6, "dx")
+        y -= 14 * MM
+
+    y -= 10 * MM
+    occhiello(c, MSX, y, "Gamma tipo · proposta di sviluppo", INCHIOSTRO)
+    y -= 10 * MM
+    p = passo(y, MGIU + 14 * MM, len(voci_gamma), 12 * MM)
+    for nome, classe, n_art, pagina in voci_gamma:
+        filetto(c, MSX, y + p / 2, UTILE, FILETTO)
+        scrivi(c, MSX, y, nome, "Barlow-Medium", 11.5, INCHIOSTRO)
+        scrivi(c, cx(5), y, f"Classe {classe}", "PlexMono", 8, GRIGIO, 0.6)
+        scrivi(c, cx(8), y, f"{n_art} articoli", "Barlow", 9.5, GRIGIO)
+        scrivi(c, LARG - MDX, y, f"{pagina:02d}", "PlexMono", 8, GRIGIO, 0.6, "dx")
+        y -= p
     piede(c, n)
 
 
@@ -712,12 +743,112 @@ def pag_referenze(c, n, l):
     piede(c, n, l["nome"])
 
 
+# ------------------------------------------------------------ gamma tipo --
+
+def pag_gamma_apertura(c, n, intro, categorie, conteggio, prima_pagina):
+    y = testata(c, "Gamma tipo") - 20 * MM
+    occhiello(c, MSX, y, intro["sottotitolo"], ACCENTO)
+    y -= 16 * MM
+    scrivi(c, MSX, y, intro["titolo"], "ZillaSlab-Bold", 34, INCHIOSTRO)
+    y -= 14 * MM
+    y = blocco(c, MSX, y, intro["testo"], "Barlow", 10.5, 16, cw(8), INCHIOSTRO)
+
+    # L'avvertenza non e' decorativa: queste pagine non sono produzione in corso
+    # e chi sfoglia il catalogo deve leggerlo prima degli articoli.
+    y -= 14 * MM
+    h = 26 * MM
+    c.saveState()
+    c.setFillColor(CARTA_CALDA)
+    c.rect(MSX, y - h, UTILE, h, stroke=0, fill=1)
+    c.restoreState()
+    c.saveState()
+    c.setFillColor(ACCENTO)
+    c.rect(MSX, y - h, 1.6 * MM, h, stroke=0, fill=1)
+    c.restoreState()
+    blocco(c, MSX + 8 * MM, y - 9 * MM,
+           "Gli articoli che seguono non sono in produzione e non sono mai stati "
+           "venduti. I prezzi restano volutamente in bianco: si fissano con il "
+           "licenziatario.",
+           "Barlow-Medium", 9.5, 13.5, cw(10), INCHIOSTRO)
+    y -= h + 16 * MM
+
+    p = passo(y, MGIU + 14 * MM, len(categorie), 12 * MM)
+    for i, cat in enumerate(categorie):
+        filetto(c, MSX, y + p / 2, UTILE, FILETTO)
+        scrivi(c, MSX, y, cat["nome"], "Barlow-SemiBold", 11, INCHIOSTRO)
+        scrivi(c, cx(5), y, f"Classe {cat['classe']}", "PlexMono", 8, GRIGIO, 0.6)
+        n_art = conteggio.get(cat["id"], 0)
+        scrivi(c, cx(8), y, f"{n_art} articoli", "Barlow", 9.5, GRIGIO)
+        scrivi(c, LARG - MDX, y, f"{prima_pagina + i:02d}", "PlexMono", 8, GRIGIO, 0.6, "dx")
+        y -= p
+    piede(c, n, "Gamma tipo · proposta di sviluppo")
+
+
+def scheda_articolo(c, a, y, h):
+    """Una fascia articolo a tutta larghezza. y = bordo superiore."""
+    finestra_foto(c, MSX, y - h, cw(3), h, a["codice"], a.get("foto", ""))
+
+    xa = cx(3)
+    ya = y - 4 * MM
+    occhiello(c, xa, ya, a["codice"], ACCENTO)
+    ya -= 8 * MM
+    ya = blocco(c, xa, ya, a["nome"], "Barlow-SemiBold", 12, 14.5, cw(4), INCHIOSTRO)
+    ya -= 2 * MM
+    blocco(c, xa, ya, a.get("forma", ""), "Barlow", 8.8, 12, cw(4), GRIGIO)
+    if a.get("target"):
+        scrivi(c, xa, y - h + 1 * MM, a["target"].upper(), "PlexMono", 6.8, GRIGIO, 1.0)
+
+    yb = y - 4 * MM
+    occhiello(c, cx(7), yb, "Marchio", GRIGIO)
+    blocco(c, cx(7), yb - 6 * MM, a.get("marchio", ""), "Barlow", 8.8, 12,
+           cw(2.5), INCHIOSTRO)
+
+    xv = cx(9.5)
+    wv = LARG - MDX - xv
+    # Su profumi e linee corpo la colonna non elenca colori ma formati: cambia
+    # l'etichetta, non la colonna.
+    varianti = a.get("formato") or ", ".join(a.get("varianti") or [])
+    if varianti:
+        occhiello(c, xv, y - 4 * MM, "Formato" if a.get("formato") else "Varianti", GRIGIO)
+        blocco(c, xv, y - 10 * MM, varianti, "Barlow", 8.8, 12, wv, INCHIOSTRO,
+               max_righe=3)
+
+    # Taglie ancorate al fondo della fascia: appese sotto le varianti
+    # scivolavano oltre il filetto quando i colori andavano a tre righe.
+    misura = a.get("misure") or a.get("taglie") or ""
+    if misura:
+        occhiello(c, xv, y - h + 9 * MM, "Misure" if a.get("misure") else "Taglie", GRIGIO)
+        blocco(c, xv, y - h + 3 * MM, misura, "PlexMono", 8, 11, wv, INCHIOSTRO,
+               max_righe=1)
+
+
+def pag_gamma_categoria(c, n, cat, articoli):
+    y = testata(c, f"Gamma · {cat['nome']}") - 16 * MM
+    occhiello(c, MSX, y, f"Classe {cat['classe']} · gamma tipo", ACCENTO)
+    y -= 13 * MM
+    scrivi(c, MSX, y, cat["nome"], "ZillaSlab-Bold", 28, INCHIOSTRO)
+    y -= 9 * MM
+    blocco(c, MSX, y, cat["applicazione"], "Barlow", 9.5, 13.5, cw(8), GRIGIO)
+    y -= 12 * MM
+
+    p = passo(y, MGIU + 12 * MM, len(articoli), 40 * MM)
+    h = min(p - 8 * MM, 56 * MM)
+    for a in articoli:
+        filetto(c, MSX, y + 5 * MM, UTILE, FILETTO)
+        scheda_articolo(c, a, y, h)
+        y -= p
+    piede(c, n, f"Gamma tipo · classe {cat['classe']}")
+
+
 # ----------------------------------------------------------------- montaggio --
 
 def costruisci_licenze(anno):
     categorie = yaml.safe_load((DATI / "categorie.yml").read_text(encoding="utf-8"))
     prodotti = [p for p in yaml.safe_load((DATI / "prodotti.yml").read_text(encoding="utf-8"))
                 if p.get("pubblica")]
+    for cat in categorie:
+        cat["_articoli"] = sum(1 for a in GAMMA["articoli"]
+                               if a["categoria"] == cat["id"])
     coppie = [categorie[i:i + 2] for i in range(0, len(categorie), 2)]
 
     # Il sommario deve conoscere i numeri di pagina: si monta la scaletta prima.
@@ -766,14 +897,36 @@ def costruisci_licenze(anno):
 def costruisci_prodotti(anno):
     linee = [p for p in yaml.safe_load((DATI / "prodotti.yml").read_text(encoding="utf-8"))
              if p.get("pubblica")]
-    pagine = [("copertina", lambda c, n: copertina(
-        c, n, M["titolo_lookbook"], M["sottotitolo_lookbook"], anno))]
-    pagine.append(("indice", lambda c, n: pag_lookbook_indice(c, n, linee)))
+    categorie = yaml.safe_load((DATI / "categorie.yml").read_text(encoding="utf-8"))
+    articoli = GAMMA["articoli"]
+    per_categoria = {c["id"]: [a for a in articoli if a["categoria"] == c["id"]]
+                     for c in categorie}
+    conteggio = {k: len(v) for k, v in per_categoria.items()}
+    con_articoli = [c for c in categorie if per_categoria[c["id"]]]
+
+    pagine = [("copertina", None), ("indice", None)]
     for l in linee:
         pagine.append((l["nome"], lambda c, n, l=l: pag_linea(c, n, l)))
         if l.get("referenze"):
             pagine.append((l["nome"], lambda c, n, l=l: pag_referenze(c, n, l)))
+
+    n_apertura = len(pagine) + 1
+    pagine.append(("gamma", None))
+    prima_gamma = len(pagine) + 1
+    voci_gamma = []
+    for i, cat in enumerate(con_articoli):
+        voci_gamma.append((cat["nome"], cat["classe"],
+                           conteggio[cat["id"]], prima_gamma + i))
+        pagine.append((cat["nome"],
+                       lambda c, n, cat=cat: pag_gamma_categoria(
+                           c, n, cat, per_categoria[cat["id"]])))
     pagine.append(("retro", lambda c, n: pag_retro(c, n)))
+
+    pagine[0] = ("copertina", lambda c, n: copertina(
+        c, n, M["titolo_lookbook"], M["sottotitolo_lookbook"], anno))
+    pagine[1] = ("indice", lambda c, n: pag_lookbook_indice(c, n, linee, voci_gamma))
+    pagine[n_apertura - 1] = ("gamma", lambda c, n: pag_gamma_apertura(
+        c, n, GAMMA["intro"], con_articoli, conteggio, prima_gamma))
     return pagine
 
 
@@ -812,6 +965,7 @@ def main():
 # I dati e i colori si caricano all'import: le funzioni di pagina li usano
 # come costanti di modulo.
 M = yaml.safe_load((DATI / "marchio.yml").read_text(encoding="utf-8"))
+GAMMA = yaml.safe_load((DATI / "gamma.yml").read_text(encoding="utf-8"))
 INCHIOSTRO = colors.HexColor(M["colori"]["inchiostro"])
 CARTA = colors.HexColor(M["colori"]["carta"])
 CARTA_CALDA = colors.HexColor(M["colori"]["carta_calda"])
