@@ -131,6 +131,14 @@ Valgono anche qui le regole del `CLAUDE.md` di progetto:
 - **Le pagine con pochi elementi restano vuote a meta'.** Il passo verticale
   degli elenchi si calcola sull'altezza disponibile (`passo()`), non a
   millimetri fissi.
+- **Il rapporto della finestra deve seguire il prodotto, non la pagina.** Le
+  finestre degli articoli erano orizzontali (40 × 32 mm) mentre gli scatti di
+  capo misurano 0,88 di larghezza su altezza: il ritaglio a riempimento
+  tagliava colletto e orlo. Ora la finestra e' verticale a `RAPPORTO_PRODOTTO`.
+- **Un capo bianco su fondo chiaro non si ritaglia per contorno.** I bordi
+  sfumano nel fondo e il contorno esce stretto: in una griglia regolare
+  conviene prendere la misura mediana degli altri capi e centrarla sulla stessa
+  colonna, invece di fidarsi della soglia.
 - **La didascalia di una finestra foto stretta deborda.** La misura richiesta
   scritta su una riga sola usciva dai bordi della finestra e finiva sopra la
   colonna accanto: va spezzata su due righe quando non ci sta.

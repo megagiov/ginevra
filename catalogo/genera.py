@@ -264,7 +264,14 @@ def finestra_foto(c, x, y, w, h, etichetta="", percorso="", chiave=""):
     m1 = f"{w/MM:.0f} × {h/MM:.0f} mm"
     m2 = f"{px} × {py} px a 300 dpi"
     unica = m1 + " · " + m2
-    misure = [unica] if larg(unica, "PlexMono", 6.5, 0.4) <= utile else [m1, m2]
+    # Anche le singole righe di misura vanno spezzate: su una finestra stretta
+    # "333 × 378 px a 300 dpi" da solo non ci sta e usciva dal riquadro.
+    if larg(unica, "PlexMono", 6.5, 0.4) <= utile:
+        misure = [unica]
+    else:
+        misure = []
+        for riga in (m1, m2):
+            misure += spezza(riga, "PlexMono", 6.5, utile, 0.4)
 
     righe = []
     largo = w > 58 * MM
@@ -826,9 +833,15 @@ def pag_gamma_apertura(c, n, intro, categorie, conteggio, prima_pagina):
     piede(c, n, "Gamma tipo · proposta di sviluppo")
 
 
+# Rapporto misurato sugli scatti di capo: leggermente verticale. La finestra
+# deve seguirlo, altrimenti il ritaglio a riempimento taglia teste e orli.
+RAPPORTO_PRODOTTO = 0.88
+
+
 def scheda_articolo(c, a, y, h):
     """Una fascia articolo a tutta larghezza. y = bordo superiore."""
-    finestra_foto(c, MSX, y - h, cw(3), h, a["codice"], a.get("foto", ""),
+    wf = min(cw(3), h * RAPPORTO_PRODOTTO)
+    finestra_foto(c, MSX, y - h, wf, h, a["codice"], a.get("foto", ""),
                   chiave=a["codice"])
 
     xa = cx(3)

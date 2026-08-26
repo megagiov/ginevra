@@ -51,7 +51,8 @@ articoli:
     target: uomo
     forma: Girocollo, manica corta, jersey. Capo pulito, marchio piccolo.
     marchio: Ricamo sul cuore.
-    varianti: [bianco, nero, verde militare]
+    # blu navy aggiunto dopo il mockup: lo scatto esiste (foto/SU-25-TS-02-blu-navy.jpg)
+    varianti: [bianco, blu navy, nero, verde militare]
     taglie: S–XXL
     prezzo: ""
     foto: ""
@@ -62,7 +63,7 @@ articoli:
     target: donna
     forma: Girocollo, manica corta, jersey, vestibilità femminile.
     marchio: Stampa centrale sul fronte.
-    varianti: [bianco, nero, cipria]
+    varianti: [bianco, grigio melange, nero]
     taglie: XS–XL
     prezzo: ""
     foto: ""
