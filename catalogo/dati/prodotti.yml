@@ -1,0 +1,67 @@
+# START UP® — linee prodotte in licenza
+#
+# Da qui esce il catalogo prodotti (lookbook). Ogni voce e' una LINEA, non un
+# singolo capo: il catalogo si sfoglia per linea e le referenze stanno dentro.
+#
+# `pubblica: false` tiene la voce fuori dal PDF senza cancellarla.
+# `foto` e' un percorso relativo a catalogo/foto/. Se il file non c'e', il
+# catalogo stampa comunque la scheda con la finestra foto vuota e la misura
+# esatta dello scatto che serve: si riempie man mano che arrivano le immagini.
+#
+# REGOLA: nessun campo si inventa. Se un dato non e' verificato, si lascia
+# vuoto e resta vuoto anche in stampa.
+
+- id: calzature-mare
+  pubblica: true
+  nome: Calzature mare
+  classe: 25
+  categoria: Calzature
+  stagione: ""
+  licenziatario: Logo Distribution
+  distribuzione: GM Vegasi
+  canali: [Wholesale, E-commerce, TikTok Shop]
+  mercati: [Italia]
+  # FONTE: pagina Licenziatari di www.startupmoda.com, letta il 2026-08-26.
+  descrizione: >-
+    La licenza sulla classe 25 concessa a Logo Distribution ha portato in
+    produzione una linea di calzature mare, distribuita in Italia su wholesale,
+    e-commerce e TikTok Shop attraverso GM Vegasi.
+  gamma: >-
+    Linea uomo, donna e bambino: sette varianti colore più una capsule di
+    sandali intrecciati.
+  domanda: >-
+    Forte richiesta organica su social e TikTok Shop, con vendita diretta al
+    consumatore finale.
+  risultato:
+    valore: "60.000"
+    unita: paia
+    nota: superate in due stagioni
+  target: [uomo, donna, bambino]
+  varianti_colore: 7
+  foto: ""
+  referenze: []   # elenco SKU: {codice, nome, colori, taglie, prezzo}
+
+# --- Modello di scheda. Copiare, rinominare l'id, mettere pubblica: true. ---
+- id: modello-scheda
+  pubblica: false
+  nome: ""
+  classe: 0
+  categoria: ""
+  stagione: ""
+  licenziatario: ""
+  distribuzione: ""
+  canali: []
+  mercati: []
+  descrizione: ""
+  gamma: ""
+  domanda: ""
+  risultato: {valore: "", unita: "", nota: ""}
+  target: []
+  varianti_colore: 0
+  foto: ""
+  referenze:
+    - codice: ""
+      nome: ""
+      colori: []
+      taglie: ""
+      prezzo: ""

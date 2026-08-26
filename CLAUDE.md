@@ -26,6 +26,11 @@ Regole che non si violano mai, nemmeno se sembrano superflue:
 
 ## Altro nel repository
 
+`catalogo/` contiene l'archivio del marchio e il generatore dei due cataloghi
+in PDF (licenze e prodotti). Vedi il suo README.
+
+`brand/logo/` contiene il marchio in vettoriale e in PNG trasparente.
+
 `video-prodotto/` contiene la pipeline locale per gli spot: montaggio,
 scontorno, voce e sottotitoli girano senza servizi a pagamento. Vedi il suo
 README.

@@ -1,0 +1,175 @@
+# START UP® — identita' di marchio
+#
+# Questo file e' l'unica fonte per colori, tipografia e testi ricorrenti del
+# catalogo. Cambiare un valore qui cambia tutti i PDF generati.
+#
+# FONTE dei testi: pagine pubblicate su www.startupmoda.com (Home, Servizi,
+# Chi siamo, Licenziatari), lette il 2026-08-26. Non aggiungere affermazioni
+# che non provengano dal sito o dall'utente.
+
+nome: START UP
+simbolo_registrato: "®"
+paese: MADE IN ITALY
+dominio: www.startupmoda.com
+
+posizionamento: Licenze marchio registrato
+titolo_catalogo: Catalogo licenze
+sottotitolo_catalogo: Otto categorie, una sola identità
+titolo_lookbook: Catalogo prodotti
+sottotitolo_lookbook: Le linee prodotte in licenza
+
+promessa: >-
+  Il marchio c'è già. Mettilo sui tuoi prodotti.
+
+abstract: >-
+  START UP è un marchio registrato, sul mercato da anni e riconosciuto dai
+  buyer. Noi concediamo la licenza d'uso, tu produci con la tua filiera e vendi
+  con i tuoi canali. Si paga una royalty sul venduto.
+
+# --- Numeri dichiarati sul sito. Riverificare prima di ogni stampa. ---
+numeri:
+  - valore: "Dal 1998"
+    etichetta: Marchio sul mercato
+  - valore: "8"
+    etichetta: Categorie già in licenza
+  - valore: "Italia e UE"
+    etichetta: Registrazione attiva
+  - valore: "Royalty"
+    etichetta: Sul venduto, non sul prodotto
+
+# --- Perche' entrare in licenza (Home, blocchi 01-03) ---
+argomenti:
+  - numero: "01"
+    titolo: Un nome che i buyer conoscono
+    testo: >-
+      START UP è in vendita da anni tra negozi indipendenti e catene. Chi entra
+      in licenza non parte da zero con la presentazione.
+  - numero: "02"
+    titolo: File e manuale pronti
+    testo: >-
+      Logo vettoriale, versioni positivo e negativo, misure minime di stampa,
+      ricamo e stampo a caldo. Tutto nel manuale che ricevi con il contratto.
+  - numero: "03"
+    titolo: Esclusiva per categoria
+    testo: >-
+      Chi prende una categoria la tiene. Non affidiamo la stessa classe a due
+      produttori sullo stesso mercato.
+
+# --- Come si arriva alla licenza (Home) ---
+percorso:
+  - passo: Passo 1
+    titolo: Ci scrivi cosa produci
+    testo: >-
+      Categoria, volumi, mercati e canali di vendita. Serve poco: una mail con i
+      dati dell'azienda basta per iniziare.
+  - passo: Passo 2
+    titolo: Verifichiamo la classe
+    testo: >-
+      Controlliamo se la classe merceologica è libera sul tuo mercato e ti
+      mandiamo la proposta con durata, minimi e royalty.
+  - passo: Passo 3
+    titolo: Produci e vendi
+    testo: >-
+      Firmi, ricevi i file e il manuale, ci mandi i campioni per approvazione.
+      Da lì produci e rendiconti il venduto ogni trimestre.
+
+# --- Cosa comprende il contratto (Servizi) ---
+contratto:
+  - titolo: Durata e rinnovo
+    testo: >-
+      Contratti da 24 mesi con rinnovo automatico se i minimi vengono
+      rispettati.
+  - titolo: Royalty sul venduto
+    testo: >-
+      Percentuale sul fatturato netto della linea, rendicontata ogni trimestre.
+      Nessun acquisto di licenza in anticipo.
+  - titolo: Approvazione campioni
+    testo: >-
+      Prima della produzione approviamo prototipo, etichette e packaging. Due
+      giri di revisione sono compresi.
+  - titolo: Materiali marchio
+    testo: >-
+      File vettoriali, manuale d'uso, immagini per e-commerce e layout per
+      corner e stand fiera.
+
+# --- Come lavoriamo (Chi siamo) ---
+metodo:
+  - titolo: Qualità controllata
+    testo: >-
+      Ogni stagione riceviamo i campioni. Se un capo non regge lo standard, non
+      esce con il marchio.
+  - titolo: Territori chiari
+    testo: >-
+      La licenza indica i paesi. Chi vende in Italia sa che nessun altro
+      licenziatario della stessa categoria lo affianca.
+  - titolo: Difesa del marchio
+    testo: >-
+      Seguiamo i rinnovi e le opposizioni. Se qualcuno copia, ce ne occupiamo
+      noi.
+  - titolo: Supporto commerciale
+    testo: >-
+      Catalogo partnership, materiali fiera e presentazione buyer aggiornati una
+      volta all'anno.
+
+# --- Chi siamo (pagina Chi siamo) ---
+chi_siamo:
+  titolo: Gestiamo un marchio e lo affidiamo a chi sa produrre
+  paragrafi:
+    - >-
+      START UP nasce come marchio di abbigliamento e negli anni si è esteso ad
+      accessori, orologeria e profumeria. Oggi non produciamo noi: selezioniamo
+      aziende italiane ed europee che producono con il nostro nome e rispettano
+      il manuale del marchio.
+    - >-
+      Il nostro lavoro sta in tre cose: tenere il marchio registrato e difeso,
+      controllare la qualità di quello che esce con il logo, tenere separate le
+      categorie in modo che due licenziatari non si pestino i piedi.
+
+# --- Retail (Home) ---
+retail:
+  titolo: Retail
+  testo: >-
+    Chi prende la licenza può aprire un corner o un negozio a insegna START UP,
+    con le linee guida di allestimento incluse.
+
+# --- Il marchio in stampa ---
+marchio_pagina:
+  titolo: Il marchio
+  testo: >-
+    Il segno va usato in positivo su fondo chiaro e in negativo su fondo scuro,
+    senza ricostruirlo e senza modificarne le proporzioni. Il manuale d'uso
+    completo, con le misure minime di stampa, ricamo e stampo a caldo, arriva
+    con il contratto insieme ai file vettoriali.
+  positivo: Positivo su fondo chiaro
+  negativo: Negativo su fondo scuro
+
+chiusura:
+  titolo: Dicci cosa produci.
+  testo: Ti diciamo in due giorni se la classe è libera.
+  azione: Richiedi una licenza
+
+contatti:
+  # DA COMPLETARE: il sito non espone questi dati in chiaro. Compilare prima
+  # di mandare il catalogo in stampa.
+  email: ""
+  telefono: ""
+  sede: "Sede operativa in Italia"
+
+# --- Sistema visivo ---
+# I colori vengono dal sito (nero caldo e blu gia' in uso nelle pagine
+# Elementor). Cambiare qui per cambiare tutto il catalogo.
+colori:
+  inchiostro: "#1D1815"   # nero caldo, testo e fondi pieni
+  carta: "#FFFFFF"
+  carta_calda: "#F2EFE9"  # fondo delle schede
+  accento: "#066AAB"      # blu gia' in uso sul sito
+  grigio: "#8A837A"       # testo secondario
+  filetto: "#D9D3CA"
+
+tipografia:
+  titoli: ZillaSlab          # slab, richiama il lettering del marchio
+  titoli_grassetto: ZillaSlab-Bold
+  testo: Barlow
+  testo_medio: Barlow-Medium
+  testo_forte: Barlow-SemiBold
+  dati: PlexMono             # classi, codici, royalty

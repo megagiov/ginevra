@@ -1,0 +1,80 @@
+# START UP® — le categorie in licenza
+#
+# FONTE: pagina Servizi di www.startupmoda.com, letta il 2026-08-26.
+# `stato` e `licenziatario` non sono sul sito: vanno tenuti aggiornati a mano.
+#   stato: libera | in-trattativa | assegnata
+#
+# `applicazione` e' il modo in cui il marchio va sul prodotto: e' il dato che
+# interessa davvero al produttore che sfoglia il catalogo.
+
+- id: t-shirt
+  nome: T-shirt
+  classe: 25
+  descrizione: Jersey uomo, donna e bambino.
+  applicazione: Stampa centrale, ricamo cuore o etichetta tessuta al collo.
+  stato: libera
+  licenziatario: ""
+  mercati: []
+
+- id: felpe
+  nome: Felpe
+  classe: 25
+  descrizione: Girocollo e cappuccio, garzato o leggero.
+  applicazione: Stampa fronte grande e ricamo manica.
+  stato: libera
+  licenziatario: ""
+  mercati: []
+
+- id: pantaloni
+  nome: Pantaloni
+  classe: 25
+  descrizione: Denim, chino e felpa.
+  applicazione: Marchio su patch posteriore, bottone inciso e etichetta interna.
+  stato: libera
+  licenziatario: ""
+  mercati: []
+
+- id: borse
+  nome: Borse
+  classe: 18
+  descrizione: Tote, shopper, cartelle e zaini in pelle o tessuto tecnico.
+  applicazione: Logo a secco o placca metallica.
+  stato: libera
+  licenziatario: ""
+  mercati: []
+
+- id: cinture
+  nome: Cinture
+  classe: 18
+  descrizione: Cuoio pieno fiore e sintetici.
+  applicazione: Fibbia con marchio inciso, confezione singola brandizzata.
+  stato: libera
+  licenziatario: ""
+  mercati: []
+
+- id: orologi
+  nome: Orologi
+  classe: 14
+  descrizione: Quarzo e automatici, quadrante con marchio e fondello inciso.
+  applicazione: Cofanetto e garanzia a nostro standard.
+  stato: libera
+  licenziatario: ""
+  mercati: []
+
+- id: profumi
+  nome: Profumi
+  classe: 3
+  descrizione: Eau de toilette, creme e linee corpo.
+  applicazione: Etichetta, astuccio e tester seguono la palette del marchio.
+  stato: libera
+  licenziatario: ""
+  mercati: []
+
+- id: occhiali
+  nome: Occhiali
+  classe: 9
+  descrizione: Sole e vista, acetato e metallo.
+  applicazione: Marchio su asta e custodia, display banco incluso nel kit.
+  stato: libera
+  licenziatario: ""
+  mercati: []
