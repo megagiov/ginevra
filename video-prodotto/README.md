@@ -102,46 +102,61 @@ vanno allineati a quei valori.
 - Prezzo e taglie sono quelli letti dalla scheda al momento del montaggio e
   vanno riverificati prima di ogni pubblicazione.
 
-## Sostituire il parlato di un video generato (`align.py` + `finish.py`)
+## Sostituire il parlato di un video generato (`place.py` + `finish.py`)
 
 I modelli video generativi pronunciano male l'italiano: nel primo spot in
 negozio storpiavano "venduto" in "venditi", "finiture" in "finituri" e
-"sfuggire" in "sfiggere". Questi due script rimpiazzano la traccia con una voce
-italiana corretta, senza rigenerare il video e senza spendere crediti.
+"sfuggire" in "sfiggere". Questi script rimpiazzano la traccia con una voce
+italiana corretta, senza rigenerare il video.
 
 Verifica del difetto prima di intervenire: si trascrive l'audio generato **e**
-una voce italiana di controllo con lo stesso riconoscitore. Se la controprova
-esce corretta e il generato no, l'errore e' nel parlato, non nella misura.
+una voce di controllo con lo stesso riconoscitore. Se la controprova esce
+corretta e il generato no, l'errore e' nel parlato, non nella misura.
+
+### La regola che conta: non deformare mai l'audio
+
+Il primo tentativo deformava ogni parola con `atempo` per inseguire il labiale.
+Sulla carta funzionava — scarto medio 53 ms — ma il risultato era inascoltabile:
+ogni segmento veniva stirato di una quantita' diversa, e quella variazione
+continua di velocita' si sente come tono che balla. **Scartato.**
+
+L'approccio buono: la voce viene generata una volta sola, a velocita' naturale,
+e poi si spezza in **gruppi di parole contigue** che vengono appoggiati sugli
+attacchi del parlato originale. Dentro ogni gruppo l'audio non viene toccato.
+Dove l'originale e' piu' lento resta una pausa vera, non una parola tirata.
+
+- la soglia `TH` decide quando aprire un nuovo gruppo: bassa (0.12) frammenta in
+  parole singole e introduce artefatti ai tagli, alta (0.30) tiene frasi intere;
+- gli scarti residui si correggono spostando ogni gruppo per intero, con due
+  passate misurate e reiniettate in `goff.json`: da 148 a 91 ms di scarto medio.
+
+### Voce
+
+Il sintetizzatore locale (Piper) e' gratuito ma elide una consonante: dice
+"lasciatelo" invece di "lasciartelo". La voce ElevenLabs su Artlist costa 29
+crediti per un copione di 10 secondi, pronuncia correttamente e ha una cadenza
+gia' vicina a quella del parlato generato (9,3 s contro 9,8 s), il che riduce di
+molto il riposizionamento necessario. Impostare `language: "Italian"`: il
+default e' inglese anche quando il testo e' italiano.
 
 ```bash
 pip install faster-whisper scipy
-# 1. tempi di parola del parlato generato -> gen_words.json
-# 2. una battuta per file con piper -> out/nat0..3.wav, tempi -> my_words.json
-python3 align.py     # deforma parola per parola sui tempi di lei
+# gen_words.json  = tempi di parola del parlato del video
+# el_words.json   = tempi di parola della voce sostitutiva
+python3 place.py     # raggruppa e posiziona, senza deformare
 python3 finish.py    # fondo sala + trattamento voce + mix
 ffmpeg -i video.mp4 -i out/mix_finale.wav -map 0:v -map 1:a -c:v copy -c:a aac out.mp4
 ```
 
-Come funziona l'allineamento:
+Risultato sullo spot in negozio: **scarto mediano 40 ms, medio 91 ms, 17 parole
+su 24 entro 100 ms**, trascrizione corretta su tutte e 24. Lo standard ITU-R
+BT.1359 considera impercettibile una desincronizzazione tra -125 e +45 ms.
 
-- i punti di taglio stanno sugli **attacchi di parola**, non sui silenzi, e ogni
-  segmento viene portato alla durata del corrispondente con `atempo` (che
-  preserva l'intonazione, a differenza del ricampionamento);
-- la durata totale di ogni frase viene **forzata sulla campata di lei** dopo il
-  montaggio dei segmenti: senza questo passo le dissolvenze ai giunti
-  accorciano la frase e l'errore si accumula (da 68 ms a 162 ms di scarto);
-- resta una correzione costante per frase, misurata sul risultato e reiniettata
-  in `corr.json`: una seconda passata porta lo scarto medio da 68 a 53 ms.
-
-Risultato misurato sullo spot in negozio: **scarto medio 53 ms, mediano 30 ms,
-23 parole su 24 entro 150 ms**. Lo standard di trasmissione ITU-R BT.1359
-considera impercettibile una desincronizzazione tra -125 e +45 ms.
-
-`finish.py` ricostruisce anche il fondo sala: stima lo spettro medio del 10% di
+`finish.py` ricostruisce il fondo sala: stima lo spettro medio del 10% di
 fotogrammi piu' silenziosi dell'audio originale e ne sintetizza rumore della
 stessa forma. Senza, la voce sostituita suona staccata dalla stanza. Poi
 passa-alto a 85 Hz, taglio degli acuti da microfono di telefono, compressione
-morbida e un riverbero corto al 11%.
+morbida e un riverbero corto all'11%.
 
-Nota: agganciare la frase all'attacco di energia invece che al tempo di parola
+Nota: agganciare le frasi all'attacco di energia invece che al tempo di parola
 peggiora le cose (162 ms contro 103 ms) — provato e scartato.
