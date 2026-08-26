@@ -20,6 +20,7 @@ python3 genera.py              # tutti e due i cataloghi
 python3 genera.py licenze      # solo il catalogo licenze
 python3 genera.py prodotti     # solo il lookbook
 python3 genera.py --anno 2027  # cambia l'anno in copertina
+python3 genera.py --finestre   # elenca le foto mancanti e la misura che serve
 ```
 
 I font (SIL OFL: Zilla Slab, Barlow, IBM Plex Mono) si scaricano da soli in
@@ -33,7 +34,7 @@ I font (SIL OFL: Zilla Slab, Barlow, IBM Plex Mono) si scaricano da soli in
 | Le otto categorie, la classe, lo stato della licenza | `dati/categorie.yml` |
 | Le linee prodotte, i dati, le referenze | `dati/prodotti.yml` |
 | I 33 articoli della gamma tipo | `dati/gamma.yml` |
-| Le foto | `foto/`, richiamate dal campo `foto:` |
+| Le foto | `foto/`, riconosciute dal nome del file |
 | L'impaginazione | `genera.py` |
 
 Nessun testo e' scritto dentro il codice: `genera.py` impagina, i contenuti
@@ -73,9 +74,32 @@ da solo, indice compreso.
 
 ### Quando arriva una foto
 
-Mettila in `foto/` e scrivi il nome nel campo `foto:`. Finche' non c'e', la
-pagina si stampa lo stesso con una finestra che dichiara la misura richiesta in
-millimetri e in pixel a 300 dpi: sono le specifiche da passare al fotografo.
+**Salvala in `foto/` col nome che la finestra vuota dichiara, e rilancia.** Non
+c'e' altro da fare: nessun file da aprire, nessun YAML da modificare. La
+finestra vuota stampa dentro il nome del file che sta aspettando —
+`SU-25-TS-01.jpg` — insieme alla misura in millimetri e in pixel a 300 dpi.
+
+I nomi seguono lo schema:
+
+| Finestra | Nome del file |
+|---|---|
+| Articolo di gamma | il suo codice: `SU-25-TS-01.jpg` |
+| Scheda categoria del catalogo licenze | `categoria-t-shirt.jpg` |
+| Apertura di una linea nel lookbook | `linea-calzature-mare.jpg` |
+| Immagine di apertura, pagina retail | `apertura.jpg`, `retail.jpg` |
+
+Vanno bene `.jpg`, `.jpeg`, `.png` e `.webp`. Un percorso scritto a mano nel
+campo `foto:` ha comunque la precedenza sulla ricerca per nome.
+
+Per avere la lista della spesa completa — cosa manca, come va chiamato e quanti
+pixel deve avere:
+
+```bash
+python3 genera.py --finestre
+```
+
+Non genera niente e non spende niente: impagina su un foglio buttato via solo
+per misurare le finestre.
 
 ## Regole di contenuto
 

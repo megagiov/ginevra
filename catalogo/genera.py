@@ -15,6 +15,11 @@ Il marchio finisce nel PDF come tracciato vettoriale, non come immagine.
     python3 genera.py licenze      solo il catalogo licenze
     python3 genera.py prodotti     solo il lookbook
     python3 genera.py --anno 2027  cambia l'anno in copertina
+    python3 genera.py --finestre   elenca le foto mancanti e la misura richiesta
+
+Le foto si agganciano da sole: basta salvarle in `foto/` col nome che la
+finestra vuota dichiara in pagina (il codice dell'articolo, `categoria-<id>`,
+`linea-<id>`). Nessun file da modificare.
 """
 
 import json
@@ -199,14 +204,33 @@ def occhiello(c, x, y, s, colore, allinea="sx"):
 
 FINESTRE = []       # inventario riempito a ogni impaginazione
 
+ESTENSIONI = (".jpg", ".jpeg", ".png", ".webp",
+              ".JPG", ".JPEG", ".PNG", ".WEBP")
 
-def finestra_foto(c, x, y, w, h, etichetta="", percorso=""):
-    """Piazza la foto se c'e'. Se manca, lascia la finestra con la misura
-    esatta dello scatto che serve: il catalogo si stampa lo stesso."""
+
+def trova_foto(percorso, chiave):
+    """Il file dichiarato nel YAML vince. Se non c'e', si cerca in foto/ un
+    file che si chiami come la chiave della finestra: cosi' per riempire il
+    catalogo basta salvare l'immagine col nome giusto, senza aprire nulla."""
+    if percorso:
+        f = FOTO / percorso
+        if f.exists():
+            return f
+    if chiave:
+        for est in ESTENSIONI:
+            f = FOTO / (chiave + est)
+            if f.exists():
+                return f
+    return None
+
+
+def finestra_foto(c, x, y, w, h, etichetta="", percorso="", chiave=""):
+    """Piazza la foto se c'e'. Se manca, lascia la finestra con il nome del
+    file atteso e la misura dello scatto: il catalogo si stampa lo stesso."""
     FINESTRE.append({"etichetta": etichetta, "mm_w": w / MM, "mm_h": h / MM,
-                     "file": percorso})
-    f = FOTO / percorso if percorso else None
-    if f and f.exists():
+                     "file": percorso, "chiave": chiave})
+    f = trova_foto(percorso, chiave)
+    if f:
         try:
             # Riempie la finestra e taglia il resto: una foto "adattata" lascia
             # bande vuote e in un catalogo si vedono tutte.
@@ -222,7 +246,7 @@ def finestra_foto(c, x, y, w, h, etichetta="", percorso=""):
             c.restoreState()
             return True
         except Exception as e:                       # PIL assente o file rotto
-            print(f"  ! foto non inserita ({percorso}): {e}")
+            print(f"  ! foto non inserita ({f.name}): {e}")
     c.saveState()
     c.setFillColor(CARTA_CALDA)
     c.rect(x, y, w, h, stroke=0, fill=1)
@@ -241,16 +265,25 @@ def finestra_foto(c, x, y, w, h, etichetta="", percorso=""):
     m2 = f"{px} × {py} px a 300 dpi"
     unica = m1 + " · " + m2
     misure = [unica] if larg(unica, "PlexMono", 6.5, 0.4) <= utile else [m1, m2]
-    et = spezza((etichetta or "foto").upper(), "PlexMono", 7, utile, 1.1)
-    alto = len(et) * 4.2 * MM + 2 * MM + len(misure) * 3.6 * MM
-    yy = y + h / 2 + alto / 2 - 3 * MM
-    for r in et:
-        scrivi(c, cxm, yy, r, "PlexMono", 7, GRIGIO, 1.1, "centro")
-        yy -= 4.2 * MM
-    yy -= 2 * MM
+
+    righe = []
+    largo = w > 58 * MM
+    if etichetta and largo and etichetta.lower() != chiave.lower():
+        for r in spezza(etichetta.upper(), "PlexMono", 7, utile, 1.1):
+            righe.append((r, "PlexMono", 7, GRIGIO, 1.1, 4.2 * MM))
+    if chiave:
+        for r in spezza(chiave + ".jpg", "PlexMono", 7.5, utile, 0.4):
+            righe.append((r, "PlexMono", 7.5, ACCENTO, 0.4, 5 * MM))
+    elif not etichetta:
+        righe.append(("FOTO", "PlexMono", 7, GRIGIO, 1.1, 4.2 * MM))
     for r in misure:
-        scrivi(c, cxm, yy, r, "PlexMono", 6.5, GRIGIO, 0.4, "centro")
-        yy -= 3.6 * MM
+        righe.append((r, "PlexMono", 6.5, GRIGIO, 0.4, 3.6 * MM))
+
+    alto = sum(r[5] for r in righe)
+    yy = y + h / 2 + alto / 2 - 3 * MM
+    for testo, font, corpo, colore, tr, passo_riga in righe:
+        scrivi(c, cxm, yy, testo, font, corpo, colore, tr, "centro")
+        yy -= passo_riga
     c.restoreState()
     return False
 
@@ -358,7 +391,8 @@ def pag_apertura(c, n):
     y_basso = yb + h + 12 * MM
     if y_alto - y_basso > 35 * MM:
         finestra_foto(c, MSX, y_basso, UTILE, y_alto - y_basso,
-                      "Immagine di apertura · prodotti in licenza")
+                      "Immagine di apertura · prodotti in licenza",
+                      chiave="apertura")
 
     # blocco scuro con la chiusura commerciale
     c.saveState()
@@ -490,7 +524,8 @@ def pag_categorie_indice(c, n, categorie, prima_pagina):
 def scheda_categoria(c, cat, x, y, w, h):
     """Una scheda categoria dentro il rettangolo dato (y = bordo superiore)."""
     wfoto = cw(5)
-    finestra_foto(c, x, y - h, wfoto, h, f"{cat['nome']} · scatto prodotto")
+    finestra_foto(c, x, y - h, wfoto, h, f"{cat['nome']} · scatto prodotto",
+                  chiave="categoria-" + cat["id"])
     xt = x + wfoto + 8 * MM
     wt = w - wfoto - 8 * MM
     yy = y - 5 * MM
@@ -570,7 +605,8 @@ def pag_retail(c, n):
         scrivi(c, MSX, y, riga, "ZillaSlab-Bold", 24, INCHIOSTRO)
         y -= 10 * MM
     y -= 8 * MM
-    finestra_foto(c, MSX, y - 92 * MM, UTILE, 92 * MM, "Corner o negozio a insegna")
+    finestra_foto(c, MSX, y - 92 * MM, UTILE, 92 * MM, "Corner o negozio a insegna",
+                  chiave="retail")
     y -= 104 * MM
     filetto(c, MSX, y + 8 * MM, UTILE, FILETTO)
     occhiello(c, MSX, y, "Materiali compresi", GRIGIO)
@@ -684,7 +720,8 @@ def pag_linea(c, n, l):
     y -= 10 * MM
     hf = 80 * MM
     finestra_foto(c, MSX, y - hf, UTILE, hf,
-                  f"{l['nome']} · immagine di apertura", l.get("foto", ""))
+                  f"{l['nome']} · immagine di apertura", l.get("foto", ""),
+                  chiave="linea-" + l["id"])
     y -= hf + 12 * MM
 
     # Le due colonne scendono a velocita' diverse: quello che viene dopo parte
@@ -739,7 +776,7 @@ def pag_referenze(c, n, l):
         x = cx(col * 4)
         yy = y - riga * (hcell + 10 * MM)
         finestra_foto(c, x, yy - 52 * MM, wcell, 52 * MM, r.get("codice") or "referenza",
-                      r.get("foto", ""))
+                      r.get("foto", ""), chiave=r.get("codice", ""))
         scrivi(c, x, yy - 60 * MM, r.get("nome", ""), "Barlow-SemiBold", 10, INCHIOSTRO)
         scrivi(c, x, yy - 66 * MM, r.get("codice", ""), "PlexMono", 7.5, GRIGIO, 0.5)
         dettagli = " · ".join([d for d in [", ".join(r.get("colori") or []),
@@ -791,7 +828,8 @@ def pag_gamma_apertura(c, n, intro, categorie, conteggio, prima_pagina):
 
 def scheda_articolo(c, a, y, h):
     """Una fascia articolo a tutta larghezza. y = bordo superiore."""
-    finestra_foto(c, MSX, y - h, cw(3), h, a["codice"], a.get("foto", ""))
+    finestra_foto(c, MSX, y - h, cw(3), h, a["codice"], a.get("foto", ""),
+                  chiave=a["codice"])
 
     xa = cx(3)
     ya = y - 4 * MM
@@ -972,6 +1010,14 @@ def inventario(quali, anno):
             c.showPage()
 
         print(f"\n{nome_doc} — {len(FINESTRE)} finestre foto")
+        mancanti = [f for f in FINESTRE if not trova_foto(f["file"], f["chiave"])]
+        if mancanti:
+            print(f"  file attesi in foto/ ({len(mancanti)} mancanti):")
+            for f in mancanti:
+                px = (round(f["mm_w"] / 25.4 * 300), round(f["mm_h"] / 25.4 * 300))
+                g = gradino(max(px))[0]
+                nome_file = (f["chiave"] + ".jpg") if f["chiave"] else "(nessuna chiave)"
+                print(f"    {nome_file:<26} {px[0]:>5} × {px[1]:<5} px   {g}")
         print(f"  {'misura':>14}  {'a 300 dpi':>13}  {'a 200 dpi':>13}  "
               f"{'300dpi':>7}  {'200dpi':>7}  n.")
         conteggio = collections.Counter()
