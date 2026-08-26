@@ -10,9 +10,10 @@ Aggiornare questo file ogni volta che si scopre qualcosa di nuovo.
 
 | Cosa | Costo |
 |---|---|
-| Video Seedance 2.5, immagine→video 9:16, **480p** | **200 crediti al secondo** (8 s = 1.600, 10 s = 2.000) |
+| Video Seedance 2.5, immagine→video 9:16, **480p** | **200 crediti al secondo** (8 s = 1.600, 10 s = 2.000, 11 s = 2.200) |
 | Stesso video a **1080p**, 10 s | **10.000** |
 | Voce ElevenLabs Multilingual v2, copione da ~10 s | **29** |
+| Voce Eleven v3, copione da 21 parole (10,37 s) | **25** |
 | Stessa voce, frase da ~4 s | **11** |
 | Immagine Nano Banana 2, ritocco 2K | **130** |
 | Creazione e modifica di uno style kit | **gratis** |
@@ -84,6 +85,49 @@ Il formato predefinito e' 16:9 **anche partendo da un'immagine verticale**: il
 modello estende la scena e si inventa lo sfondo. Passare **sempre**
 `aspect_ratio` esplicito e scrivere nel prompt di non estendere ne' inventare
 parti della scena.
+
+### Lo scaffale scolastico: storpiature su scala diversa
+
+Sul corner back to school il difetto dei marchi inventati si moltiplica, perche'
+in campo non c'e' un prodotto ma decine. Da una sola generazione Nano Banana 2
+partita dalla foto del negozio, ispezionata a piena risoluzione:
+
+| Sullo scaffale vero | Stampato dal modello |
+|---|---|
+| KUROMI | `ROIRCHMI` |
+| Mickey Mouse | `Mickey eHouse` |
+| HUNTRIX | `FUNFOO` |
+| (zaino rosa a quadri) | `MUANOL CHAUS` |
+| astucci, borracce | scritte illeggibili sparse |
+
+Spider-Man, Capitan America e Hello Kitty sono invece tornati riconoscibili.
+
+**Il problema non e' estetico.** Un'inserzione del negozio con `Mickey eHouse`
+stampato sullo zaino sembra merce contraffatta, cioe' dice il contrario di
+quello che il negozio vende. Vale piu' del divieto nel prompt, che anche qui ha
+ridotto ma non eliminato.
+
+**Quello che funziona:** la merce si mostra solo con le foto vere, ferme, con
+carrellata digitale; la presentatrice generata si tiene con il fondo sfocato,
+cosi' le storpiature dietro di lei non sono leggibili. Vedi
+`back-to-school/`.
+
+### Segmentare la presentatrice dallo scaffale
+
+Per sfocare il fondo serve la sagoma della persona, e una sola segmentazione non
+basta: lascia frammenti di prodotto a fuoco attaccati al contorno. Serve
+l'**intersezione di tre maschere** (birefnet-portrait, isnet-general-use,
+u2net_human_seg): quello che tutte e tre chiamano persona e' persona.
+
+E **non si riempiono tutti i buchi**: `binary_fill_holes` chiude anche lo spazio
+fra braccio e busto, e li' dentro resta a fuoco lo scaffale che si vede in
+mezzo. Vanno richiusi solo i buchi sotto gli 8000 px.
+
+### Il formato della foto sorgente
+
+Le foto del negozio sono 3:4, lo spot e' 9:16. Il ritaglio va fatto **ai lati**:
+lasciare che il modello estenda il quadro significa fondo inventato. Nel campo
+largo il ritaglio ai lati toglie anche la persona reale sul bordo destro.
 
 ---
 
