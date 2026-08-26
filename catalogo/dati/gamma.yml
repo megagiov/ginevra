@@ -36,57 +36,23 @@ articoli:
   # ---------------------------------------------------------- classe 25 --
   - codice: SU-25-TS-01
     categoria: t-shirt
-    nome: T-shirt stampa centrale
-    target: uomo
+    nome: T-shirt bollo fronte e retro
+    target: unisex
     forma: Girocollo, manica corta, jersey.
-    marchio: Stampa centrale sul fronte.
-    varianti: [bianco, nero, grigio melange, blu navy]
+    marchio: Bollo piccolo sul cuore davanti, bollo grande al centro dietro.
+    varianti: [bianco, nero, blu navy, grigio melange]
     taglie: S–XXL
     prezzo: ""
     foto: ""
 
   - codice: SU-25-TS-02
     categoria: t-shirt
-    nome: T-shirt ricamo cuore
-    target: uomo
-    forma: Girocollo, manica corta, jersey. Capo pulito, marchio piccolo.
-    marchio: Ricamo sul cuore.
-    # blu navy aggiunto dopo il mockup: lo scatto esiste (foto/SU-25-TS-02-blu-navy.jpg)
-    varianti: [bianco, blu navy, nero, verde militare]
-    taglie: S–XXL
-    prezzo: ""
-    foto: ""
-
-  - codice: SU-25-TS-03
-    categoria: t-shirt
-    nome: T-shirt stampa centrale
-    target: donna
-    forma: Girocollo, manica corta, jersey, vestibilità femminile.
-    marchio: Stampa centrale sul fronte.
-    varianti: [bianco, grigio melange, nero]
-    taglie: XS–XL
-    prezzo: ""
-    foto: ""
-
-  - codice: SU-25-TS-04
-    categoria: t-shirt
-    nome: T-shirt etichetta al collo
-    target: donna
-    forma: Girocollo, manica corta, jersey. Nessun marchio a vista.
-    marchio: Etichetta tessuta al collo.
-    varianti: [bianco, nero]
-    taglie: XS–XL
-    prezzo: ""
-    foto: ""
-
-  - codice: SU-25-TS-05
-    categoria: t-shirt
-    nome: T-shirt stampa centrale
-    target: bambino
+    nome: T-shirt bollo petto e manica
+    target: unisex
     forma: Girocollo, manica corta, jersey.
-    marchio: Stampa centrale sul fronte.
-    varianti: [bianco, nero, rosso]
-    taglie: 4–14 anni
+    marchio: Bollo grande al centro del petto, oppure bollo piccolo sulla manica.
+    varianti: [verde militare, bordeaux, sabbia, antracite]
+    taglie: S–XXL
     prezzo: ""
     foto: ""
 
