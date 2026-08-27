@@ -1,82 +1,69 @@
 # Spot back to school
 
-Spot verticale 9:16 per il corner scolastico del negozio. Metodo ibrido: la
-presentatrice e' generata, la merce no.
+Spot verticale 9:16 per il corner scolastico. La presentatrice e' generata su
+Artlist e parla; il parlato del modello viene sostituito con la voce italiana
+corretta; testi e taglio finale si montano in locale.
 
-## Perche' ibrido
+## Come e' fatto
 
-Sullo scaffale scolastico ci sono decine di prodotti su licenza. Generando la
-scena col modello immagine, le scritte tornano indietro storpiate: `KUROMI` ->
-`ROIRCHMI`, `Mickey Mouse` -> `Mickey eHouse`, `HUNTRIX` -> `FUNFOO`, piu'
-scritte illeggibili su astucci e borracce. Il divieto scritto nel prompt riduce
-la frequenza ma non la elimina — vale la stessa regola gia' a quaderno per le
-sneakers.
+| Passo | Strumento | Costo |
+|---|---|---|
+| Immagine della presentatrice in posa | Nano Banana 2, 9:16 2K | 130 |
+| Voce italiana | Eleven v3, voce Grounded, `language: Italian` | 25 |
+| Video, 11 s 480p, `startFrame` ancorato | Seedance 2.0 Mini | 550 |
+| Sostituzione voce, testi, taglio | locale | 0 |
 
-Un'inserzione del negozio con `Mickey eHouse` stampato sullo zaino sembra merce
-contraffatta. Quindi:
-
-- **la merce si vede solo nelle foto vere del negozio**, ferme, con carrellata
-  digitale: pixel fotografati, nessun marchio inventabile;
-- **la presentatrice e' l'unica immagine generata**, e ha il fondo sfocato in
-  post, cosi' le scritte storpiate dietro di lei non sono leggibili.
-
-## Struttura
-
-Gli stacchi cadono dentro le pause vere della voce, misurate sull'onda.
-
-| Da | A | Immagine | Testo a schermo |
-|---|---|---|---|
-| 0,00 | 2,18 | presentatrice | È TEMPO DI PENSARE ALLA SCUOLA |
-| 2,18 | 5,04 | foto parete | ZAINI · ASTUCCI · BORRACCE |
-| 5,04 | 7,21 | foto campo largo | ANCHE CON I PERSONAGGI DEI CARTONI |
-| 7,21 | 10,37 | presentatrice, piu' stretta | DA NOI TROVI TUTTO / COSA ASPETTI? |
-
-Voce fuori campo: *"È tempo di pensare alla scuola. Zaini, astucci, borracce,
-anche con i personaggi dei cartoni. Da noi trovi tutto. Cosa aspetti?"*
-
-## Materiali attesi in `foto/`
-
-Non sono versionati (`.gitignore` esclude jpg e png): qui si versiona la
-pipeline, non il materiale.
-
-| File | Cos'e' |
-|---|---|
-| `negozio-close.jpg` | foto vera, parete del corner |
-| `negozio-largo.jpg` | foto vera, corsia in campo largo |
-| `avatar-presentazione-9x16.png` | presentatrice generata, 9:16 |
-| `avatar-sfocato.png` | la stessa col fondo sfocato, prodotta da `sfoca_avatar.py` |
-
-## Esecuzione
+## L'ordine dei comandi
 
 ```bash
-pip install Pillow numpy scipy imageio-ffmpeg "rembg[cpu]"
-python3 back-to-school/sfoca_avatar.py     # maschera + sfocatura del fondo
-python3 back-to-school/build_bts.py        # voce, montaggio, codifica
+pip install Pillow numpy scipy imageio-ffmpeg faster-whisper "rembg[cpu]"
+# out/voce.wav  = voce italiana scaricata da Artlist
+# out/f11/      = fotogrammi del video generato
+# orig_44k.wav  = audio del video generato, 44,1 kHz mono
+python3 back-to-school/allinea_voce.py    # posa le frasi vere sugli attacchi
+python3 finish.py                          # fondo sala + trattamento + mix
+python3 back-to-school/monta_testi.py      # testi, taglio, 1080x1920
 ```
 
-La voce va generata prima su Artlist (Eleven v3, voce Grounded, lingua
-`Italian`) e salvata in `out/voce.wav`. Piper non va bene qui: elide una
-consonante.
+## Le cose che contano
 
-## Trappole gia' pagate
-
-- **La segmentazione della persona sbava sugli oggetti dello scaffale.** Un solo
-  modello lascia frammenti di prodotto a fuoco attaccati alla sagoma. Serve
-  l'intersezione di tre maschere: cio' che tutti e tre chiamano persona e'
-  persona.
-- **`binary_fill_holes` chiude anche lo spazio tra braccio e busto**, e li'
-  dentro resta a fuoco lo scaffale che si vede in mezzo. Vanno richiusi solo i
-  buchi piccoli (< 8000 px).
-- **La foto sorgente e' 3:4, lo spot e' 9:16.** Il ritaglio va fatto ai lati:
-  far estendere il quadro al modello significa fondo inventato. Nel campo largo
-  il ritaglio esclude anche la persona reale sul bordo destro e il volantino a
-  terra.
+- **`startFrame`, non un riferimento normale.** Passare l'immagine come
+  riferimento a una variante reference-to-video la tratta come ispirazione: e'
+  tornato indietro un video con un'altra donna in un altro negozio, 2.200
+  crediti buttati. Con `input: { startFrame: ... }` su una variante
+  image-to-video l'ancoraggio tiene.
+- **Il parlato generato va sostituito sempre.** Qui ha detto *"E timola a
+  pensare a scuolo, backpacks, pencil cases, water bottles..."*: storpia e
+  traduce in inglese.
+- **Allineamento per frase, non per parola.** `place.py` pretende che le parole
+  si corrispondano; qui non si corrispondono. Le quattro frasi si', e appoggiate
+  sui rispettivi attacchi restano entro 60 ms. Dentro le frasi l'audio non si
+  tocca mai.
+- **La bocca si ferma prima della voce.** Misurato otticamente: parla fino a
+  8,6 s. L'ultima frase va posata sull'ultimo tratto sonoro vero (7,97 s), non
+  in coda alla precedente: lo scarto scende da 0,96 a 0,50 s. Il cartello
+  `COSA ASPETTI?` entra mezzo secondo prima della voce e copre quel residuo.
+- **Il video si taglia a 9,60 s.** Dopo c'e' solo lei ferma che sorride.
 - **Il testo non scende sotto y=1400**: sotto ci vanno didascalia e pulsanti di
-  TikTok e Instagram.
+  TikTok e Instagram. E la velatura sotto il testo va tenuta densa, altrimenti
+  il bianco sparisce sulla canotta.
 
 ## Da fare prima di pubblicare
 
-- **Musica**: lo spot esce con la sola voce. Serve un brano su licenza.
-- **End card**: gli ultimi secondi sono la presentatrice. Se si usa l'end card
-  GM Vegasi TikTok Shop, va montata in coda.
-- **Etichettatura**: contenuto pubblicitario del negozio.
+- **Musica su licenza.** Lo spot esce con la sola voce.
+- **End card** GM Vegasi TikTok Shop, se la si vuole in coda.
+- **Etichettatura** come contenuto pubblicitario del negozio.
+- **Ispezione a piena risoluzione** di ogni nuova generazione, sempre.
+
+## Materiali in `foto/`
+
+Non versionati (`.gitignore` esclude jpg e png): qui si versiona la pipeline,
+non il materiale. Servono `negozio-close.jpg`, `negozio-largo.jpg` e
+`avatar-presentazione-9x16.png`.
+
+## La strada alternativa, senza generazione video
+
+`build_bts.py` e `sfoca_avatar.py` montano lo stesso copione a costo zero: la
+merce dalle foto vere con carrellata digitale, la presentatrice generata col
+fondo sfocato. Utile se la generazione video non e' disponibile o se si vuole
+evitare del tutto il rischio dei marchi ridisegnati.
