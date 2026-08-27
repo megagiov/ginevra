@@ -131,6 +131,63 @@ largo il ritaglio ai lati toglie anche la persona reale sul bordo destro.
 
 ---
 
+### `startFrame` e' la differenza fra ancorare e ispirare
+
+Passare l'immagine come riferimento normale a una variante **reference-to-video**
+non la usa come primo fotogramma: la usa come ispirazione. Verificato pagando
+2.200 crediti: e' tornato indietro un video con **un'altra donna in un altro
+negozio**, nessun elemento delle foto fornite.
+
+Passare invece `input: { startFrame: ... }` a una variante **image-to-video**
+ancora davvero il fotogramma: stessa presentatrice, stesso negozio, stessa
+merce per tutta la durata. Controllare sempre che la risposta riporti
+`feature: "image-to-video"`.
+
+### L'italiano parlato passa all'inglese
+
+Nuovo modo di sbagliare, oltre alle storpiature gia' note. Dando al modello il
+copione italiano completo, il parlato e' tornato cosi':
+
+> "E timola a pensare a scuolo, **backpacks, pencil cases, water bottles**, iri
+> con cartone gamari, che che lo trovarei tutto con no."
+
+Non solo storpia: **traduce in inglese** un pezzo dell'elenco. In una prova
+precedente a 5 secondi si era invece impiantato ripetendo *"scuola di scuola di
+scuola"*.
+
+**Conseguenza per la sostituzione della voce:** l'allineamento parola per parola
+di `place.py` non e' utilizzabile, perche' le parole non si corrispondono.
+Funziona l'allineamento **per frase**: i due parlati condividono la struttura in
+quattro frasi, e appoggiando ogni frase sul suo attacco si resta entro 60 ms
+senza deformare nulla. Vedi `back-to-school/allinea_voce.py`.
+
+Resta uno scarto strutturale: il parlato generato finisce prima di quello vero
+(8,44 s contro 9,57 s), quindi l'ultima frase corre su una bocca ferma.
+
+### La macchina non sta ferma nemmeno se glielo scrivi tre volte
+
+"Macchina ferma, quadro invariato" ripetuto in tre punti del prompt, comprese le
+maiuscole: il faretto a soffitto usato come riferimento fisso si sposta lo
+stesso da x=42 a x=139 e torna a x=54. Il quadro si allarga e si restringe da
+solo. Va messo in conto, non e' un vincolo che si possa imporre.
+
+### Costi misurati sui modelli video
+
+| Modello | Formato | Costo |
+|---|---|---|
+| Seedance 2.5, 480p | 10 s / 11 s | 2.000 / 2.200 |
+| **Seedance 2.0 Mini, 480p** | 5 s / 10 s / 11 s | **250 / 500 / 550** |
+
+Mini costa **un quarto** di 2.5 e su un verticale a 480p, che TikTok ricomprime
+comunque, la resa regge. A 480p le scritte sui prodotti escono per lo piu'
+illeggibili invece che storpiate: il video e' messo meglio dell'immagine da cui
+parte.
+
+`get_generation_cost` da' il prezzo esatto **senza spendere e senza aprire il
+gate**: usarlo sempre prima di proporre una cifra.
+
+---
+
 ## 3. Voce
 
 Impostare **sempre** la lingua su italiano: il valore predefinito resta inglese
