@@ -19,8 +19,12 @@ BASE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(BASE)
 OUT = os.path.join(ROOT, 'out')
 
-# attacchi delle quattro frasi nel parlato generato, letti dalla trascrizione
-ATTACCHI = [0.00, 1.94, 4.92, 6.92]
+# Attacchi nel parlato generato, letti dalla trascrizione e dall'onda.
+# L'ultima frase e' spezzata in due: il modello smette di muovere la bocca a
+# 8,6 s, quindi "Cosa aspetti?" va posato sull'ultimo tratto sonoro vero
+# (7,97-8,51) invece che in coda a "Da noi trovi tutto", altrimenti corre su
+# una bocca ferma per quasi un secondo.
+ATTACCHI = [0.00, 1.94, 4.92, 6.92, 7.97]
 
 # Confini delle stesse quattro frasi dentro la voce italiana, misurati sull'onda.
 # Vanno scritti, non dedotti: le pause della voce non hanno una gerarchia che
@@ -30,7 +34,8 @@ ATTACCHI = [0.00, 1.94, 4.92, 6.92]
 FRASI = [(0.064, 1.758),    # È tempo di pensare alla scuola
          (2.330, 4.825),    # Zaini, astucci, borracce
          (5.337, 7.126),    # anche con i personaggi dei cartoni
-         (7.717, 10.353)]   # Da noi trovi tutto. Cosa aspetti?
+         (7.717, 8.978),    # Da noi trovi tutto
+         (9.574, 10.353)]   # Cosa aspetti?
 
 
 def leggi(path):
