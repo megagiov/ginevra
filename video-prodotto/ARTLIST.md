@@ -15,6 +15,9 @@ Aggiornare questo file ogni volta che si scopre qualcosa di nuovo.
 | Voce ElevenLabs Multilingual v2, copione da ~10 s | **29** |
 | Stessa voce, frase da ~4 s | **11** |
 | Immagine Nano Banana 2, ritocco 2K | **130** |
+| Immagine Nano Banana Pro, ritocco 2K | **160** |
+| Stessa, 4K | **280** |
+| Immagine Seedream 5.0 Pro, ritocco | **150** |
 | Creazione e modifica di uno style kit | **gratis** |
 
 **Il formato non incide sul prezzo.** 1:1, 9:16 e 16:9 costano uguale. Le uniche
@@ -56,6 +59,40 @@ esplicitamente nel prompt. Il divieto riduce la frequenza, non la elimina.
 **Conseguenza operativa:** ogni video va ispezionato a piena risoluzione prima
 della consegna. Un marchio inventato su un'inserzione commerciale non e' un
 dettaglio estetico.
+
+### Il logo passato come riferimento viene comunque ridisegnato
+Verificato su Nano Banana Pro con il logo START UP ufficiale allegato come
+riferimento e l'ordine esplicito di riprodurlo identico: il modello ha
+**aggiunto una lettera** all'anello circolare (quindici invece di quattordici)
+e ne ha **ruotato la fase**, cosi' che la parola non parte piu' da mezzogiorno.
+Sull'etichetta tessuta piccola, sul retro, e' uscito illeggibile e in parte
+speculare.
+
+Il divieto e l'immagine di riferimento **riducono la deriva, non la
+impediscono**. Vale la stessa regola dei marchi inventati: si ispeziona sempre.
+
+**Cosa funziona:** far generare il capo al modello e poi **ricomporre il logo
+vero sul render**, cancellando quello inventato. Il procedimento e in
+`prodotto-3d/logo_esatto.py`: si isolano i pixel del marchio generato per
+soglia dentro l'ingombro del logo, si ricostruisce il tessuto sotto prendendo
+il livello di grigio dai bordi del buco e la grana da una zona pulita alla
+stessa altezza, poi si sovrappone il file ufficiale con ombra portata, bordo in
+luce e ombreggiatura ripresa dal drappo. Costo: **zero crediti**.
+
+Due trappole trovate strada facendo. Se la maschera arriva a toccare il bordo
+del capo, la ricostruzione **appiattisce la sagoma** e lascia una banda
+rettangolare visibile: la maschera va limitata a un'ellisse attorno al logo e
+la soglia tenuta alta, perche' il bordo illuminato del pantalone supera una
+soglia bassa. E la zona di tessuto da cui si prende la grana va scelta **alla
+stessa altezza**, non piu' in basso: sotto c'e' l'ombra dell'orlo e la toppa si
+porta dentro una macchia scura.
+
+### I dettagli finiscono sul lato sbagliato
+Chiesto un ricamo "sul lato esterno della gamba sinistra", il modello l'ha
+messo sulla gamba destra, mentre il logo principale sulla coscia sinistra era
+corretto. Scrivere anche da che parte del fotogramma deve comparire aiuta, ma
+va comunque verificato: sinistra del capo e sinistra dell'inquadratura sono
+opposte.
 
 ### L'italiano parlato e' inaffidabile
 Errori raccolti: *venduto→venditi*, *finiture→finituri*, *sfuggire→sfiggere*,
