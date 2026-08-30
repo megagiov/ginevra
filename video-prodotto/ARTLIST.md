@@ -11,7 +11,8 @@ Aggiornare questo file ogni volta che si scopre qualcosa di nuovo.
 | Cosa | Costo |
 |---|---|
 | Video Seedance 2.5, immagine→video 9:16, **480p** | **200 crediti al secondo** (8 s = 1.600, 10 s = 2.000) |
-| Stesso video a **1080p**, 10 s | **10.000** |
+| Stesso video a **720p** | **500 crediti al secondo** (5 s = 2.500) |
+| Stesso video a **1080p** | **1.000 crediti al secondo** (5 s = 5.000, 10 s = 10.000) |
 | Voce ElevenLabs Multilingual v2, copione da ~10 s | **29** |
 | Stessa voce, frase da ~4 s | **11** |
 | Immagine Nano Banana 2, ritocco 2K | **130** |
@@ -28,7 +29,9 @@ nulla**: e' l'occasione per riportare il prezzo esatto all'utente e aspettare.
 
 Ma sotto una certa soglia il gate **non scatta e la generazione parte subito**.
 Verificato: 11, 29 e 130 crediti sono partiti da soli; 1.600, 2.000 e 10.000
-hanno aperto il gate. Per le generazioni piccole quindi non c'e' rete di
+hanno aperto il gate. **La zona fra 130 e 1.600 non e' mai stata sondata**: un
+video da 5 s a 480p costa 1.000 e non si sa da che parte cada — va annunciato
+prima, senza contare sul gate. Per le generazioni piccole quindi non c'e' rete di
 protezione: vanno annunciate prima o rendicontate subito dopo.
 
 Per conoscere un prezzo senza spendere basta lanciare la chiamata e leggere il
@@ -155,12 +158,13 @@ occupa le righe 241-1679, sopra e sotto restano due bande nere.
 
 ## 7. Gli style kit gia' pronti
 
-Quattro kit stagionali, uno per look, tutti con la stessa presentatrice:
+Cinque kit, uno per look, tutti con la stessa presentatrice:
 
 - **GM Vegasi — Presentatrice Inverno** (camicia azzurra)
 - **GM Vegasi — Presentatrice Estate** (canotta bianca)
 - **GM Vegasi — Presentatrice Mezza Stagione** (maglia crema)
 - **GM Vegasi — Presentatrice Street** (felpa grigia)
+- **GM Vegasi — Presentatrice Back to School**
 
 Ognuno contiene il look, la foto del negozio e le regole scritte di ripresa.
 
