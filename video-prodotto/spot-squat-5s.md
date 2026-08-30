@@ -45,12 +45,12 @@ reinventa di piu'.
 | # | Passo | Strumento | Crediti |
 |---|---|---|---|
 | 0 | Caricare la foto prodotto originale | `upload_image` | 0 |
-| 1 | **Fotogramma di partenza**: modella nella posa di squat, con la scarpa del riferimento montata sul piede | Nano Banana 2, `aspect_ratio: "9:16"` esplicito | 130 |
+| 1 | **Fotogramma di partenza**: modella nella posa di squat, con la scarpa del riferimento montata sul piede | Nano Banana 2 **1K**, `aspect_ratio: "9:16"` esplicito | 90 |
 | 2 | **Ispezione del fermo immagine**: forma, tre strappi, finestre, suola, assenza di marchi inventati | — | 0 |
 | 3 | Animazione 5 s dal fotogramma approvato | Seedance 2.5 I2V, 480p, `generate_audio: false` | 1.000 |
 | 4 | **Ispezione fotogramma per fotogramma** a piena risoluzione | — | 0 |
 
-Totale **1.130**, ne restano ~2.610 per un secondo giro.
+Totale **1.090**, ne restano ~2.650 per un secondo giro.
 
 Il passo 1 e' quello che salva i crediti: correggere una scarpa sbagliata costa
 130, correggerla dopo il video ne costa 1.000.
@@ -198,3 +198,38 @@ volte su tre. Il controllo a video e' obbligatorio comunque.
 - **Formato definitivo.** 5 secondi sono una inquadratura sola. La struttura
   completa del brief (hook → curiosita' → reveal → desiderabilita' → CTA)
   richiede 3-4 generazioni, circa 3.000-4.000 crediti a 480p.
+
+---
+
+## 8. Esito della prima esecuzione (variante beige)
+
+Speso: **1.090 crediti** — 90 il fotogramma di partenza, 1.000 il video.
+Il gate a 1.000 **non e' scattato**: la generazione e' partita da sola.
+
+Riferimento usato: la foto di catalogo `bellamica-ra159i26-beige-a26_2`, non lo
+screenshot — stessa scarpa, risoluzione piena.
+
+Output: MP4 478x856, 24 fps, 5,04 s, **senza traccia audio**.
+
+**Prodotto: fedele.** Controllati 40 fotogrammi campionati a 8 fps e i dettagli
+ingranditi a inizio, meta' e fine:
+
+- [x] tre strappi per scarpa, mai due
+- [x] finestre laterali aperte, forma corretta
+- [x] suola gum sottile, spessore e profilo del riferimento
+- [x] zeppa interna, silhouette invariata
+- [x] **nessun marchio, scritta o logo inventato** in nessun fotogramma
+- [x] le due scarpe identiche fra loro
+- [x] colore e nap del camoscio stabili, nessun flicker
+- [x] nessun testo generato dal modello
+
+**Difetto: il push-in ha stretto troppo.** Chiesto "molto lento" con la figura
+intera sempre in quadro, il modello ha chiuso fino a lasciare solo le gambe
+nell'ultimo secondo: la modella e' tagliata alla coscia sul finale. Il gesto
+squat→risalita c'e' tutto ed e' pulito, e la scarpa chiude grande e nitida —
+ma non e' l'inquadratura chiesta e il video non cicla.
+
+**Correzione per il prossimo giro** (1.000 crediti): descrivere l'inquadratura
+**finale** invece della velocita' del movimento — "the final frame is a full
+body wide shot with the model standing, head and feet both inside the frame" —
+e togliere del tutto la parola push-in.

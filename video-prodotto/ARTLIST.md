@@ -15,6 +15,7 @@ Aggiornare questo file ogni volta che si scopre qualcosa di nuovo.
 | Stesso video a **1080p** | **1.000 crediti al secondo** (5 s = 5.000, 10 s = 10.000) |
 | Voce ElevenLabs Multilingual v2, copione da ~10 s | **29** |
 | Stessa voce, frase da ~4 s | **11** |
+| Immagine Nano Banana 2, **1K** | **90** |
 | Immagine Nano Banana 2, ritocco 2K | **130** |
 | Creazione e modifica di uno style kit | **gratis** |
 
@@ -29,9 +30,9 @@ nulla**: e' l'occasione per riportare il prezzo esatto all'utente e aspettare.
 
 Ma sotto una certa soglia il gate **non scatta e la generazione parte subito**.
 Verificato: 11, 29 e 130 crediti sono partiti da soli; 1.600, 2.000 e 10.000
-hanno aperto il gate. **La zona fra 130 e 1.600 non e' mai stata sondata**: un
-video da 5 s a 480p costa 1.000 e non si sa da che parte cada — va annunciato
-prima, senza contare sul gate. Per le generazioni piccole quindi non c'e' rete di
+hanno aperto il gate. **A 1.000 crediti il gate NON scatta**: verificato con un
+video da 5 s a 480p, partito da solo senza chiedere conferma. La soglia sta
+quindi fra 1.000 e 1.600. Per le generazioni piccole non c'e' rete di
 protezione: vanno annunciate prima o rendicontate subito dopo.
 
 Per conoscere un prezzo senza spendere basta lanciare la chiamata e leggere il
@@ -50,6 +51,16 @@ strappi e platform carrarmato.
 **Cosa funziona:** partire dalla **foto del negozio** dove il prodotto e'
 fisicamente sugli scaffali. Cosi' il prodotto in campo e' fotografato, non
 generato, e resta fedele.
+
+**Funziona anche il fotogramma intermedio.** Per una scena che il negozio non
+puo' dare (il prodotto indossato, in movimento), si genera prima un fermo
+immagine con Nano Banana 2 dalla foto di catalogo, lo si ispeziona, e solo
+quello approvato si passa a Seedance come start frame. Provato sulla BELLAMICA
+beige: tre strappi, finestre, suola gum e zeppa corretti sia nel fermo immagine
+sia in tutti i fotogrammi del video, **nessun marchio inventato** — la prima
+volta su quattro. Costa 90 crediti (Nano Banana 2 a 1K, non 130: il 2K non
+serve per alimentare un video 480p) e ne salva 1.000 quando la scarpa esce
+sbagliata.
 
 ### I marchi inventati
 Il modello stampa nomi di marca inesistenti sui prodotti — sulla linguetta, sul
@@ -81,6 +92,12 @@ lo stesso. Verificato confrontando gli inviluppi: correlazione 0,06.
 "Mai avvicinare il prodotto all'obiettivo" e' stato ignorato: scarpa incollata
 alla lente e presentatrice tagliata fuori dal bordo. Ripetere il vincolo in piu'
 punti del prompt aiuta ma non garantisce.
+
+Confermato una seconda volta sullo spot squat da 5 s: chiesto un push-in "molto
+lento" con la figura intera sempre dentro il quadro, il modello ha stretto fino
+a lasciare in campo solo le gambe nell'ultimo secondo. **Il push-in va chiesto
+per quello che deve essere alla fine, non per la sua velocita'**: descrivere
+l'inquadratura finale desiderata invece di aggettivare il movimento.
 
 ### Nano Banana 2 allarga il quadro
 Il formato predefinito e' 16:9 **anche partendo da un'immagine verticale**: il
