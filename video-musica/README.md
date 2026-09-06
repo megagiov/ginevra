@@ -48,8 +48,10 @@ sono circa 4 minuti.
 1. `ffmpeg` decodifica il tratto scelto in PCM mono 44,1 kHz.
 2. FFT su finestre di 2048 campioni centrate sul frame, energia raccolta in 48
    bande log-spaziate da 30 Hz a 16 kHz — l'orecchio legge le ottave, non gli Hz.
-3. Normalizzazione mista: meta' globale (tiene le dinamiche del brano) e meta'
-   per banda (evita bassi sempre a fondo scala e acuti sempre piatti).
+3. Espansione per banda: il fondo di ogni banda va a zero e il picco a uno. Sui
+   brani molto compressi (disco, EDM, pop radiofonico) senza questo passaggio
+   tutte le barre restano a fondo scala e l'equalizzatore diventa una massa
+   piena che non balla.
 4. Inviluppo con attacco rapido e rilascio lento: le barre non sfarfallano.
 5. Render per frame: gradiente animato a bassa risoluzione ingrandito, alone
    diffuso delle barre disegnato a 1/5 e sfocato, barre nitide sopra, testo e
@@ -62,4 +64,7 @@ sono circa 4 minuti.
   l'equalizzatore. La colonna destra dell'interfaccia TikTok resta libera.
 - Cambia `--preset` fra un post e l'altro ma tieni la stessa impaginazione: e'
   quella che rende il feed riconoscibile.
+- Taglia su un tempo forte e su un numero intero di battute: il clip si
+  riaggancia da solo quando TikTok lo rimanda in loop. A 126 BPM una battuta
+  dura 1,904 s, quindi 16 battute fanno 30,476 s.
 - Usa musica di cui hai i diritti, oppure la libreria audio di TikTok.

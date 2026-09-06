@@ -65,12 +65,15 @@ def spettro(pcm, n_frame):
         out[f] *= tilt
 
     out = np.log1p(out * 12.0)
-    glob = np.percentile(out, 99.0)
-    # meta' normalizzazione globale (tiene le dinamiche del brano) e meta' per
-    # banda (evita l'equalizzatore tutto gonfio sui bassi e piatto sugli acuti)
-    per_banda = np.percentile(out, 95.0, axis=0)
-    rif = 0.45 * max(glob, 1e-6) + 0.55 * np.maximum(per_banda, 1e-6)
-    out = np.clip(out / rif, 0.0, 1.0)
+    # Espansione per banda: il fondo di ogni banda va a zero e il picco a uno.
+    # Senza, su un brano compresso come il disco tutte le barre restano a fondo
+    # scala e l'equalizzatore diventa una massa piena che non balla.
+    fondo = np.percentile(out, 25.0, axis=0)
+    picco = np.percentile(out, 98.0, axis=0)
+    out = (out - fondo) / np.maximum(picco - fondo, 1e-6)
+    out = np.clip(out, 0.0, 1.0) ** 1.35
+    # un filo di fondo comune, se no le bande scariche spariscono del tutto
+    out = 0.08 + 0.92 * out
 
     # attacco rapido, rilascio lento: le barre non sfarfallano
     sm = np.zeros_like(out)
