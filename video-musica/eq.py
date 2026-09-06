@@ -117,7 +117,9 @@ def sfondo(t, energia, colori):
     base += np.array(glow, np.float32) * (alone * (0.22 + 0.5 * energia))[..., None]
 
     img = Image.fromarray(np.clip(base, 0, 255).astype(np.uint8))
-    return img.resize((W, H), Image.BICUBIC).filter(ImageFilter.GaussianBlur(6))
+    # la sfocatura si applica sul piccolo: sul frame intero costerebbe da sola
+    # piu' di tutto il resto del render
+    return img.filter(ImageFilter.GaussianBlur(0.6)).resize((W, H), Image.BICUBIC)
 
 
 def font(px, grassetto=True):
@@ -170,25 +172,96 @@ def barre(img, val, colori):
         dr.rounded_rectangle(rect, radius=r, fill=c)
 
 
-def testo(dr, titolo, artista, avanzamento):
-    f_t, f_a = font(84), font(46)
-    def centrato(txt, f, y, col, ombra=True):
-        w = dr.textbbox((0, 0), txt, font=f)[2]
-        x = (W - w) / 2
-        if ombra:
-            dr.text((x + 3, y + 4), txt, font=f, fill=(0, 0, 0, 160))
-        dr.text((x, y), txt, font=f, fill=col)
+def centrato(dr, txt, f, y, col):
+    w = dr.textbbox((0, 0), txt, font=f)[2]
+    x = (W - w) / 2
+    dr.text((x + 3, y + 4), txt, font=f, fill=(0, 0, 0, 150))
+    dr.text((x, y), txt, font=f, fill=col)
 
-    if titolo:
-        centrato(titolo.upper(), f_t, H * 0.72, (255, 255, 255))
-    if artista:
-        centrato(artista, f_a, H * 0.72 + 105, (235, 235, 235))
+
+def a_capo(dr, parole, f, largh_max):
+    """Spezza la riga cantata in piu' righe che stiano nella larghezza data."""
+    righe, cur = [], []
+    for p in parole:
+        prova = cur + [p]
+        if dr.textbbox((0, 0), " ".join(prova), font=f)[2] > largh_max and cur:
+            righe.append(cur)
+            cur = [p]
+        else:
+            cur = prova
+    if cur:
+        righe.append(cur)
+    return righe
+
+
+def verso(dr, seg, t, colori):
+    """Riga cantata, con la parola in corso accesa sull'accento."""
+    _, _, acc, _ = colori
+    f = font(64)
+    parole = seg.get("words") or [{"w": w, "s": seg["start"], "e": seg["end"]}
+                                  for w in seg["text"].split()]
+    righe = a_capo(dr, [p["w"] for p in parole], f, W - 200)
+    # dissolvenza in entrata e in uscita, mezzo secondo per parte
+    a = min(1.0, (t - seg["start"] + 0.25) / 0.45, (seg["end"] + 0.5 - t) / 0.45)
+    a = max(0.0, a)
+
+    y = H * 0.70 - (len(righe) - 1) * 40
+    i = 0
+    for riga in righe:
+        largh = dr.textbbox((0, 0), " ".join(riga), font=f)[2]
+        x = (W - largh) / 2
+        for w in riga:
+            p = parole[i]; i += 1
+            accesa = p["s"] <= t <= p["e"] + 0.08
+            col = acc if accesa else (255, 255, 255)
+            dr.text((x + 3, y + 4), w, font=f, fill=(0, 0, 0, int(150 * a)))
+            dr.text((x, y), w, font=f, fill=tuple(col) + (int(255 * a),))
+            x += dr.textbbox((0, 0), w + " ", font=f)[2]
+        y += 80
+
+
+def testo(dr, titolo, artista, avanzamento, seg=None, t=0.0, colori=None):
+    if seg is not None:
+        # con i versi a schermo il titolo sale in alto, se no si accavallano
+        if titolo:
+            centrato(dr, titolo.upper(), font(52), H * 0.085, (255, 255, 255))
+        if artista:
+            centrato(dr, artista, font(34), H * 0.085 + 68, (232, 232, 232))
+        verso(dr, seg, t, colori)
+    else:
+        if titolo:
+            centrato(dr, titolo.upper(), font(84), H * 0.72, (255, 255, 255))
+        if artista:
+            centrato(dr, artista, font(46), H * 0.72 + 105, (235, 235, 235))
 
     # barra di avanzamento del brano
     y, m = int(H * 0.86), 120
     dr.rounded_rectangle([m, y, W - m, y + 10], radius=5, fill=(255, 255, 255, 70))
     dr.rounded_rectangle([m, y, m + (W - 2 * m) * avanzamento, y + 10],
                          radius=5, fill=(255, 255, 255))
+
+
+def carica_versi(path, start, durata):
+    """Segmenti dal JSON della trascrizione, riportati a zero sul ritaglio."""
+    import json
+    with open(path, encoding="utf-8") as f:
+        dati = json.load(f)
+    out = []
+    for s in dati:
+        a, b = s["start"] - start, s["end"] - start
+        if b <= 0 or a >= durata or not s.get("text"):
+            continue
+        out.append({"start": a, "end": b, "text": s["text"],
+                    "words": [{"w": w["w"], "s": w["s"] - start, "e": w["e"] - start}
+                              for w in s.get("words") or []]})
+    return out
+
+
+def verso_a(versi, t):
+    for s in versi:
+        if s["start"] - 0.25 <= t <= s["end"] + 0.5:
+            return s
+    return None
 
 
 def render(args):
@@ -202,13 +275,14 @@ def render(args):
     sp = spettro(pcm, n)
     en = livelli(pcm, n)
     colori = PRESET[args.preset]
+    versi = carica_versi(args.testo, args.start, durata) if args.testo else None
 
     out = os.path.join(os.path.dirname(os.path.abspath(__file__)), "out", args.out)
     proc = subprocess.Popen(
         [FFMPEG, "-y", "-v", "error",
          "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", f"{W}x{H}", "-r", str(FPS), "-i", "-",
          "-ss", str(args.start), "-t", f"{durata:.3f}", "-i", args.audio,
-         "-c:v", "libx264", "-preset", "medium", "-crf", "20", "-pix_fmt", "yuv420p",
+         "-c:v", "libx264", "-preset", "medium", "-crf", str(args.crf), "-pix_fmt", "yuv420p",
          "-c:a", "aac", "-b:a", "192k", "-shortest", "-movflags", "+faststart", out],
         stdin=subprocess.PIPE)
 
@@ -216,7 +290,9 @@ def render(args):
         img = sfondo(f / FPS, float(en[f]), colori)
         barre(img, sp[f], colori)
         dr = ImageDraw.Draw(img, "RGBA")
-        testo(dr, args.titolo, args.artista, f / max(n - 1, 1))
+        t = f / FPS
+        seg = verso_a(versi, t) if versi else None
+        testo(dr, args.titolo, args.artista, f / max(n - 1, 1), seg, t, colori)
         proc.stdin.write(img.tobytes())
         if f % (FPS * 5) == 0:
             print(f"  frame {f}/{n}", flush=True)
@@ -234,6 +310,9 @@ def main():
     p.add_argument("--titolo", default="")
     p.add_argument("--artista", default="")
     p.add_argument("--preset", default="sunset", choices=sorted(PRESET))
+    p.add_argument("--testo", help="JSON dei versi con i tempi (vedi versi.py)")
+    p.add_argument("--crf", type=int, default=20,
+                   help="qualita' H.264: piu' alto = file piu' leggero")
     p.add_argument("--out", default="eq.mp4")
     render(p.parse_args())
 

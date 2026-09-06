@@ -38,7 +38,30 @@ python3 eq.py brano.mp3 --start 45 --dur 30 \
 | `--dur` | durata in secondi del clip |
 | `--titolo` / `--artista` | testo a schermo, opzionali |
 | `--preset` | `sunset`, `ocean`, `neon`, `ember`, `mono` |
+| `--testo` | JSON dei versi con i tempi: li stampa a schermo sincronizzati |
+| `--crf` | qualita' H.264, piu' alto = file piu' leggero (default 20) |
 | `--out` | nome del file in `out/` |
+
+## Versi a schermo
+
+`versi.py` trascrive il cantato del brano in un JSON con i tempi parola per
+parola (faster-whisper, in locale, nessuna API):
+
+```bash
+pip install faster-whisper
+python3 versi.py brano.mp3 --out versi.json
+python3 eq.py brano.mp3 --testo versi.json --dur 60 ...
+```
+
+Il JSON e' fatto per essere corretto a mano prima del render: su un mix denso di
+batteria e basso la trascrizione sbaglia parole, e una parola sbagliata a schermo
+si nota piu' di qualunque altro difetto. Formato: lista di
+`{"start", "end", "text", "words": [{"w", "s", "e"}]}`, tempi in secondi
+dall'inizio del brano.
+
+Con `--testo` l'impaginazione cambia: titolo e artista salgono in cima, la riga
+cantata sta sotto l'equalizzatore e la parola in corso si accende sul colore
+d'accento.
 
 Il render costa circa 8 s di calcolo per ogni secondo di video: 30 s di clip
 sono circa 4 minuti.
@@ -57,6 +80,10 @@ sono circa 4 minuti.
    diffuso delle barre disegnato a 1/5 e sfocato, barre nitide sopra, testo e
    barra di avanzamento.
 6. I frame RGB vanno per pipe a `ffmpeg`, che li unisce all'audio originale.
+
+La sfocatura dello sfondo e l'alone delle barre si calcolano in bassa
+risoluzione e si ingrandiscono: sfocare il frame intero costerebbe da solo piu'
+di tutto il resto del render.
 
 ## Note per il format
 
