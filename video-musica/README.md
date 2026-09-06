@@ -85,6 +85,29 @@ La sfocatura dello sfondo e l'alone delle barre si calcolano in bassa
 risoluzione e si ingrandiscono: sfocare il frame intero costerebbe da solo piu'
 di tutto il resto del render.
 
+## File lunghi
+
+Un video di otto minuti a 1080x1920 pesa qualche centinaio di MB: TikTok lo
+accetta, ma altri canali no. Per spezzarlo senza ricodificare:
+
+```bash
+ffmpeg -i out/lungo.mp4 -c copy -f segment -segment_time 70 \
+       -reset_timestamps 1 -segment_format mp4 out/parti/parte%02d.mp4
+```
+
+e per rimetterlo insieme:
+
+```bash
+printf "file '%s'\n" out/parti/parte*.mp4 > lista.txt
+ffmpeg -f concat -safe 0 -i lista.txt -c copy out/lungo.mp4
+```
+
+## Trascrizioni gia' fatte
+
+`versi/` contiene i JSON gia' trascritti e corretti a mano, uno per brano: sono
+la parte cara del lavoro (trascrizione piu' revisione), il video si rigenera
+quando si vuole.
+
 ## Note per il format
 
 - Il testo sta al 72% dell'altezza: sopra i pulsanti dell'app, sotto
