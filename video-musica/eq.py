@@ -241,11 +241,32 @@ def testo(dr, titolo, artista, avanzamento, seg=None, t=0.0, colori=None):
                          radius=5, fill=(255, 255, 255))
 
 
+def spezza(seg, max_dur=4.5, max_par=7):
+    """Segmenti lunghi divisi sui tempi delle parole: a schermo una riga che
+    resta ferma dieci secondi non segue piu' il cantato."""
+    par = seg.get("words") or []
+    if len(par) <= max_par and seg["end"] - seg["start"] <= max_dur:
+        return [seg]
+    if not par:
+        return [seg]
+    fuori, cur = [], []
+    for p in par:
+        cur.append(p)
+        troppo_lungo = cur[-1]["e"] - cur[0]["s"] > max_dur
+        if len(cur) >= max_par or troppo_lungo:
+            fuori.append(cur)
+            cur = []
+    if cur:
+        fuori.append(cur)
+    return [{"start": g[0]["s"], "end": g[-1]["e"],
+             "text": " ".join(w["w"] for w in g), "words": g} for g in fuori]
+
+
 def carica_versi(path, start, durata):
     """Segmenti dal JSON della trascrizione, riportati a zero sul ritaglio."""
     import json
     with open(path, encoding="utf-8") as f:
-        dati = json.load(f)
+        dati = [x for s in json.load(f) for x in spezza(s)]
     out = []
     for s in dati:
         a, b = s["start"] - start, s["end"] - start
