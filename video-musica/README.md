@@ -85,6 +85,28 @@ La sfocatura dello sfondo e l'alone delle barre si calcolano in bassa
 risoluzione e si ingrandiscono: sfocare il frame intero costerebbe da solo piu'
 di tutto il resto del render.
 
+## Senza il file del brano
+
+Quando il brano si aggiunge dentro l'app (catalogo TikTok) e il file non ce
+l'hai, l'equalizzatore non ha una forma d'onda da leggere. Ripiego:
+
+```bash
+python3 eq.py --bpm 128 --dur 60 --titolo "Nome" --preset neon --out clip.mp4
+```
+
+Barre su griglia di battute — cassa sul quarto, rullante sul secondo e quarto,
+charleston sugli ottavi — e uscita sempre muta. Sta a tempo, ma non reagisce a
+niente: sugli stacchi e sulle pause del brano vero si vede che va per conto suo.
+Con il file audio vero, invece, si usa `--muto` e l'equalizzatore resta calcolato
+sulla forma d'onda:
+
+```bash
+python3 eq.py brano.mp3 --start 60 --dur 30 --muto --out clip.mp4
+```
+
+In entrambi i casi, nell'editor di TikTok va spostato il punto di partenza del
+suono per farlo combaciare con il taglio del video.
+
 ## File lunghi
 
 Un video di otto minuti a 1080x1920 pesa qualche centinaio di MB: TikTok lo

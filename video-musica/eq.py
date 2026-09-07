@@ -85,6 +85,43 @@ def spettro(pcm, n_frame):
     return sm
 
 
+def spettro_sintetico(n_frame, bpm):
+    """Equalizzatore su griglia di battute, senza audio.
+
+    Ripiego per quando il brano non ce l'ho come file: cassa sul quarto, rullante
+    sul secondo e quarto, charleston sugli ottavi, con un respiro lento sopra.
+    Sta a tempo, ma non reagisce a niente: sugli stacchi e sulle pause del brano
+    vero si vede che va per conto suo.
+    """
+    T = 60.0 / bpm
+    banda = np.arange(BANDS)
+    bassi = np.clip(1.0 - banda / 12.0, 0, 1) ** 1.5
+    medi = np.exp(-((banda - 20.0) / 9.0) ** 2)
+    acuti = np.clip((banda - 26.0) / 22.0, 0, 1) ** 1.2
+
+    out = np.zeros((n_frame, BANDS), dtype=np.float32)
+    for f in range(n_frame):
+        t = f / FPS
+        q = t / T                      # posizione in quarti
+        p = q % 1.0                    # dentro il quarto
+        b = int(q) % 4                 # quarto nella battuta
+        ott = (t / (T / 2)) % 1.0      # dentro l'ottavo
+
+        cassa = math.exp(-7.0 * p) * (1.0 if b == 0 else 0.82)
+        rull = math.exp(-9.0 * p) if b in (1, 3) else 0.0
+        hat = math.exp(-16.0 * ott) * (0.75 if ott < 0.5 else 0.5)
+
+        # respiro lento e leggera deriva per banda, se no e' un metronomo
+        resp = 0.5 + 0.5 * math.sin(2 * math.pi * t / (8 * 4 * T))
+        deriva = 0.5 + 0.5 * np.sin(banda * 0.7 + t * 1.7)
+
+        v = (bassi * cassa * 1.0 + medi * rull * 0.9 + acuti * hat * 0.85
+             + deriva * (0.10 + 0.16 * resp))
+        out[f] = np.clip(v, 0.0, 1.0)
+
+    return np.clip(0.08 + 0.92 * out, 0.0, 1.0).astype(np.float32)
+
+
 def livelli(pcm, n_frame):
     """RMS per frame, 0..1: pilota il respiro dello sfondo."""
     hop = SR / FPS
@@ -286,15 +323,19 @@ def verso_a(versi, t):
 
 
 def render(args):
-    pcm = decodifica(args.audio, args.start, args.dur)
-    if pcm.size == 0:
-        sys.exit("audio vuoto: controlla --start, il brano e' piu' corto?")
-    durata = pcm.size / SR
-    n = int(durata * FPS)
+    if args.audio:
+        pcm = decodifica(args.audio, args.start, args.dur)
+        if pcm.size == 0:
+            sys.exit("audio vuoto: controlla --start, il brano e' piu' corto?")
+        durata = pcm.size / SR
+        n = int(durata * FPS)
+        sp, en = spettro(pcm, n), livelli(pcm, n)
+    else:
+        durata = args.dur
+        n = int(durata * FPS)
+        sp = spettro_sintetico(n, args.bpm)
+        en = sp[:, :12].mean(axis=1)
     print(f"{durata:.2f} s, {n} frame")
-
-    sp = spettro(pcm, n)
-    en = livelli(pcm, n)
     colori = PRESET[args.preset]
     versi = carica_versi(args.testo, args.start, durata) if args.testo else None
 
@@ -330,19 +371,29 @@ def render(args):
 
 def main():
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument("audio")
+    p.add_argument("audio", nargs="?",
+                   help="il brano; senza, serve --bpm e il video esce muto")
     p.add_argument("--start", type=float, default=0.0, help="secondo di inizio")
     p.add_argument("--dur", type=float, default=30.0, help="durata in secondi")
     p.add_argument("--titolo", default="")
     p.add_argument("--artista", default="")
     p.add_argument("--preset", default="sunset", choices=sorted(PRESET))
     p.add_argument("--testo", help="JSON dei versi con i tempi (vedi versi.py)")
+    p.add_argument("--bpm", type=float,
+                   help="senza file audio: equalizzatore su griglia a questo tempo")
     p.add_argument("--muto", action="store_true",
                    help="esporta senza audio: il brano lo mette TikTok")
     p.add_argument("--crf", type=int, default=20,
                    help="qualita' H.264: piu' alto = file piu' leggero")
     p.add_argument("--out", default="eq.mp4")
-    render(p.parse_args())
+    a = p.parse_args()
+    if not a.audio:
+        if not a.bpm:
+            p.error("senza file audio serve --bpm")
+        a.muto = True   # non c'e' niente da muxare
+        if a.testo:
+            p.error("i versi hanno senso solo con l'audio da cui sono stati presi")
+    render(a)
 
 
 if __name__ == "__main__":
