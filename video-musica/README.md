@@ -95,7 +95,16 @@ python3 eq.py --bpm 128 --dur 60 --titolo "Nome" --preset neon --out clip.mp4
 ```
 
 Barre su griglia di battute — cassa sul quarto, rullante sul secondo e quarto,
-charleston sugli ottavi — e uscita sempre muta. Sta a tempo, ma non reagisce a
+charleston sugli ottavi — e uscita sempre muta. Con `--mappa` si descrive la
+struttura del brano e le barre seguono almeno i punti che contano:
+
+```bash
+python3 eq.py --bpm 100 --dur 24 --mappa "0=0.25f,6=0.55,12=0.2f,15=1,21=0.35" ...
+```
+
+Ogni voce e' `secondo=intensita'`, da 0 a 1; il suffisso `f` marca un tratto
+filtrato (bassi tolti, restano gli acuti), come nella salita prima di uno stacco.
+I cambi cadono sul tempo indicato, con un raccordo di un quarto di secondo. Sta a tempo, ma non reagisce a
 niente: sugli stacchi e sulle pause del brano vero si vede che va per conto suo.
 Con il file audio vero, invece, si usa `--muto` e l'equalizzatore resta calcolato
 sulla forma d'onda:

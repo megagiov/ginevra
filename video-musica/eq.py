@@ -85,7 +85,41 @@ def spettro(pcm, n_frame):
     return sm
 
 
-def spettro_sintetico(n_frame, bpm):
+def leggi_mappa(spec):
+    """"0=0.2f,8=0.7,24=0.1,26=1" -> punti (secondo, intensita', filtrato).
+
+    Il suffisso f e' il tratto filtrato: bassi tolti, restano gli acuti, come
+    nella salita prima di uno stacco.
+    """
+    punti = []
+    for pezzo in spec.split(","):
+        t, _, v = pezzo.strip().partition("=")
+        filt = v.endswith("f")
+        punti.append((float(t), float(v.rstrip("f")), filt))
+    return sorted(punti)
+
+
+def valore_mappa(punti, t):
+    """Intensita' al tempo t: tiene il valore fino al punto successivo, con una
+    breve rampa sopra, cosi' i cambi cadono sul tempo e non sfumano nel nulla."""
+    if not punti:
+        return 1.0, False
+    cur = punti[0]
+    for p in punti:
+        if p[0] <= t:
+            cur = p
+        else:
+            break
+    v, filt = cur[1], cur[2]
+    # 0,25 s di raccordo in entrata sul cambio, se no e' uno scatto secco
+    d = t - cur[0]
+    if d < 0.25 and cur is not punti[0]:
+        prec = punti[punti.index(cur) - 1]
+        v = prec[1] + (v - prec[1]) * (d / 0.25)
+    return v, filt
+
+
+def spettro_sintetico(n_frame, bpm, mappa=None):
     """Equalizzatore su griglia di battute, senza audio.
 
     Ripiego per quando il brano non ce l'ho come file: cassa sul quarto, rullante
@@ -117,6 +151,13 @@ def spettro_sintetico(n_frame, bpm):
 
         v = (bassi * cassa * 1.0 + medi * rull * 0.9 + acuti * hat * 0.85
              + deriva * (0.10 + 0.16 * resp))
+
+        if mappa:
+            forza, filtrato = valore_mappa(mappa, t)
+            if filtrato:
+                # tratto filtrato: sotto la decima banda non resta niente
+                v = v * np.clip((banda - 8.0) / 10.0, 0.0, 1.0)
+            v = v * forza
         out[f] = np.clip(v, 0.0, 1.0)
 
     return np.clip(0.08 + 0.92 * out, 0.0, 1.0).astype(np.float32)
@@ -333,7 +374,8 @@ def render(args):
     else:
         durata = args.dur
         n = int(durata * FPS)
-        sp = spettro_sintetico(n, args.bpm)
+        sp = spettro_sintetico(n, args.bpm,
+                               leggi_mappa(args.mappa) if args.mappa else None)
         en = sp[:, :12].mean(axis=1)
     print(f"{durata:.2f} s, {n} frame")
     colori = PRESET[args.preset]
@@ -381,6 +423,9 @@ def main():
     p.add_argument("--testo", help="JSON dei versi con i tempi (vedi versi.py)")
     p.add_argument("--bpm", type=float,
                    help="senza file audio: equalizzatore su griglia a questo tempo")
+    p.add_argument("--mappa",
+                   help="struttura del brano: \"0=0.2f,8=0.7,24=0.1,26=1\" "
+                        "(secondo=intensita', f = tratto filtrato)")
     p.add_argument("--muto", action="store_true",
                    help="esporta senza audio: il brano lo mette TikTok")
     p.add_argument("--crf", type=int, default=20,
