@@ -299,13 +299,18 @@ def render(args):
     versi = carica_versi(args.testo, args.start, durata) if args.testo else None
 
     out = os.path.join(os.path.dirname(os.path.abspath(__file__)), "out", args.out)
-    proc = subprocess.Popen(
-        [FFMPEG, "-y", "-v", "error",
-         "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", f"{W}x{H}", "-r", str(FPS), "-i", "-",
-         "-ss", str(args.start), "-t", f"{durata:.3f}", "-i", args.audio,
-         "-c:v", "libx264", "-preset", "medium", "-crf", str(args.crf), "-pix_fmt", "yuv420p",
-         "-c:a", "aac", "-b:a", "192k", "-shortest", "-movflags", "+faststart", out],
-        stdin=subprocess.PIPE)
+    cmd = [FFMPEG, "-y", "-v", "error",
+           "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", f"{W}x{H}", "-r", str(FPS), "-i", "-"]
+    if args.muto:
+        # nessuna traccia audio: il brano lo mette l'app al momento della
+        # pubblicazione, e due audio sovrapposti non si vogliono
+        coda = ["-an"]
+    else:
+        cmd += ["-ss", str(args.start), "-t", f"{durata:.3f}", "-i", args.audio]
+        coda = ["-c:a", "aac", "-b:a", "192k", "-shortest"]
+    cmd += ["-c:v", "libx264", "-preset", "medium", "-crf", str(args.crf),
+            "-pix_fmt", "yuv420p"] + coda + ["-movflags", "+faststart", out]
+    proc = subprocess.Popen(cmd, stdin=subprocess.PIPE)
 
     for f in range(n):
         img = sfondo(f / FPS, float(en[f]), colori)
@@ -332,6 +337,8 @@ def main():
     p.add_argument("--artista", default="")
     p.add_argument("--preset", default="sunset", choices=sorted(PRESET))
     p.add_argument("--testo", help="JSON dei versi con i tempi (vedi versi.py)")
+    p.add_argument("--muto", action="store_true",
+                   help="esporta senza audio: il brano lo mette TikTok")
     p.add_argument("--crf", type=int, default=20,
                    help="qualita' H.264: piu' alto = file piu' leggero")
     p.add_argument("--out", default="eq.mp4")
