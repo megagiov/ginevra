@@ -185,3 +185,19 @@ marchi inventati scritto nelle regole **e' un'istruzione, non un lucchetto**.
 - Superlativi assoluti come "il piu' venduto del web" sono dell'utente e restano
   suoi; vanno segnalati una volta perche' in advertising a pagamento possono
   richiedere di essere sostanziati.
+
+### Prodotti a marchio di terzi
+
+Su un prodotto che porta un marchio altrui (Diadora, e chiunque altro) il
+difetto dei marchi inventati di §2 smette di essere estetico. Il modello non
+riproduce un logo esistente: lo ridisegna a memoria, storto, e il risultato e'
+un marchio registrato alterato dentro un'inserzione a pagamento.
+
+**Il prodotto non si rigenera mai.** Si scontorna la foto reale del catalogo e
+la si compone sopra uno sfondo costruito a parte. Niente immagine→immagine,
+niente riferimenti: la scarpa in campo dev'essere fotografata.
+
+Il carosello TikTok (`carosello.py`) lavora cosi' ed e' a **costo zero**: nessun
+credito, nessuna chiamata a un modello. Se in futuro serve uno sfondo generato,
+si genera **solo lo sfondo** — il prodotto ci va sopra scontornato, mai dentro
+al prompt.

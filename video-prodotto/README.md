@@ -60,6 +60,36 @@ python3 build.py
 python3 build.py nero
 ```
 
+## Carosello TikTok (`carosello.py`)
+
+Cinque slide PNG 1080x1920 da cinque foto di catalogo. Nessun credito speso:
+sfondo, scontorno, ombre e testo sono costruiti qui.
+
+```bash
+mkdir -p carosello/in          # 1.jpg ... 5.jpg, una per variante colore
+python3 carosello.py           # scrive carosello/out/
+```
+
+Testi, colori e abbinamento foto→slide stanno nella lista `SLIDES` in cima al
+file. L'area sicura e' 96-980 in orizzontale e 150-1500 in verticale: TikTok
+copre il fondo con didascalia e pulsanti e la colonna destra con le icone, e
+nessun testo esce da li' (ARTLIST.md §6).
+
+**Il prodotto non si rigenera mai.** Su un marchio di terzi un logo ridisegnato
+da un modello e' un marchio alterato in un'inserzione a pagamento: vedi
+ARTLIST.md §8. La scarpa in campo e' sempre la foto reale, scontornata.
+
+### Lo scontorno dei prodotti chiari
+
+`cutout()` in `build.py` considera fondo tutto cio' che supera **238** di
+luminanza. Su BELLAMICA funziona, ma su un prodotto bianco fotografato su fondo
+bianco mangia meta' scarpa: la tomaia sparisce e resta solo la banda colorata.
+
+`carosello.py` usa quindi `scontorna()`, identico ma con soglia a **247** e
+regolabile per slide (campo `thr`). Solo il bianco quasi puro e' fondo; a
+distinguerlo dai bianchi interni al prodotto ci pensa il floodfill dagli
+angoli, che raggiunge solo la regione connessa al bordo.
+
 ## Adattarlo a un altro prodotto
 
 | Cosa cambiare | Dove |
