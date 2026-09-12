@@ -7,3 +7,6 @@ voices/
 *.png
 *.jpg
 page.html
+
+# gli sfondi generati sono asset pagati: vanno versati
+!carosello/sfondi/*.jpg

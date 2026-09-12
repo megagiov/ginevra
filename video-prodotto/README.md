@@ -70,6 +70,11 @@ mkdir -p carosello/in          # 1.jpg ... 5.jpg, una per variante colore
 python3 carosello.py           # scrive carosello/out/
 ```
 
+Gli sfondi fotografici stanno in `carosello/sfondi/` e sono **gia' pagati**
+(Nano Banana 2, 9:16, 2K, 130 crediti l'uno). Sono versati apposta: rigenerarli
+costerebbe di nuovo. Se mancano, lo script ripiega da solo sullo sfondo grafico
+costruito in locale, senza spendere nulla.
+
 Testi, colori e abbinamento foto→slide stanno nella lista `SLIDES` in cima al
 file. L'area sicura e' 96-980 in orizzontale e 150-1500 in verticale: TikTok
 copre il fondo con didascalia e pulsanti e la colonna destra con le icone, e
@@ -78,6 +83,19 @@ nessun testo esce da li' (ARTLIST.md §6).
 **Il prodotto non si rigenera mai.** Su un marchio di terzi un logo ridisegnato
 da un modello e' un marchio alterato in un'inserzione a pagamento: vedi
 ARTLIST.md §8. La scarpa in campo e' sempre la foto reale, scontornata.
+
+### La velatura si taratura da sola
+
+Con uno sfondo fotografico una velatura a forza fissa non basta: sul piano
+cucina e sul muro chiaro della boutique il testo bianco sparisce, mentre in
+palestra e sul parquet notturno la stessa forza annerisce tutto. `velatura()`
+misura quindi la luminanza media della fascia che il testo occupa davvero e ne
+ricava la forza, tra 72 e 238.
+
+Il prodotto **appoggia**, non galleggia: il campo `appoggio` di ogni slide e' la
+quota in pixel a cui va la suola, misurata sullo sfondo (il piano, il tappeto
+del tapis roulant, la pozza di luce sul parquet). Per lo scaffale le due quote
+stanno in `RIPIANI`.
 
 ### Lo scontorno dei prodotti chiari
 

@@ -197,7 +197,23 @@ un marchio registrato alterato dentro un'inserzione a pagamento.
 la si compone sopra uno sfondo costruito a parte. Niente immagine→immagine,
 niente riferimenti: la scarpa in campo dev'essere fotografata.
 
-Il carosello TikTok (`carosello.py`) lavora cosi' ed e' a **costo zero**: nessun
-credito, nessuna chiamata a un modello. Se in futuro serve uno sfondo generato,
-si genera **solo lo sfondo** — il prodotto ci va sopra scontornato, mai dentro
-al prompt.
+Il carosello TikTok (`carosello.py`) lavora cosi'. Gli sfondi sono generati,
+il prodotto no: **si genera solo lo sfondo**, il prodotto ci va sopra
+scontornato, mai dentro al prompt.
+
+Cinque sfondi 9:16 a 2K con Nano Banana 2: **130 crediti l'uno, 650 in tutto**,
+confermati da `get_generation_cost` prima di spendere — il preventivo non fa
+partire nulla ed e' il modo giusto di conoscere un prezzo sotto soglia, molto
+meglio che leggere il gate.
+
+Tre vincoli nel prompt, tutti necessari:
+
+- `aspect_ratio` **9:16 esplicito**: il default del modello e' 16:9 (§2).
+- **nessun prodotto nella scena** — niente scarpe, niente scatole: lo spazio
+  dove appoggera' il prodotto va chiesto vuoto e piatto.
+- **nessun testo, marchio, insegna o cartellino**, ripetuto per esteso.
+
+Alla verifica i cinque sfondi erano puliti: nessuna scritta, nessun logo. Il
+divieto sui marchi regge quando **non c'e' un prodotto da marchiare** — e'
+sul prodotto che il modello inventa (§2), non sull'ambiente. Gli sfondi sono
+versati in `carosello/sfondi/`: sono asset pagati, rigenerarli ricosta.

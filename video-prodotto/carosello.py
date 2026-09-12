@@ -11,7 +11,7 @@ import numpy as np, os, sys
 # helper condivisi con lo spot: cutout, band, line, eo, cl, font, W, H, GR, colori
 exec(open('build.py').read().split('A1,B1,C1,D1,E0')[0])
 
-IN, OUT = 'carosello/in', 'carosello/out'
+IN, OUT, SFONDI = 'carosello/in', 'carosello/out', 'carosello/sfondi'
 
 def scontorna(path, gain=1.0, thr=247):
     """Come cutout() in build.py, ma con soglia regolabile.
@@ -41,17 +41,25 @@ ROSA, CIANO = (254, 44, 85), (37, 244, 238)      # coordinati all'end card, ARTL
 SX, SY, EX, EY = 96, 150, 980, 1500
 
 SLIDES = [
- dict(slug='petrolio', src='1.jpg', kicker='LUNED\u00cc  7:40',
-      l1='PRIMA IL CAFF\u00c8.',      l2='POI TUTTO IL RESTO.',  lift=0,  gain=1.0),
- dict(slug='grigioblu', src='5.jpg', kicker='MERCOLED\u00cc  19:00',
-      l1='ANCHE OGGI',           l2='CI SEI ANDATO.',       lift=6,  gain=1.0),
- dict(slug='nero',      src='3.jpg', kicker='SABATO  21:30',
-      l1='IL NERO NON',          l2='CHIEDE PERMESSO.',     lift=54, gain=1.40),
- dict(slug='marrone',   src='2.jpg', kicker='DOMENICA',
-      l1='JEANS E N.92.',        l2='NIENT\u2019ALTRO.',         lift=26, gain=1.12),
- dict(slug='militare',  src='4.jpg', kicker='CINQUE COLORI, UNA N.92',
-      l1='SCEGLI',               l2='IL TUO.',              lift=18, gain=1.08),
+ dict(slug='petrolio', src='1.jpg', bg='1.jpg', kicker='LUNED\u00cc  7:40',
+      l1='PRIMA IL CAFF\u00c8.',   l2='POI TUTTO IL RESTO.', appoggio=1300, gain=1.00, dx=115),
+ dict(slug='grigioblu', src='5.jpg', bg='2.jpg', kicker='MERCOLED\u00cc  19:00',
+      l1='ANCHE OGGI',          l2='CI SEI ANDATO.',      appoggio=1460, gain=1.10),
+ dict(slug='nero',      src='3.jpg', bg='3.jpg', kicker='SABATO  21:30',
+      l1='IL NERO NON',         l2='CHIEDE PERMESSO.',    appoggio=1430, gain=1.55),
+ dict(slug='marrone',   src='2.jpg', bg='4.jpg', kicker='DOMENICA',
+      l1='JEANS E N.92.',       l2='NIENT\u2019ALTRO.',      appoggio=1480, gain=1.12),
+ dict(slug='militare',  src='4.jpg', bg='5.jpg', kicker='CINQUE COLORI, UNA N.92',
+      l1='SCEGLI',              l2='IL TUO.',             appoggio=None, gain=1.08),
 ]
+
+def sfondo_foto(nome):
+    """Sfondo generato, ritagliato a coprire 1080x1920 senza deformare."""
+    im = Image.open(os.path.join(SFONDI, nome)).convert('RGB')
+    k = max(W / im.width, H / im.height)
+    im = im.resize((round(im.width * k), round(im.height * k)), Image.LANCZOS)
+    return im.crop(((im.width - W) // 2, (im.height - H) // 2,
+                    (im.width - W) // 2 + W, (im.height - H) // 2 + H))
 
 def sfondo(lift):
     """Gradiente verticale + vignettatura + macchia morbida, come lo spot."""
@@ -81,47 +89,63 @@ def fit(im, box_w, box_h):
     k = min(box_w / im.width, box_h / im.height)
     return im.resize((int(im.width * k), int(im.height * k)), Image.LANCZOS)
 
-def velatura(base, y0, y1, forza=170):
-    """Velatura scura dietro al testo: ARTLIST.md §6, leggibilita' prima di tutto."""
-    v = Image.new('RGBA', (W, H), (0, 0, 0, 0))
+def velatura(base, fino=830):
+    """Velatura scura dietro al testo (ARTLIST.md §6), tarata sul fondo.
+
+    Su uno sfondo fotografico chiaro — il piano cucina, il muro della boutique —
+    una velatura fissa non basta e il testo bianco sparisce. La forza si calcola
+    quindi dalla luminanza media della fascia che il testo occupa davvero.
+    """
+    lum = np.asarray(base.convert('L')).astype(np.float32)[:fino]
+    forza = float(np.clip(72 + (lum.mean() - 60) * 1.5, 72, 238))
+    piena = int(fino * 0.62)
     a = np.zeros((H, W), np.float32)
-    a[y0:y1] = np.linspace(forza, 0, y1 - y0)[:, None]
+    a[:piena] = forza
+    a[piena:fino] = np.linspace(forza, 0, fino - piena)[:, None]
+    v = Image.new('RGBA', (W, H), (0, 0, 0, 0))
     v.putalpha(Image.fromarray(a.astype(np.uint8), 'L'))
     base.alpha_composite(v)
 
-def slide(i, s, tutte=None):
-    base = sfondo(s['lift']).convert('RGBA')
-    velatura(base, 0, 720)
+# Ripiani della boutique nello sfondo 5, misurati sull'immagine: quota a cui
+# appoggia la suola e margini orizzontali utili del ripiano.
+RIPIANI = [(890, 70, 1010), (1205, 70, 1010)]
 
-    prod = scontorna(os.path.join(IN, s['src']), s.get('gain', 1.0), s.get('thr', 247))
+def slide(i, s, tutte=None):
+    bg = s.get('bg')
+    base = (sfondo_foto(bg) if bg and os.path.exists(os.path.join(SFONDI, bg))
+            else sfondo(s.get('lift', 0))).convert('RGBA')
+    velatura(base)
+
     if tutte is None:
-        p = fit(prod, 900, 680); px, py = (W - p.width) // 2, 880
+        prod = scontorna(os.path.join(IN, s['src']), s.get('gain', 1.0), s.get('thr', 247))
+        p = fit(prod, 800, 560)
+        px = (W - p.width) // 2 + s.get('dx', 0)
+        py = s['appoggio'] - p.height   # appoggia, non galleggia
         ombra(base, p, px, py, p.width, p.height)
         base.alpha_composite(p, (px, py))
     else:
-        # ultima slide: lo scaffale, tre sopra e due sotto centrate.
-        # Nessun esemplare in primo piano: duplicava una delle cinque e
-        # finiva sopra il marchio a fondo pagina.
+        # ultima slide: le cinque sui due ripiani, tre sopra e due sotto.
         for j, (im, g, t) in enumerate(tutte):
-            q = fit(scontorna(os.path.join(IN, im), g, t), 330, 240)
-            riga, col = (0, j) if j < 3 else (1, j - 3)
-            x0 = 30 if riga == 0 else 195
-            qx = x0 + col * 350 + (330 - q.width) // 2
-            qy = (880 if riga == 0 else 1150) + (240 - q.height) // 2
+            q = fit(scontorna(os.path.join(IN, im), g, t), 300, 215)
+            riga, col, n = (0, j, 3) if j < 3 else (1, j - 3, 2)
+            quota, x0, x1 = RIPIANI[riga]
+            passo = (x1 - x0) / n
+            qx = int(x0 + passo * (col + 0.5) - q.width / 2)
+            qy = quota - q.height
             ombra(base, q, qx, qy, q.width, q.height)
             base.alpha_composite(q, (qx, qy))
 
     d = ImageDraw.Draw(base)
-    fk = font(ARCH, 40); f1 = font(ANTON, 118)
-    line(d, W // 2, SY + 40, s['kicker'], fk, fill=CIANO, track=7, off=3)
-    line(d, W // 2, SY + 190, s['l1'], f1, fill=WHITE, off=6)
-    line(d, W // 2, SY + 310, s['l2'], f1, fill=WHITE, off=6)
+    fw = font(ARCH, 26); fk = font(ARCH, 40); f1 = font(ANTON, 118)
+    # il marchio sta in cima, non a fondo pagina: li' cadeva sopra il prodotto
+    line(d, W // 2, SY, 'GM VEGASI', fw, fill=(255, 255, 255, 170), track=11, off=2)
+    line(d, W // 2, SY + 80, s['kicker'], fk, fill=CIANO, track=7, off=3)
+    line(d, W // 2, SY + 220, s['l1'], f1, fill=WHITE, off=6)
+    line(d, W // 2, SY + 340, s['l2'], f1, fill=WHITE, off=6)
 
-    if i == 4:                                  # call to action solo sull'ultima
+    if i == len(SLIDES) - 1:                    # call to action solo sull'ultima
         fb = font(ARCH, 46)
-        band(d, W // 2, SY + 452, 'ACQUISTA ORA', fb, bg=ROSA, fg=WHITE, padx=44, pady=20)
-    fw = font(ARCH, 30)
-    line(d, W // 2, EY - 10, 'GM VEGASI', fw, fill=(255, 255, 255, 120), track=11, off=2)
+        band(d, W // 2, SY + 482, 'ACQUISTA ORA', fb, bg=ROSA, fg=WHITE, padx=44, pady=20)
 
     os.makedirs(OUT, exist_ok=True)
     path = os.path.join(OUT, f"{i+1}-{s['slug']}.png")
