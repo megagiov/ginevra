@@ -1,0 +1,30 @@
+# Tutte le richieste a index.php, tranne i file che esistono davvero.
+RewriteEngine On
+
+# Forza HTTPS: senza, la PWA non si installa e il cookie di sessione viaggia in chiaro.
+RewriteCond %{HTTPS} !=on
+RewriteCond %{HTTP:X-Forwarded-Proto} !=https
+RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^ index.php [QSA,L]
+
+# Cartelle di servizio: non devono essere raggiungibili dal browser.
+RedirectMatch 404 ^/(src|pagine|test)/
+<FilesMatch "^(config\.php|config\.example\.php|\.env)$">
+  Require all denied
+</FilesMatch>
+
+<IfModule mod_headers.c>
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set X-Frame-Options "DENY"
+  Header always set Referrer-Policy "same-origin"
+  # Il service worker non va messo in cache, altrimenti gli aggiornamenti
+  # dell'app non arrivano mai ai telefoni gia' installati.
+  <FilesMatch "sw\.js$">
+    Header set Cache-Control "no-cache"
+  </FilesMatch>
+</IfModule>
+
+DirectoryIndex index.php

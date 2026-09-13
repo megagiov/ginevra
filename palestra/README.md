@@ -11,10 +11,16 @@ sottodominio dedicato. Nessun servizio cloud a pagamento.
 
 | Parte | Stato |
 |---|---|
-| Schema MySQL e vincoli | completo — 26 asserzioni verdi |
-| Regole di prenotazione in PHP | complete — 24 asserzioni verdi |
-| Interfaccia web (PWA) | da fare |
-| Accesso via link email | tabelle pronte, logica da scrivere |
+| Schema MySQL e vincoli | completo — 26 asserzioni |
+| Regole di prenotazione in PHP | complete — 24 asserzioni |
+| Accesso con link via email | completo — 21 asserzioni |
+| Schermate cliente (PWA) | complete — 27 asserzioni end-to-end |
+| Schermate amministratore | da fare |
+
+**98 asserzioni verdi in totale.**
+
+Le schermate cliente sono tre: prenota, le mie lezioni, saldo. L'accesso
+avviene con un link inviato per email, senza password.
 
 ### Due implementazioni
 
@@ -68,8 +74,15 @@ mariadb studio_dev < db/mysql/migrations/0001_schema.sql
 
 ```bash
 mariadb -t studio_test < db/mysql/test/01_vincoli.sql   # 26 — cosa garantisce il database
-php app/test/regole.php                                 # 24 — le regole in PHP
+php app/test/regole.php                                 # 24 — le regole di prenotazione
+php app/test/accesso.php                                # 21 — accesso senza password
+bash app/test/schermate.sh                              # 27 — percorso completo via HTTP
 ```
+
+`schermate.sh` avvia il server integrato di PHP e percorre l'app come
+farebbe un telefono: richiesta del link, entrata, prenotazione, disdetta,
+saldo, uscita. Verifica anche che un cliente non veda ne' possa toccare i
+dati di un altro.
 
 `regole.php` ricrea il database indicato da `DB_NAME` (default `studio_test`)
 a ogni esecuzione: non puntarlo mai a un database vero. Esce con codice 1 se
@@ -87,9 +100,19 @@ Aruba prima di fidarti dello schema.
 1. Crea un sottodominio `studio.<dominio>` con la sua cartella.
 2. Crea un database MySQL **separato da quello di WordPress**, con un
    utente dedicato.
-3. Carica `app/` via FTP e applica `db/mysql/migrations/0001_schema.sql`
-   da phpMyAdmin.
-4. Configura le credenziali (vedi `app/config.example.php`).
+3. Applica `db/mysql/migrations/0001_schema.sql` da phpMyAdmin.
+4. Copia `app/config.example.php` in `app/config.php` e compilalo.
+5. Carica il contenuto di `app/` via FTP nella cartella del sottodominio.
+   Le cartelle `src/`, `pagine/` e `test/` hanno gia' il loro `.htaccess`
+   che ne nega l'accesso dal browser; `test/` puoi anche non caricarla.
+6. Crea il primo amministratore, da phpMyAdmin:
+
+   ```sql
+   INSERT INTO utenti (id, email, nome, ruolo)
+   VALUES (UUID(), 'tua@email.it', 'Nome Cognome', 'admin');
+   ```
+
+   Poi entra dall'app con quell'indirizzo: riceverai il link di accesso.
 
 Il motivo della separazione: l'app tratta PAR-Q e storico infortuni, che
 sono dati sanitari. Un WordPress compromesso non deve poterci arrivare.

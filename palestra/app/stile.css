@@ -1,0 +1,245 @@
+/* ===========================================================================
+   Studio PT — foglio di stile unico.
+   Un file solo, nessun framework: su un hosting FTP non c'e' build, e un
+   file di 8 KB si carica prima di qualunque CDN.
+
+   Colori: blu fiducia, verde disponibile, grigio occupato. Lo stato non e'
+   mai affidato al solo colore — ogni riquadro porta anche la sua etichetta.
+   =========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&display=swap');
+
+:root {
+  --primario:     #0284C7;
+  --primario-cupo:#0369A1;
+  --su-primario:  #FFFFFF;
+  --libero:       #059669;
+  --libero-tenue: #ECFDF5;
+  --occupato:     #64748B;
+  --occupato-tenue:#F1F5F9;
+  --pericolo:     #B91C1C;
+  --pericolo-tenue:#FEF2F2;
+  --sfondo:       #F8FAFC;
+  --carta:        #FFFFFF;
+  --testo:        #0F172A;
+  --testo-tenue:  #475569;
+  --bordo:        #E2E8F0;
+  --raggio:       12px;
+  --ombra:        0 1px 2px rgb(15 23 42 / .06), 0 4px 12px rgb(15 23 42 / .04);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --primario:      #38BDF8;
+    --primario-cupo: #7DD3FC;
+    --su-primario:   #082F49;
+    --libero:        #34D399;
+    --libero-tenue:  #064E3B;
+    --occupato:      #94A3B8;
+    --occupato-tenue:#1E293B;
+    --pericolo:      #FCA5A5;
+    --pericolo-tenue:#450A0A;
+    --sfondo:        #0F172A;
+    --carta:         #1E293B;
+    --testo:         #F1F5F9;
+    --testo-tenue:   #CBD5E1;
+    --bordo:         #334155;
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  padding-bottom: 3rem;
+  background: var(--sfondo);
+  color: var(--testo);
+  font: 16px/1.55 Barlow, system-ui, -apple-system, sans-serif;
+  /* Il telaio del telefono non deve mangiare i contenuti. */
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+
+main { max-width: 680px; margin: 0 auto; padding: 1rem; }
+
+h1, h2 {
+  font-family: 'Barlow Condensed', Barlow, system-ui, sans-serif;
+  font-weight: 700;
+  letter-spacing: .01em;
+  line-height: 1.15;
+}
+/* Il condensato resta ai titoli: sotto i 16px si legge peggio, e qui
+   l'utenza non ha vent'anni tutta. */
+h1 { font-size: 1.9rem; margin: .2rem 0 1rem; }
+h2 { font-size: 1.35rem; margin: 1.6rem 0 .6rem; }
+h2.sezione { padding-top: .8rem; border-top: 1px solid var(--bordo); }
+
+a { color: var(--primario-cupo); }
+
+/* --- testata e navigazione ------------------------------------------------ */
+
+.testata {
+  background: var(--carta);
+  border-bottom: 1px solid var(--bordo);
+  padding: .9rem 1rem calc(.9rem + env(safe-area-inset-top));
+}
+.marchio {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 1.25rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .06em;
+}
+
+.barra {
+  display: flex;
+  background: var(--carta);
+  border-bottom: 1px solid var(--bordo);
+  position: sticky; top: 0; z-index: 5;
+}
+.barra a {
+  flex: 1;
+  min-height: 48px;                /* bersaglio comodo anche in movimento */
+  display: flex; align-items: center; justify-content: center;
+  text-decoration: none;
+  color: var(--testo-tenue);
+  font-weight: 500;
+  border-bottom: 3px solid transparent;
+  transition: color .2s, border-color .2s;
+}
+.barra a.attiva { color: var(--primario-cupo); border-bottom-color: var(--primario); font-weight: 600; }
+
+/* --- lezioni -------------------------------------------------------------- */
+
+.giorno { margin-bottom: 1.5rem; }
+
+ul.slot { list-style: none; margin: 0; padding: 0; display: grid; gap: .6rem; }
+
+.slot-voce {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: .75rem;
+  padding: .85rem 1rem;
+  background: var(--carta);
+  border: 1px solid var(--bordo);
+  border-left: 4px solid var(--occupato);
+  border-radius: var(--raggio);
+  box-shadow: var(--ombra);
+}
+.slot-voce.libero { border-left-color: var(--libero); }
+.slot-voce.mia    { border-left-color: var(--primario); }
+.slot-voce.pieno  { opacity: .72; }
+
+.quando { display: flex; flex-direction: column; }
+.orario { font-family: 'Barlow Condensed', sans-serif; font-size: 1.5rem; font-weight: 700; }
+.tipo   { font-size: .82rem; color: var(--testo-tenue); }
+
+.segno {
+  font-size: .82rem; font-weight: 600;
+  padding: .2rem .55rem; border-radius: 999px;
+  background: var(--occupato-tenue); color: var(--testo-tenue);
+  white-space: nowrap;
+}
+.slot-voce.libero .segno { background: var(--libero-tenue); color: var(--libero); }
+.slot-voce.mia    .segno { background: var(--occupato-tenue); color: var(--primario-cupo); }
+
+.termine { grid-column: 1 / -1; margin: .1rem 0 0; font-size: .82rem; color: var(--testo-tenue); }
+.termine.scaduto { color: var(--pericolo); font-weight: 500; }
+
+/* --- pulsanti ------------------------------------------------------------- */
+
+button {
+  min-height: 44px;                /* mai sotto: si sbaglia il tocco */
+  padding: .6rem 1.1rem;
+  font: inherit; font-weight: 600;
+  border-radius: 10px; border: 1px solid transparent;
+  cursor: pointer;
+  transition: background .2s, border-color .2s, opacity .2s;
+}
+button.principale { background: var(--primario); color: var(--su-primario); }
+button.principale:hover { background: var(--primario-cupo); }
+button.secondaria {
+  background: transparent; color: var(--pericolo); border-color: var(--bordo);
+}
+button.secondaria:hover { border-color: var(--pericolo); background: var(--pericolo-tenue); }
+button.testuale { background: none; border: none; color: var(--testo-tenue); text-decoration: underline; }
+
+:focus-visible { outline: 3px solid var(--primario); outline-offset: 2px; }
+
+/* --- moduli --------------------------------------------------------------- */
+
+.riquadro {
+  background: var(--carta);
+  border: 1px solid var(--bordo);
+  border-radius: var(--raggio);
+  padding: 1.5rem;
+  box-shadow: var(--ombra);
+}
+.accesso { max-width: 420px; margin: 2rem auto; }
+
+label { display: block; font-weight: 600; margin: 1rem 0 .35rem; }
+input[type=email] {
+  width: 100%; min-height: 48px; padding: .6rem .8rem;
+  font: inherit;
+  color: var(--testo); background: var(--sfondo);
+  border: 1px solid var(--bordo); border-radius: 10px;
+}
+.accesso button { width: 100%; margin-top: 1rem; }
+
+/* --- avvisi --------------------------------------------------------------- */
+
+.avviso {
+  padding: .75rem 1rem; border-radius: var(--raggio);
+  border-left: 4px solid; margin: 0 0 1rem;
+}
+.avviso.esito  { background: var(--libero-tenue);   border-color: var(--libero);   color: var(--libero); }
+.avviso.errore { background: var(--pericolo-tenue); border-color: var(--pericolo); color: var(--pericolo); }
+
+.vuoto, .sommesso { color: var(--testo-tenue); }
+.saldo-riga { color: var(--testo-tenue); font-size: .95rem; }
+
+/* --- saldo ---------------------------------------------------------------- */
+
+.saldi { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; }
+.carta {
+  background: var(--carta); border: 1px solid var(--bordo);
+  border-radius: var(--raggio); padding: 1.1rem; text-align: center;
+  box-shadow: var(--ombra);
+}
+.numero {
+  display: block;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 2.6rem; font-weight: 700; line-height: 1;
+  color: var(--primario-cupo);
+}
+.voce { font-size: .85rem; color: var(--testo-tenue); }
+
+ul.movimenti, ul.storico { list-style: none; margin: 0; padding: 0; }
+ul.movimenti li, ul.storico li {
+  display: grid; grid-template-columns: auto 1fr auto;
+  gap: .75rem; align-items: baseline;
+  padding: .7rem .2rem; border-bottom: 1px solid var(--bordo);
+}
+.delta {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 1.2rem; font-weight: 700; min-width: 2.2rem;
+}
+.delta.piu  { color: var(--libero); }
+.delta.meno { color: var(--testo-tenue); }
+.descrizione .tipo, .nota { display: block; }
+.nota { font-size: .8rem; color: var(--testo-tenue); font-style: italic; }
+.data { font-size: .82rem; color: var(--testo-tenue); white-space: nowrap; }
+.esito-presenza { font-size: .82rem; font-weight: 600; }
+.esito-presenza.presente { color: var(--libero); }
+.esito-presenza.assente  { color: var(--pericolo); }
+
+.esci { margin-top: 2.5rem; text-align: center; }
+
+@media (max-width: 380px) {
+  .slot-voce { grid-template-columns: auto 1fr; }
+  .slot-voce form { grid-column: 1 / -1; }
+  .slot-voce form button { width: 100%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+}

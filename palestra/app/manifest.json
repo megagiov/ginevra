@@ -1,0 +1,16 @@
+{
+  "name": "Studio — prenotazioni",
+  "short_name": "Studio",
+  "description": "Prenota le tue lezioni e controlla il saldo.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F8FAFC",
+  "theme_color": "#0284C7",
+  "lang": "it",
+  "icons": [
+    { "src": "/icona-180.png", "sizes": "180x180", "type": "image/png" },
+    { "src": "/icona-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

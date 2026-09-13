@@ -10,101 +10,17 @@ declare(strict_types=1);
  * Uso:  php app/test/regole.php
  */
 
-require __DIR__ . '/../src/Db.php';
-require __DIR__ . '/../src/Regole.php';
+foreach (['Config', 'Db', 'Posta', 'Regole'] as $classe) {
+    require __DIR__ . "/../src/$classe.php";
+}
 
 use Studio\Db;
 use Studio\Regole;
 use Studio\RegolaViolata;
 
-$DB   = getenv('DB_NAME') ?: 'studio_test';
-$HOST = getenv('DB_HOST') ?: 'localhost';
-$USER = getenv('DB_USER') ?: 'root';
-$PASS = getenv('DB_PASSWORD') ?: '';
+require __DIR__ . '/comune.php';
 
-// ---------------------------------------------------------------------------
-// Impalcatura
-// ---------------------------------------------------------------------------
-
-$esiti = [];
-
-function ok(string $descrizione, bool $condizione): void
-{
-    global $esiti;
-    $esiti[] = [$descrizione, $condizione];
-    printf("%s  %s\n", $condizione ? 'PASS' : 'FAIL', $descrizione);
-}
-
-/** L'operazione deve fallire, e il messaggio deve parlare della cosa giusta. */
-function errore(string $descrizione, callable $operazione, string $frammento): void
-{
-    try {
-        $operazione();
-        ok($descrizione . ' — atteso errore, non e\' arrivato', false);
-    } catch (RegolaViolata $e) {
-        $centrato = stripos($e->getMessage(), $frammento) !== false;
-        ok($descrizione . '  [' . $e->getMessage() . ']', $centrato);
-    } catch (\Throwable $e) {
-        ok($descrizione . ' — eccezione inattesa: ' . $e->getMessage(), false);
-    }
-}
-
-function utc(string $quando): string
-{
-    return (new DateTimeImmutable($quando, new DateTimeZone('UTC')))->format('Y-m-d H:i:s');
-}
-
-// ---------------------------------------------------------------------------
-// Database pulito
-// ---------------------------------------------------------------------------
-
-$root = new PDO("mysql:host=$HOST;charset=utf8mb4", $USER, $PASS,
-    [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
-$root->exec("DROP DATABASE IF EXISTS `$DB`");
-$root->exec("CREATE DATABASE `$DB` CHARACTER SET utf8mb4");
-
-$schema = file_get_contents(__DIR__ . '/../../db/mysql/migrations/0001_schema.sql');
-
-// I trigger usano DELIMITER, che e' una direttiva del client e non del
-// server: qui si esegue il blocco fra i delimitatori come statement unici.
-$pdo = new PDO("mysql:host=$HOST;dbname=$DB;charset=utf8mb4", $USER, $PASS,
-    [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
-
-foreach (spezzaSql($schema) as $statement) {
-    $pdo->exec($statement);
-}
-
-function spezzaSql(string $sql): array
-{
-    $out = [];
-    $delimitatore = ';';
-    $buffer = '';
-
-    foreach (preg_split('/\R/', $sql) as $riga) {
-        if (preg_match('/^\s*delimiter\s+(\S+)/i', $riga, $m)) {
-            $delimitatore = $m[1];
-            continue;
-        }
-
-        // I commenti si scartano subito: se finissero nel buffer, lo
-        // statement che li segue sembrerebbe cominciare con "--".
-        if (preg_match('/^\s*--/', $riga) || trim($riga) === '') {
-            continue;
-        }
-
-        $buffer .= $riga . "\n";
-
-        if (str_ends_with(rtrim($buffer), $delimitatore)) {
-            $pezzo = trim(substr(rtrim($buffer), 0, -strlen($delimitatore)));
-            if ($pezzo !== '') {
-                $out[] = $pezzo;
-            }
-            $buffer = '';
-        }
-    }
-    return $out;
-}
-
+$pdo = preparaDatabase();
 Db::usa($pdo);
 $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
 
@@ -297,13 +213,4 @@ ok('Una prenotazione rifiutata non lascia movimenti orfani',
 ok('Una prenotazione rifiutata non lascia righe orfane',
    (int) $pdo->query("SELECT COUNT(*) FROM prenotazioni")->fetchColumn() === $preProma);
 
-// ---------------------------------------------------------------------------
-// Esito
-// ---------------------------------------------------------------------------
-
-$falliti = array_filter($esiti, fn($e) => !$e[1]);
-
-printf("\n%d passati, %d falliti, %d totali\n",
-    count($esiti) - count($falliti), count($falliti), count($esiti));
-
-exit(count($falliti) > 0 ? 1 : 0);
+esito();

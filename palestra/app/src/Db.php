@@ -24,13 +24,14 @@ final class Db
             return self::$pdo;
         }
 
-        $host = getenv('DB_HOST') ?: 'localhost';
-        $nome = getenv('DB_NAME') ?: 'studio';
-        $user = getenv('DB_USER') ?: 'studio';
-        $pass = getenv('DB_PASSWORD') ?: '';
-        $port = getenv('DB_PORT') ?: '3306';
+        $cfg = Config::tutto();
 
-        $dsn = sprintf('mysql:host=%s;port=%s;dbname=%s;charset=utf8mb4', $host, $port, $nome);
+        $dsn = sprintf(
+            'mysql:host=%s;port=%s;dbname=%s;charset=utf8mb4',
+            $cfg['db_host'], $cfg['db_port'], $cfg['db_name']
+        );
+        $user = $cfg['db_user'];
+        $pass = $cfg['db_password'];
 
         try {
             self::$pdo = new PDO($dsn, $user, $pass, [
