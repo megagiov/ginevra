@@ -5,7 +5,10 @@
  * statico, piu' una pagina di cortesia quando la rete manca.
  */
 const CACHE = 'studio-v1';
-const STATICI = ['/stile.css', '/manifest.json', '/icona-180.png', '/icona-512.png'];
+// Percorsi relativi al service worker: si risolvono da soli sia alla radice
+// del dominio sia dentro una sottocartella.
+const STATICI = ['stile.css', 'manifest.json', 'icona-180.png', 'icona-512.png'];
+const STATICI_ASSOLUTI = STATICI.map((f) => new URL(f, self.location).pathname);
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(STATICI)).then(() => self.skipWaiting()));
@@ -27,7 +30,7 @@ self.addEventListener('fetch', (e) => {
   if (url.origin !== self.location.origin) return;
 
   // Statici: prima la cache, e' roba che non cambia.
-  if (STATICI.includes(url.pathname)) {
+  if (STATICI_ASSOLUTI.includes(url.pathname)) {
     e.respondWith(caches.match(richiesta).then((r) => r || fetch(richiesta)));
     return;
   }

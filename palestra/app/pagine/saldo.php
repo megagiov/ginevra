@@ -47,7 +47,7 @@ echo Vista::intestazione('Saldo', $utente, 'saldo');
   </ul>
 <?php endif; ?>
 
-<form method="post" action="/esci" class="esci">
+<form method="post" action="<?= Vista::u('/esci') ?>" class="esci">
   <?= Vista::campoGettone() ?>
   <button type="submit" class="testuale">Esci</button>
 </form>

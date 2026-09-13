@@ -25,7 +25,7 @@ echo Vista::intestazione('Oggi', $utente, 'oggi');
   <?php endif; ?>
   <?php if ($riepilogo['in_esaurimento'] > 0): ?>
     <div class="attenzione">
-      <a href="/admin/clienti"><strong><?= (int) $riepilogo['in_esaurimento'] ?></strong> in esaurimento</a>
+      <a href="<?= Vista::u('/admin/clienti') ?>"><strong><?= (int) $riepilogo['in_esaurimento'] ?></strong> in esaurimento</a>
     </div>
   <?php endif; ?>
 </div>
@@ -60,7 +60,7 @@ echo Vista::intestazione('Oggi', $utente, 'oggi');
             <?php if ($p['stato'] === 'prenotata'): ?>
               <!-- Due pulsanti, non una spunta: in sala si tocca una volta
                    sola e si va avanti, senza menu da aprire. -->
-              <form method="post" action="/admin/presenza" class="presenza">
+              <form method="post" action="<?= Vista::u('/admin/presenza') ?>" class="presenza">
                 <?= Vista::campoGettone() ?>
                 <input type="hidden" name="prenotazione" value="<?= Vista::e($p['id']) ?>">
                 <input type="hidden" name="giorno" value="<?= $giorno->format('Y-m-d') ?>">
@@ -71,7 +71,7 @@ echo Vista::intestazione('Oggi', $utente, 'oggi');
               <span class="esito-presenza <?= Vista::e($p['stato']) ?>">
                 <?= $p['stato'] === 'presente' ? 'Presente' : 'Assente' ?>
               </span>
-              <form method="post" action="/admin/presenza" class="presenza">
+              <form method="post" action="<?= Vista::u('/admin/presenza') ?>" class="presenza">
                 <?= Vista::campoGettone() ?>
                 <input type="hidden" name="prenotazione" value="<?= Vista::e($p['id']) ?>">
                 <input type="hidden" name="giorno" value="<?= $giorno->format('Y-m-d') ?>">
@@ -87,7 +87,7 @@ echo Vista::intestazione('Oggi', $utente, 'oggi');
   <?php endforeach; ?>
 <?php endif; ?>
 
-<form method="post" action="/esci" class="esci">
+<form method="post" action="<?= Vista::u('/esci') ?>" class="esci">
   <?= Vista::campoGettone() ?>
   <button type="submit" class="testuale">Esci</button>
 </form>

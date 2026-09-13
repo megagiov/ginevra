@@ -16,6 +16,10 @@ header('Content-Type: text/html; charset=utf-8');
 
 $esiti = [];
 
+// Sottocartella in cui gira l'app, per mostrare i link giusti.
+$cartella = str_replace('\\', '/', dirname((string) ($_SERVER['SCRIPT_NAME'] ?? '/')));
+$base = ($cartella === '/' || $cartella === '.') ? '' : rtrim($cartella, '/');
+
 /** @param 'ok'|'errore'|'avviso' $stato */
 function esito(string $cosa, string $stato, string $dettaglio = ''): void
 {
@@ -57,7 +61,7 @@ if (function_exists('apache_get_modules')) {
         : esito('Riscrittura indirizzi (mod_rewrite)', 'errore', 'l\'.htaccess non puo\' funzionare');
 } else {
     esito('Riscrittura indirizzi', 'avviso',
-          'non verificabile da qui: provalo aprendo /accedi — se risponde, funziona');
+          "non verificabile da qui: provalo aprendo $base/accedi — se risponde, funziona");
 }
 
 // ---------------------------------------------------------------------------
@@ -226,7 +230,8 @@ $avvisi  = count(array_filter($esiti, fn(array $e): bool => $e['stato'] === 'avv
   <?php if ($errori === 0): ?>
     <p class="cartello bene">
       Tutto a posto<?= $avvisi > 0 ? " ($avvisi avviso/i da leggere)" : '' ?>.
-      Apri <a href="/accedi">/accedi</a> e prova a entrare.
+      Apri <a href="<?= htmlspecialchars($base, ENT_QUOTES) ?>/accedi">
+      <?= htmlspecialchars($base, ENT_QUOTES) ?>/accedi</a> e prova a entrare.
     </p>
   <?php else: ?>
     <p class="cartello male"><?= $errori ?> problema/i da risolvere.</p>

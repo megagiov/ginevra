@@ -30,7 +30,17 @@ header('X-Content-Type-Options: nosniff');
 header('X-Frame-Options: DENY');
 header('Referrer-Policy: same-origin');
 
-$percorso = '/' . trim(parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/', '/');
+// L'indirizzo richiesto puo' contenere la sottocartella in cui l'app e'
+// installata: la si toglie qui, una volta, cosi' le rotte restano scritte
+// come se l'app fosse alla radice.
+$richiesto = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
+$prefisso  = Vista::base();
+
+if ($prefisso !== '' && str_starts_with($richiesto, $prefisso)) {
+    $richiesto = substr($richiesto, strlen($prefisso));
+}
+
+$percorso = '/' . trim($richiesto, '/');
 $metodo   = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 $utente   = Accesso::corrente();
 
@@ -41,7 +51,7 @@ function vaiA(string $dove, ?string $esito = null, ?string $errore = null): neve
     if ($esito  !== null) { $q['esito']  = $esito; }
     if ($errore !== null) { $q['errore'] = $errore; }
 
-    header('Location: ' . $dove . ($q ? '?' . http_build_query($q) : ''), true, 303);
+    header('Location: ' . Vista::u($dove) . ($q ? '?' . http_build_query($q) : ''), true, 303);
     exit;
 }
 
@@ -78,7 +88,7 @@ function lunediRichiesto(?string $valore): DateTimeImmutable
 function richiediAccesso(?array $utente): array
 {
     if ($utente === null) {
-        header('Location: /accedi', true, 302);
+        header('Location: ' . Vista::u('/accedi'), true, 302);
         exit;
     }
     return $utente;
@@ -117,7 +127,7 @@ try {
 
             // Si risponde allo stesso modo per un indirizzo noto e per uno
             // sconosciuto: la pagina non deve rivelare chi e' cliente.
-            header('Location: /accedi?inviata=1', true, 303);
+            header('Location: ' . Vista::u('/accedi?inviata=1'), true, 303);
             exit;
 
         case 'GET /entra':
@@ -146,7 +156,7 @@ try {
             $utente = richiediAccesso($utente);
 
             if ($utente['ruolo'] === 'admin') {
-                header('Location: /admin', true, 302);
+                header('Location: ' . Vista::u('/admin'), true, 302);
                 exit;
             }
 
@@ -385,7 +395,7 @@ try {
             http_response_code(404);
             echo Vista::intestazione('Pagina non trovata', $utente);
             echo '<p class="vuoto">Questa pagina non esiste. '
-               . '<a href="/">Torna alle prenotazioni</a>.</p>';
+               . '<a href="' . Vista::u('/') . '">Torna alle prenotazioni</a>.</p>';
             echo Vista::chiusura();
     }
 } catch (Throwable $e) {

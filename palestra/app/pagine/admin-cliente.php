@@ -6,7 +6,7 @@ $c = $scheda['anagrafica'];
 
 echo Vista::intestazione($c['nome'], $utente, 'clienti');
 ?>
-<p class="briciole"><a href="/admin/clienti">&larr; Clienti</a></p>
+<p class="briciole"><a href="<?= Vista::u('/admin/clienti') ?>">&larr; Clienti</a></p>
 
 <h1><?= Vista::e($c['nome']) ?><?= $c['attivo'] ? '' : ' <span class="segno">disattivato</span>' ?></h1>
 
@@ -40,7 +40,7 @@ echo Vista::intestazione($c['nome'], $utente, 'clienti');
 <details class="riquadro pubblica" <?= isset($_GET['errore']) ? 'open' : '' ?>>
   <summary>Registra un movimento</summary>
 
-  <form method="post" action="/admin/accredita" class="modulo-griglia">
+  <form method="post" action="<?= Vista::u('/admin/accredita') ?>" class="modulo-griglia">
     <?= Vista::campoGettone() ?>
     <input type="hidden" name="cliente" value="<?= Vista::e($c['id']) ?>">
 
@@ -88,7 +88,7 @@ echo Vista::intestazione($c['nome'], $utente, 'clienti');
 
   <!-- Meta' dei clienti prenotera' per telefono o WhatsApp. Se non puoi
        farlo tu in tre tocchi, l'app viene abbandonata. -->
-  <form method="post" action="/admin/prenota" class="modulo-griglia">
+  <form method="post" action="<?= Vista::u('/admin/prenota') ?>" class="modulo-griglia">
     <?= Vista::campoGettone() ?>
     <input type="hidden" name="cliente" value="<?= Vista::e($c['id']) ?>">
 
@@ -151,7 +151,7 @@ echo Vista::intestazione($c['nome'], $utente, 'clienti');
   </ul>
 <?php endif; ?>
 
-<form method="post" action="/admin/cliente/attivazione" class="esci"
+<form method="post" action="<?= Vista::u('/admin/cliente/attivazione') ?>" class="esci"
       onsubmit="return confirm(<?= $c['attivo']
         ? "'Disattivare questo cliente? Perdera\\' subito l\\'accesso all\\'app.'"
         : "'Riattivare questo cliente?'" ?>)">

@@ -10,7 +10,7 @@ echo Vista::intestazione('Accedi');
   <p>Se l'indirizzo e' registrato hai ricevuto un link per entrare.
      Vale 30 minuti e una volta sola.</p>
   <p class="sommesso">Non arriva? Controlla lo spam, oppure
-     <a href="/accedi">richiedilo di nuovo</a>.</p>
+     <a href="<?= Vista::u('/accedi') ?>">richiedilo di nuovo</a>.</p>
 <?php else: ?>
   <h1>Entra</h1>
   <p>Scrivi la tua email: ti mando un link per entrare.
@@ -18,7 +18,7 @@ echo Vista::intestazione('Accedi');
 
   <?= Vista::avviso('errore', $_GET['errore'] ?? null) ?>
 
-  <form method="post" action="/accedi">
+  <form method="post" action="<?= Vista::u('/accedi') ?>">
     <label for="email">Email</label>
     <input id="email" name="email" type="email" inputmode="email"
            autocomplete="email" required autofocus

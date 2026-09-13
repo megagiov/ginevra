@@ -12,7 +12,7 @@ echo Vista::intestazione('Clienti', $utente, 'clienti');
 <details class="riquadro pubblica" <?= isset($_GET['errore']) ? 'open' : '' ?>>
   <summary>Nuovo cliente</summary>
 
-  <form method="post" action="/admin/clienti" class="modulo-griglia">
+  <form method="post" action="<?= Vista::u('/admin/clienti') ?>" class="modulo-griglia">
     <?= Vista::campoGettone() ?>
     <div>
       <label for="nome">Nome e cognome</label>
@@ -87,9 +87,9 @@ echo Vista::intestazione('Clienti', $utente, 'clienti');
 
 <p class="sommesso piccolo">
   <?php if (isset($_GET['tutti'])): ?>
-    <a href="/admin/clienti">Mostra solo i clienti attivi</a>
+    <a href="<?= Vista::u('/admin/clienti') ?>">Mostra solo i clienti attivi</a>
   <?php else: ?>
-    <a href="/admin/clienti?tutti=1">Mostra anche i disattivati</a>
+    <a href="<?= Vista::u('/admin/clienti?tutti=1') ?>">Mostra anche i disattivati</a>
   <?php endif; ?>
 </p>
 <?php

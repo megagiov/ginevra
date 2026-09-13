@@ -9,7 +9,7 @@ echo Vista::intestazione('Prenota', $utente, 'prenota');
 <p class="saldo-riga">
   Hai <strong><?= (int) $saldi['individuale'] ?></strong> lezioni individuali
   e <strong><?= (int) $saldi['gruppo'] ?></strong> di gruppo.
-  <a href="/saldo">Dettaglio</a>
+  <a href="<?= Vista::u('/saldo') ?>">Dettaglio</a>
 </p>
 
 <?= Vista::avviso('errore', $_GET['errore'] ?? null) ?>
@@ -44,7 +44,7 @@ echo Vista::intestazione('Prenota', $utente, 'prenota');
           <span class="segno"><?= Vista::e($etichetta) ?></span>
 
           <?php if (!$mia && $liberi > 0): ?>
-            <form method="post" action="/prenota">
+            <form method="post" action="<?= Vista::u('/prenota') ?>">
               <?= Vista::campoGettone() ?>
               <input type="hidden" name="slot" value="<?= Vista::e($s['id']) ?>">
               <button type="submit" class="principale">Prenota</button>

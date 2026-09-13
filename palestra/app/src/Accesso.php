@@ -218,7 +218,7 @@ final class Accesso
     {
         setcookie(self::COOKIE, $sessione, [
             'expires'  => time() + self::DURATA_SESSIONE_GIORNI * 86400,
-            'path'     => '/',
+            'path'     => Vista::base() . '/',
             'secure'   => !str_starts_with((string) Config::v('base_url'), 'http://'),
             'httponly' => true,     // fuori portata di JavaScript
             'samesite' => 'Lax',
@@ -230,7 +230,7 @@ final class Accesso
         if (isset($_COOKIE[self::COOKIE])) {
             self::esci($_COOKIE[self::COOKIE]);
         }
-        setcookie(self::COOKIE, '', ['expires' => time() - 3600, 'path' => '/']);
+        setcookie(self::COOKIE, '', ['expires' => time() - 3600, 'path' => Vista::base() . '/']);
         self::$utente = null;
     }
 

@@ -20,7 +20,7 @@ echo Vista::intestazione('Calendario', $utente, 'calendario');
 <details class="riquadro pubblica" <?= isset($_GET['errore']) ? 'open' : '' ?>>
   <summary>Pubblica disponibilita'</summary>
 
-  <form method="post" action="/admin/slot" class="modulo-griglia">
+  <form method="post" action="<?= Vista::u('/admin/slot') ?>" class="modulo-griglia">
     <?= Vista::campoGettone() ?>
     <input type="hidden" name="da" value="<?= $qui ?>">
 
@@ -94,7 +94,7 @@ echo Vista::intestazione('Calendario', $utente, 'calendario');
           </span>
 
           <div class="azioni">
-            <form method="post" action="/admin/slot/stato">
+            <form method="post" action="<?= Vista::u('/admin/slot/stato') ?>">
               <?= Vista::campoGettone() ?>
               <input type="hidden" name="slot" value="<?= Vista::e($s['id']) ?>">
               <input type="hidden" name="da" value="<?= $qui ?>">
@@ -103,7 +103,7 @@ echo Vista::intestazione('Calendario', $utente, 'calendario');
             </form>
 
             <?php if ($occupati === 0): ?>
-              <form method="post" action="/admin/slot/elimina"
+              <form method="post" action="<?= Vista::u('/admin/slot/elimina') ?>"
                     onsubmit="return confirm('Eliminare questa lezione dal calendario?')">
                 <?= Vista::campoGettone() ?>
                 <input type="hidden" name="slot" value="<?= Vista::e($s['id']) ?>">

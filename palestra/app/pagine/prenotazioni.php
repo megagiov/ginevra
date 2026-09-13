@@ -11,7 +11,7 @@ echo Vista::intestazione('Le mie lezioni', $utente, 'prenotazioni');
 
 <?php if ($prossime === []): ?>
   <p class="vuoto">Non hai lezioni in programma.
-     <a href="/">Prenotane una</a>.</p>
+     <a href="<?= Vista::u('/') ?>">Prenotane una</a>.</p>
 <?php else: ?>
   <ul class="slot">
   <?php foreach ($prossime as $p): ?>
@@ -24,7 +24,7 @@ echo Vista::intestazione('Le mie lezioni', $utente, 'prenotazioni');
         </span>
       </div>
 
-      <form method="post" action="/disdici"
+      <form method="post" action="<?= Vista::u('/disdici') ?>"
             onsubmit="return confirm(<?= $p['disdetta_gratuita']
               ? "'Disdire questa lezione? La lezione torna sul tuo saldo.'"
               : "'Sei fuori dai termini: disdicendo ora la lezione viene scalata. Confermi?'" ?>)">

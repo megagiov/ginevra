@@ -15,6 +15,37 @@ final class Vista
     private const MESI   = ['','gennaio','febbraio','marzo','aprile','maggio','giugno',
                             'luglio','agosto','settembre','ottobre','novembre','dicembre'];
 
+    /**
+     * Prefisso sotto cui gira l'applicazione.
+     *
+     * Vale "" quando l'app sta alla radice di un dominio e "/studio" quando
+     * sta in una sottocartella. Si ricava da solo dal percorso dello script,
+     * cosi' la stessa copia funziona in entrambi i casi senza configurazione.
+     */
+    public static function base(): string
+    {
+        static $base = null;
+
+        if ($base !== null) {
+            return $base;
+        }
+
+        $daConfig = Config::v('base_path');
+        if (is_string($daConfig) && $daConfig !== '') {
+            return $base = '/' . trim($daConfig, '/');
+        }
+
+        $cartella = str_replace('\\', '/', dirname((string) ($_SERVER['SCRIPT_NAME'] ?? '/')));
+
+        return $base = ($cartella === '/' || $cartella === '.') ? '' : rtrim($cartella, '/');
+    }
+
+    /** Indirizzo interno completo: u('/saldo') -> '/studio/saldo'. */
+    public static function u(string $percorso): string
+    {
+        return self::base() . $percorso;
+    }
+
     public static function e(?string $testo): string
     {
         return htmlspecialchars((string) $testo, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
@@ -96,6 +127,7 @@ final class Vista
     {
         $studio = self::e((string) Config::v('nome_studio'));
         $t = self::e($titolo);
+        $b = self::e(self::base());
 
         $nav = '';
         if ($utente !== null) {
@@ -118,7 +150,7 @@ final class Vista
                 $corrente = $chiave === $attiva;
                 $nav .= sprintf(
                     '<a href="%s"%s>%s</a>',
-                    $href,
+                    self::u($href),
                     $corrente ? ' class="attiva" aria-current="page"' : '',
                     self::e($etichetta)
                 );
@@ -133,10 +165,10 @@ final class Vista
               <meta charset="utf-8">
               <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
               <title>$t · $studio</title>
-              <link rel="manifest" href="/manifest.json">
-              <link rel="stylesheet" href="/stile.css">
+              <link rel="manifest" href="$b/manifest.json">
+              <link rel="stylesheet" href="$b/stile.css">
               <meta name="theme-color" content="#0284C7">
-              <link rel="apple-touch-icon" href="/icona-180.png">
+              <link rel="apple-touch-icon" href="$b/icona-180.png">
             </head>
             <body>
               <header class="testata">
@@ -149,11 +181,13 @@ final class Vista
 
     public static function chiusura(): string
     {
+        $b = self::e(self::base());
+
         return <<<HTML
               </main>
               <script>
                 if ('serviceWorker' in navigator) {
-                  navigator.serviceWorker.register('/sw.js').catch(() => {});
+                  navigator.serviceWorker.register('$b/sw.js').catch(() => {});
                 }
               </script>
             </body>

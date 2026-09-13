@@ -7,7 +7,9 @@
 $percorso = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 $file = dirname(__DIR__) . $percorso;
 
-if ($percorso !== '/' && is_file($file) && !str_ends_with($file, '.php')) {
+// Come l'.htaccess: un file che esiste davvero viene servito cosi' com'e'
+// (compresi i .php, che il server esegue). Solo il resto va a index.php.
+if ($percorso !== '/' && is_file($file)) {
     return false;
 }
 

@@ -16,8 +16,9 @@ sottodominio dedicato. Nessun servizio cloud a pagamento.
 | Accesso con link via email | completo — 21 asserzioni |
 | Schermate cliente (PWA) | complete — 27 asserzioni end-to-end |
 | Schermate amministratore | complete — 41 asserzioni end-to-end |
+| Installazione in sottocartella | supportata — 18 asserzioni |
 
-**139 asserzioni verdi in totale.**
+**157 asserzioni verdi in totale.**
 
 Sette schermate, una sola applicazione: il ruolo decide cosa si vede.
 
@@ -84,6 +85,7 @@ php app/test/regole.php                                 # 24 — le regole di pr
 php app/test/accesso.php                                # 21 — accesso senza password
 bash app/test/schermate.sh                              # 27 — percorso cliente via HTTP
 bash app/test/admin.sh                                  # 41 — percorso amministratore
+bash app/test/sottocartella.sh                          # 18 — app dentro una sottocartella
 ```
 
 `schermate.sh` avvia il server integrato di PHP e percorre l'app come
@@ -104,7 +106,9 @@ Aruba prima di fidarti dello schema.
 
 ## Installazione su Aruba
 
-1. Crea un sottodominio `studio.<dominio>` con la sua cartella.
+1. Crea un sottodominio `studio.<dominio>` con la sua cartella — oppure
+   usa una sottocartella del sito (`<dominio>/studio`): l'app riconosce da
+   sola il prefisso e non serve configurare nulla.
 2. Crea un database MySQL **separato da quello di WordPress**, con un
    utente dedicato.
 3. Applica `db/mysql/migrations/0001_schema.sql` da phpMyAdmin.
