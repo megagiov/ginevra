@@ -96,19 +96,57 @@ if (!is_readable(__DIR__ . '/config.php')) {
 $pdo = null;
 
 if ($cfg !== null && !empty($cfg['db_host'])) {
+    // Si mostra con quali dati si sta provando, cosi' un errore di
+    // credenziali si riconosce subito. La password non si stampa mai: se ne
+    // riporta solo la lunghezza, che basta a capire se e' quella giusta o se
+    // e' rimasto il segnaposto.
+    $pwd = (string) ($cfg['db_password'] ?? '');
+    esito('Dati usati per la connessione', 'avviso', sprintf(
+        'utente "%s" · host "%s" · database "%s" · password di %d caratteri',
+        $cfg['db_user'], $cfg['db_host'], $cfg['db_name'], strlen($pwd)
+    ));
+
+    if (stripos($pwd, 'SCRIVI_QUI') !== false) {
+        esito('Password del database', 'errore',
+              'nel file c\'e\' ancora il segnaposto, non la password vera');
+    }
+
+    if ($pwd !== trim($pwd)) {
+        esito('Password del database', 'errore',
+              'comincia o finisce con uno spazio: toglilo');
+    }
+
     try {
         $pdo = new PDO(
             sprintf('mysql:host=%s;dbname=%s;charset=utf8mb4', $cfg['db_host'], $cfg['db_name']),
             (string) $cfg['db_user'],
-            (string) $cfg['db_password'],
+            $pwd,
             [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_TIMEOUT => 8]
         );
         $versione = (string) $pdo->query('SELECT VERSION()')->fetchColumn();
         esito('Connessione al database', 'ok', "MySQL $versione");
     } catch (PDOException $e) {
-        // Il messaggio di PDO puo' contenere l'utenza: si riporta solo il codice.
-        esito('Connessione al database', 'errore',
-              'fallita (codice ' . $e->getCode() . '). Controlla hostname, nome, utente e password.');
+        // Il messaggio di MySQL non contiene mai la password, ma dice quale
+        // utente e' stato rifiutato e se una password e' stata inviata:
+        // e' esattamente cio' che serve per capire dove si sbaglia.
+        $codice = (string) $e->getCode();
+
+        $spiegazione = match ($codice) {
+            '1045'  => 'utente o password rifiutati dal server',
+            '1049'  => 'il database indicato non esiste: controlla il nome',
+            '2002'  => 'il server non risponde: controlla l\'hostname',
+            '2005'  => 'hostname sconosciuto',
+            default => 'errore di connessione',
+        };
+
+        esito('Connessione al database', 'errore', "$spiegazione — " . $e->getMessage());
+
+        if ($codice === '1045') {
+            esito('Cosa fare', 'avviso',
+                  'Reimposta la password dal pannello Aruba (Database → "Non ricordi '
+                  . 'la password?"), attendi qualche minuto perche\' diventi attiva, '
+                  . 'poi riscrivila nel file e ricaricalo.');
+        }
     }
 }
 
