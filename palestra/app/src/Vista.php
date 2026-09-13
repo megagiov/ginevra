@@ -33,6 +33,18 @@ final class Vista
              . ' ' . self::MESI[(int) $d->format('n')];
     }
 
+    /** "14 – 20 settembre", oppure "28 settembre – 4 ottobre" a cavallo di mese. */
+    public static function intervallo(\DateTimeImmutable $da, \DateTimeImmutable $a): string
+    {
+        $meseDa = self::MESI[(int) $da->format('n')];
+        $meseA  = self::MESI[(int) $a->format('n')];
+
+        return $meseDa === $meseA
+            ? sprintf('%d – %d %s', (int) $da->format('j'), (int) $a->format('j'), $meseA)
+            : sprintf('%d %s – %d %s', (int) $da->format('j'), $meseDa,
+                                       (int) $a->format('j'), $meseA);
+    }
+
     public static function ora(\DateTimeImmutable $d): string
     {
         return $d->format('H:i');
@@ -87,11 +99,19 @@ final class Vista
 
         $nav = '';
         if ($utente !== null) {
-            $voci = [
-                '/'             => ['Prenota',     'prenota'],
-                '/prenotazioni' => ['Le mie',      'prenotazioni'],
-                '/saldo'        => ['Saldo',       'saldo'],
-            ];
+            // L'amministratore ha la sua barra: le voci del cliente non gli
+            // servono, e mescolarle renderebbe entrambe piu' confuse.
+            $voci = ($utente['ruolo'] ?? 'cliente') === 'admin'
+                ? [
+                    '/admin'            => ['Oggi',       'oggi'],
+                    '/admin/calendario' => ['Calendario', 'calendario'],
+                    '/admin/clienti'    => ['Clienti',    'clienti'],
+                  ]
+                : [
+                    '/'             => ['Prenota',     'prenota'],
+                    '/prenotazioni' => ['Le mie',      'prenotazioni'],
+                    '/saldo'        => ['Saldo',       'saldo'],
+                  ];
 
             $nav = '<nav class="barra" aria-label="Sezioni">';
             foreach ($voci as $href => [$etichetta, $chiave]) {

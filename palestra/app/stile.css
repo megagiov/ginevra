@@ -243,3 +243,115 @@ ul.movimenti li, ul.storico li {
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; animation: none !important; }
 }
+
+/* ===========================================================================
+   Schermate amministratore
+   =========================================================================== */
+
+.navigazione-giorno {
+  display: flex; align-items: center; justify-content: space-between; gap: .5rem;
+}
+.navigazione-giorno h1 { margin: .2rem 0; flex: 1; text-align: center; }
+/* Il titolo della settimana non deve mandare a capo e spingere le frecce. */
+.navigazione-giorno h1.intervallo { font-size: 1.5rem; white-space: nowrap; }
+.freccia {
+  min-width: 44px; min-height: 44px;          /* frecce grandi: si usano in piedi */
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.4rem; text-decoration: none;
+  border: 1px solid var(--bordo); border-radius: 10px;
+  background: var(--carta);
+}
+
+.riepilogo {
+  display: flex; flex-wrap: wrap; gap: .5rem;
+  margin-bottom: 1.2rem; font-size: .9rem;
+}
+.riepilogo > div {
+  padding: .4rem .8rem; border-radius: 999px;
+  background: var(--carta); border: 1px solid var(--bordo);
+  color: var(--testo-tenue);
+}
+.riepilogo .attenzione { border-color: var(--primario); color: var(--primario-cupo); }
+.riepilogo .attenzione a { text-decoration: none; color: inherit; }
+
+.lezione {
+  background: var(--carta); border: 1px solid var(--bordo);
+  border-left: 4px solid var(--primario);
+  border-radius: var(--raggio); box-shadow: var(--ombra);
+  padding: .9rem 1rem; margin-bottom: .75rem;
+}
+.lezione.passata { border-left-color: var(--occupato); }
+.lezione header { display: flex; align-items: baseline; gap: .7rem; }
+
+ul.partecipanti { list-style: none; margin: .6rem 0 0; padding: 0; }
+ul.partecipanti li {
+  display: flex; flex-wrap: wrap; align-items: center; gap: .5rem;
+  padding: .5rem 0; border-top: 1px solid var(--bordo);
+}
+.partecipanti .nome { flex: 1; min-width: 8rem; font-weight: 600; text-decoration: none; color: var(--testo); }
+.presenza { display: flex; gap: .4rem; }
+
+button.piccolo { min-height: 38px; padding: .35rem .8rem; font-size: .85rem; }
+button.pericolo { color: var(--pericolo); }
+.piccolo { font-size: .85rem; }
+
+.azioni { display: flex; gap: .3rem; align-items: center; }
+
+/* --- moduli a griglia ----------------------------------------------------- */
+
+details.pubblica { margin: 1rem 0; padding: 0; }
+details.pubblica summary {
+  cursor: pointer; padding: 1rem; font-weight: 600;
+  font-family: 'Barlow Condensed', sans-serif; font-size: 1.15rem;
+  min-height: 44px; display: flex; align-items: center;
+}
+details.pubblica[open] summary { border-bottom: 1px solid var(--bordo); }
+details.pubblica > *:not(summary) { padding-inline: 1rem; }
+details.pubblica > *:last-child { padding-bottom: 1rem; }
+
+.modulo-griglia {
+  display: grid; grid-template-columns: 1fr 1fr; gap: .3rem .8rem;
+  padding-top: .8rem;
+}
+.modulo-griglia .larga { grid-column: 1 / -1; }
+.modulo-griglia button { grid-column: 1 / -1; margin-top: .8rem; }
+.modulo-griglia label { margin-top: .6rem; }
+
+input[type=text], input[type=tel], input[type=number],
+input[type=date], input[type=time], input:not([type]), select {
+  width: 100%; min-height: 46px; padding: .5rem .7rem;
+  font: inherit; color: var(--testo); background: var(--sfondo);
+  border: 1px solid var(--bordo); border-radius: 10px;
+}
+
+@media (max-width: 420px) {
+  .modulo-griglia { grid-template-columns: 1fr; }
+}
+
+/* --- elenco clienti ------------------------------------------------------- */
+
+ul.clienti { list-style: none; margin: 0; padding: 0; }
+ul.clienti li {
+  display: flex; flex-wrap: wrap; align-items: center; gap: .5rem;
+  padding: .8rem .2rem; border-bottom: 1px solid var(--bordo);
+}
+ul.clienti .nome { flex: 1; min-width: 9rem; font-weight: 600; color: var(--testo); text-decoration: none; }
+ul.clienti li.inattivo { opacity: .55; }
+
+.saldini { display: flex; gap: .4rem; font-size: .85rem; }
+.saldini span {
+  padding: .15rem .5rem; border-radius: 999px;
+  background: var(--occupato-tenue); color: var(--testo-tenue);
+}
+/* Non basta il colore: accanto resta scritto "in esaurimento". */
+.saldini .scarso { background: var(--pericolo-tenue); color: var(--pericolo); font-weight: 600; }
+.attenzione-segno { background: var(--pericolo-tenue); color: var(--pericolo); }
+
+.briciole { margin: 0 0 .3rem; font-size: .9rem; }
+.briciole a { text-decoration: none; }
+
+.note-cliente {
+  background: var(--occupato-tenue); border-left: 3px solid var(--occupato);
+  padding: .7rem .9rem; border-radius: 0 var(--raggio) var(--raggio) 0;
+  margin: .8rem 0; font-size: .95rem;
+}

@@ -15,12 +15,18 @@ sottodominio dedicato. Nessun servizio cloud a pagamento.
 | Regole di prenotazione in PHP | complete — 24 asserzioni |
 | Accesso con link via email | completo — 21 asserzioni |
 | Schermate cliente (PWA) | complete — 27 asserzioni end-to-end |
-| Schermate amministratore | da fare |
+| Schermate amministratore | complete — 41 asserzioni end-to-end |
 
-**98 asserzioni verdi in totale.**
+**139 asserzioni verdi in totale.**
 
-Le schermate cliente sono tre: prenota, le mie lezioni, saldo. L'accesso
-avviene con un link inviato per email, senza password.
+Sette schermate, una sola applicazione: il ruolo decide cosa si vede.
+
+- **Cliente** — prenota, le mie lezioni, saldo
+- **Amministratore** — oggi (agenda e presenze), calendario (pubblica la
+  disponibilita'), clienti, scheda cliente (crediti, prenotazione per suo
+  conto, storico)
+
+L'accesso avviene con un link inviato per email, senza password.
 
 ### Due implementazioni
 
@@ -76,7 +82,8 @@ mariadb studio_dev < db/mysql/migrations/0001_schema.sql
 mariadb -t studio_test < db/mysql/test/01_vincoli.sql   # 26 — cosa garantisce il database
 php app/test/regole.php                                 # 24 — le regole di prenotazione
 php app/test/accesso.php                                # 21 — accesso senza password
-bash app/test/schermate.sh                              # 27 — percorso completo via HTTP
+bash app/test/schermate.sh                              # 27 — percorso cliente via HTTP
+bash app/test/admin.sh                                  # 41 — percorso amministratore
 ```
 
 `schermate.sh` avvia il server integrato di PHP e percorre l'app come

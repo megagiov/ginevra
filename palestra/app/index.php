@@ -7,11 +7,13 @@ declare(strict_types=1);
  * puliti e non c'e' un file PHP per pagina da proteggere uno per uno.
  */
 
-foreach (['Config', 'Db', 'Posta', 'Regole', 'Accesso', 'Vista', 'Calendario'] as $classe) {
+foreach (['Config', 'Db', 'Posta', 'Regole', 'Accesso', 'Vista', 'Calendario',
+          'Amministrazione'] as $classe) {
     require __DIR__ . "/src/$classe.php";
 }
 
 use Studio\Accesso;
+use Studio\Amministrazione;
 use Studio\Calendario;
 use Studio\Config;
 use Studio\Regole;
@@ -41,6 +43,36 @@ function vaiA(string $dove, ?string $esito = null, ?string $errore = null): neve
 
     header('Location: ' . $dove . ($q ? '?' . http_build_query($q) : ''), true, 303);
     exit;
+}
+
+function esigiAdmin(?array $utente): array
+{
+    $utente = richiediAccesso($utente);
+
+    if ($utente['ruolo'] !== 'admin') {
+        http_response_code(403);
+        exit('Area riservata.');
+    }
+    return $utente;
+}
+
+/** Giorno locale richiesto dall'URL, oggi se assente o malformato. */
+function giornoRichiesto(?string $valore): DateTimeImmutable
+{
+    $fuso = new DateTimeZone((string) Studio\Config::v('fuso'));
+
+    if ($valore !== null && $valore !== '') {
+        $d = DateTimeImmutable::createFromFormat('Y-m-d', $valore, $fuso);
+        if ($d !== false) {
+            return $d->setTime(0, 0);
+        }
+    }
+    return new DateTimeImmutable('today', $fuso);
+}
+
+function lunediRichiesto(?string $valore): DateTimeImmutable
+{
+    return giornoRichiesto($valore)->modify('monday this week');
 }
 
 function richiediAccesso(?array $utente): array
@@ -111,7 +143,13 @@ try {
         // ---------------------------------------------------------------
 
         case 'GET /':
-            $utente  = richiediAccesso($utente);
+            $utente = richiediAccesso($utente);
+
+            if ($utente['ruolo'] === 'admin') {
+                header('Location: /admin', true, 302);
+                exit;
+            }
+
             $giorni  = Calendario::disponibilita($utente['id']);
             $saldi   = Calendario::saldi($utente['id']);
             require __DIR__ . '/pagine/prenota.php';
@@ -162,6 +200,186 @@ try {
             $movimenti = Calendario::movimenti($utente['id']);
             require __DIR__ . '/pagine/saldo.php';
             break;
+
+        // ---------------------------------------------------------------
+        // Amministrazione
+        // ---------------------------------------------------------------
+
+        case 'GET /admin':
+            $utente    = esigiAdmin($utente);
+            $giorno    = giornoRichiesto($_GET['giorno'] ?? null);
+            $agenda    = Amministrazione::agenda($utente['id'], $giorno);
+            $riepilogo = Amministrazione::riepilogo($utente['id'], $giorno);
+            require __DIR__ . '/pagine/admin-oggi.php';
+            break;
+
+        case 'POST /admin/presenza':
+            $utente = esigiAdmin($utente);
+            verificaGettone();
+            $ritorno = '/admin?giorno=' . urlencode((string) ($_POST['giorno'] ?? ''));
+
+            try {
+                Regole::segnaPresenza(
+                    (string) ($_POST['prenotazione'] ?? ''),
+                    ($_POST['presente'] ?? '') === '1',
+                    $utente['id']
+                );
+                vaiA($ritorno, 'Presenza registrata.');
+            } catch (RegolaViolata $e) {
+                vaiA($ritorno, null, $e->getMessage());
+            }
+
+        case 'GET /admin/calendario':
+            $utente    = esigiAdmin($utente);
+            $lunedi    = lunediRichiesto($_GET['da'] ?? null);
+            $settimana = Amministrazione::settimana($utente['id'], $lunedi);
+            require __DIR__ . '/pagine/admin-calendario.php';
+            break;
+
+        case 'POST /admin/slot':
+            $utente = esigiAdmin($utente);
+            verificaGettone();
+            $ritorno = '/admin/calendario?da=' . urlencode((string) ($_POST['da'] ?? ''));
+
+            try {
+                $esito = Amministrazione::creaSlot(
+                    $utente['id'],
+                    (string) ($_POST['data'] ?? ''),
+                    (string) ($_POST['ora'] ?? ''),
+                    (string) ($_POST['tipo'] ?? ''),
+                    (int) ($_POST['capienza'] ?? 4),
+                    (int) ($_POST['ripetizioni'] ?? 1)
+                );
+
+                $messaggio = $esito['creati'] === 1
+                    ? 'Lezione pubblicata.'
+                    : $esito['creati'] . ' lezioni pubblicate.';
+
+                if ($esito['saltati'] !== []) {
+                    $messaggio .= ' Saltate perche\' la sala era gia\' occupata: '
+                                . implode('; ', $esito['saltati']) . '.';
+                }
+
+                $esito['creati'] > 0
+                    ? vaiA($ritorno, $messaggio)
+                    : vaiA($ritorno, null, 'Nessuna lezione pubblicata. ' . $messaggio);
+            } catch (RegolaViolata $e) {
+                vaiA($ritorno, null, $e->getMessage());
+            }
+
+        case 'POST /admin/slot/stato':
+            $utente = esigiAdmin($utente);
+            verificaGettone();
+            $ritorno = '/admin/calendario?da=' . urlencode((string) ($_POST['da'] ?? ''));
+
+            try {
+                $stato = (string) ($_POST['stato'] ?? '');
+                Amministrazione::cambiaStatoSlot($utente['id'], (string) ($_POST['slot'] ?? ''), $stato);
+                vaiA($ritorno, $stato === 'chiuso'
+                    ? 'Lezione chiusa alle prenotazioni.'
+                    : 'Lezione riaperta.');
+            } catch (RegolaViolata $e) {
+                vaiA($ritorno, null, $e->getMessage());
+            }
+
+        case 'POST /admin/slot/elimina':
+            $utente = esigiAdmin($utente);
+            verificaGettone();
+            $ritorno = '/admin/calendario?da=' . urlencode((string) ($_POST['da'] ?? ''));
+
+            try {
+                Amministrazione::eliminaSlot($utente['id'], (string) ($_POST['slot'] ?? ''));
+                vaiA($ritorno, 'Lezione eliminata.');
+            } catch (RegolaViolata $e) {
+                vaiA($ritorno, null, $e->getMessage());
+            }
+
+        case 'GET /admin/clienti':
+            $utente  = esigiAdmin($utente);
+            $elenco  = Amministrazione::clienti($utente['id'], isset($_GET['tutti']));
+            require __DIR__ . '/pagine/admin-clienti.php';
+            break;
+
+        case 'POST /admin/clienti':
+            $utente = esigiAdmin($utente);
+            verificaGettone();
+
+            try {
+                $id = Amministrazione::creaCliente(
+                    $utente['id'],
+                    (string) ($_POST['nome'] ?? ''),
+                    (string) ($_POST['email'] ?? ''),
+                    (string) ($_POST['telefono'] ?? ''),
+                    (string) ($_POST['note'] ?? '')
+                );
+                vaiA('/admin/cliente?id=' . urlencode($id), 'Cliente creato.');
+            } catch (RegolaViolata $e) {
+                vaiA('/admin/clienti', null, $e->getMessage());
+            }
+
+        case 'GET /admin/cliente':
+            $utente  = esigiAdmin($utente);
+            $scheda  = Amministrazione::cliente($utente['id'], (string) ($_GET['id'] ?? ''));
+
+            if ($scheda === null) {
+                vaiA('/admin/clienti', null, 'Cliente inesistente.');
+            }
+
+            $prenotabili = Calendario::disponibilita($scheda['anagrafica']['id']);
+            require __DIR__ . '/pagine/admin-cliente.php';
+            break;
+
+        case 'POST /admin/accredita':
+            $utente  = esigiAdmin($utente);
+            verificaGettone();
+            $cliente = (string) ($_POST['cliente'] ?? '');
+            $ritorno = '/admin/cliente?id=' . urlencode($cliente);
+
+            try {
+                $quantita = (int) ($_POST['quantita'] ?? 0);
+                $causale  = (string) ($_POST['causale'] ?? 'acquisto');
+                $importo  = ($_POST['importo'] ?? '') !== '' ? (float) $_POST['importo'] : null;
+
+                Regole::accredita(
+                    $cliente,
+                    (string) ($_POST['tipo'] ?? 'individuale'),
+                    $quantita,
+                    $utente['id'],
+                    $importo,
+                    (string) ($_POST['nota'] ?? '') ?: null,
+                    $causale
+                );
+                vaiA($ritorno, 'Movimento registrato.');
+            } catch (RegolaViolata $e) {
+                vaiA($ritorno, null, $e->getMessage());
+            }
+
+        case 'POST /admin/prenota':
+            $utente  = esigiAdmin($utente);
+            verificaGettone();
+            $cliente = (string) ($_POST['cliente'] ?? '');
+            $ritorno = '/admin/cliente?id=' . urlencode($cliente);
+
+            try {
+                Regole::prenota((string) ($_POST['slot'] ?? ''), $cliente, $utente['id']);
+                vaiA($ritorno, 'Prenotazione registrata per il cliente.');
+            } catch (RegolaViolata $e) {
+                vaiA($ritorno, null, $e->getMessage());
+            }
+
+        case 'POST /admin/cliente/attivazione':
+            $utente  = esigiAdmin($utente);
+            verificaGettone();
+            $cliente = (string) ($_POST['cliente'] ?? '');
+
+            try {
+                $attivo = ($_POST['attivo'] ?? '') === '1';
+                Amministrazione::cambiaAttivazione($utente['id'], $cliente, $attivo);
+                vaiA('/admin/cliente?id=' . urlencode($cliente),
+                     $attivo ? 'Cliente riattivato.' : 'Cliente disattivato.');
+            } catch (RegolaViolata $e) {
+                vaiA('/admin/cliente?id=' . urlencode($cliente), null, $e->getMessage());
+            }
 
         default:
             http_response_code(404);
