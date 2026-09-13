@@ -1,0 +1,74 @@
+# ============================================================================
+#  Studio PT — esecuzione sul NAS
+#
+#  Due contenitori: il database e l'applicazione. Nessun servizio esterno,
+#  nessun abbonamento cloud. Gira su qualunque NAS che supporti Docker
+#  (Synology DSM 7 con Container Manager, QNAP Container Station, unRAID).
+#
+#  Avvio:  docker compose up -d
+# ============================================================================
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: studio
+      POSTGRES_USER: studio_owner
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?serve DB_PASSWORD nel file .env}
+      TZ: Europe/Rome
+    volumes:
+      - ./dati/postgres:/var/lib/postgresql/data
+      # Le migrazioni girano da sole al PRIMO avvio, in ordine alfabetico.
+      - ./db/migrations:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U studio_owner -d studio"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    # Nessuna porta pubblicata: il database e' raggiungibile solo dall'app,
+    # sulla rete interna di Docker. Non esporlo mai su internet.
+
+  app:
+    build: ./app
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      # L'app si collega con un ruolo NON privilegiato: e' cio' che rende
+      # effettiva la Row Level Security.
+      DATABASE_URL: postgres://app_user:${APP_DB_PASSWORD:?serve APP_DB_PASSWORD}@db:5432/studio
+      SESSION_SECRET: ${SESSION_SECRET:?serve SESSION_SECRET}
+      TZ: Europe/Rome
+      # SMTP per i link di accesso e i promemoria. Va bene la casella che usi
+      # gia': con cinquanta clienti il volume e' di poche email al giorno.
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER}
+      SMTP_PASSWORD: ${SMTP_PASSWORD}
+      SMTP_MITTENTE: ${SMTP_MITTENTE}
+      BASE_URL: ${BASE_URL:?serve BASE_URL, es. https://studio.tuodominio.it}
+    ports:
+      - "3000:3000"
+
+  # Backup automatico: un dump al giorno, trenta giorni di storico.
+  # Senza questo, un guasto del disco del NAS cancella lo storico di tutti.
+  backup:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PGPASSWORD: ${DB_PASSWORD}
+      TZ: Europe/Rome
+    volumes:
+      - ./dati/backup:/backup
+    entrypoint: >
+      sh -c 'while true; do
+        pg_dump -h db -U studio_owner -d studio -Fc
+          -f /backup/studio-$$(date +%Y%m%d-%H%M).dump &&
+        find /backup -name "studio-*.dump" -mtime +30 -delete;
+        sleep 86400;
+      done'
