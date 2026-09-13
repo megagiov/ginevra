@@ -108,7 +108,16 @@ Aruba prima di fidarti dello schema.
 
 1. Crea un sottodominio `studio.<dominio>` con la sua cartella — oppure
    usa una sottocartella del sito (`<dominio>/studio`): l'app riconosce da
-   sola il prefisso e non serve configurare nulla.
+   sola il prefisso.
+
+   > Su alcuni hosting (verificato su Aruba) il server riporta un percorso
+   > diverso dopo la riscrittura degli indirizzi, e il rilevamento
+   > automatico fallisce: i fogli di stile non caricano e i link portano
+   > fuori dalla cartella. In quel caso basta dichiararlo in `config.php`:
+   >
+   > ```php
+   > 'base_path' => 'studio',
+   > ```
 2. Crea un database MySQL **separato da quello di WordPress**, con un
    utente dedicato.
 3. Applica `db/mysql/migrations/0001_schema.sql` da phpMyAdmin.
