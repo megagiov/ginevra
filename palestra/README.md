@@ -112,7 +112,11 @@ Aruba prima di fidarti dello schema.
 5. Carica il contenuto di `app/` via FTP nella cartella del sottodominio.
    Le cartelle `src/`, `pagine/` e `test/` hanno gia' il loro `.htaccess`
    che ne nega l'accesso dal browser; `test/` puoi anche non caricarla.
-6. Crea il primo amministratore, da phpMyAdmin:
+6. Apri `https://<sottodominio>/verifica.php` nel browser: elenca tutto
+   cio' che deve funzionare e dice cosa manca. **Cancella quel file dal
+   server appena hai finito.** Con `?posta=tuo@indirizzo.it` prova anche
+   l'invio delle email.
+7. Crea il primo amministratore, da phpMyAdmin:
 
    ```sql
    INSERT INTO utenti (id, email, nome, ruolo)
