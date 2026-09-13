@@ -4,21 +4,31 @@ Prenotazioni per uno studio di personal training con **una sala**: lezioni da
 60 minuti, individuali o di gruppo fino a 4 posti, crediti gestiti a mano
 dall'amministratore, disdetta gratuita entro 24 ore.
 
-Nessun servizio cloud a pagamento: gira su un NAS con Docker.
+Gira sull'hosting Aruba Linux gia' in uso (PHP 8.3 + MySQL), su un
+sottodominio dedicato. Nessun servizio cloud a pagamento.
 
 ## Stato
 
 | Parte | Stato |
 |---|---|
-| Schema del database, regole e RLS | completo e testato (34 asserzioni + test di concorrenza) |
-| Impianto Docker per il NAS | scritto, non ancora provato su hardware |
-| Applicazione web (PWA) | da fare |
+| Schema MySQL e vincoli | completo — 26 asserzioni verdi |
+| Regole di prenotazione in PHP | complete — 24 asserzioni verdi |
+| Interfaccia web (PWA) | da fare |
+| Accesso via link email | tabelle pronte, logica da scrivere |
+
+### Due implementazioni
+
+`db/mysql/` e' quella in uso, per l'hosting Aruba. `db/postgres/` e' la
+versione PostgreSQL da cui nasce il progetto: li' le regole stanno dentro il
+database e sono inaggirabili, qui stanno in PHP perche' MySQL non ha ne'
+Row Level Security ne' vincoli di esclusione. Serve se un domani il progetto
+si sposta su un VPS.
 
 ## Com'e' fatto
 
 ```
-app (PWA)  ──HTTPS──▶  NAS ──▶ PostgreSQL
-  iOS / Android            Docker
+PWA  ──HTTPS──▶  studio.<dominio>  ──▶  MySQL
+iOS / Android     PHP 8.3 su Aruba        database dedicato
 ```
 
 Una sola PWA serve sia i clienti sia l'amministratore: il ruolo decide cosa
@@ -47,28 +57,44 @@ riga con data, causale e autore.
 
 ## Sviluppo
 
-Serve PostgreSQL 16 (o Docker).
+Serve MySQL 8 o MariaDB 10.3+ e PHP 8.1+.
 
 ```bash
-createdb studio_dev
-psql -d studio_dev -f db/migrations/0000_auth.sql
-psql -d studio_dev -f db/migrations/0001_schema.sql
-psql -d studio_dev -f db/migrations/0002_regole.sql
+mariadb -e "CREATE DATABASE studio_dev CHARACTER SET utf8mb4"
+mariadb studio_dev < db/mysql/migrations/0001_schema.sql
 ```
 
 ### Test
 
 ```bash
-psql -d studio_dev -f db/test/01_regole.sql   # 34 asserzioni sulle regole
-./db/test/02_concorrenza.sh studio_dev        # 8 clienti, 4 posti, stesso istante
+mariadb -t studio_test < db/mysql/test/01_vincoli.sql   # 26 — cosa garantisce il database
+php app/test/regole.php                                 # 24 — le regole in PHP
 ```
 
-`01_regole.sql` esce con errore se anche una sola asserzione fallisce, quindi
-si puo' usare in una pipeline. `02_concorrenza.sh` apre otto connessioni
-reali che partono allo stesso secondo: verifica che la corsa all'ultimo posto
-del gruppo non produca sovrapprenotazioni ne' crediti scalati a vuoto.
+`regole.php` ricrea il database indicato da `DB_NAME` (default `studio_test`)
+a ogni esecuzione: non puntarlo mai a un database vero. Esce con codice 1 se
+anche una sola asserzione fallisce.
 
-## Installazione sul NAS
+### Attenzione alla versione di MySQL
+
+Su **MySQL 5.7 i vincoli CHECK vengono accettati e poi ignorati in silenzio**:
+lo schema si installa ma meta' delle garanzie non esiste. La prima asserzione
+di `01_vincoli.sql` verifica proprio questo, quindi eseguila sul server di
+Aruba prima di fidarti dello schema.
+
+## Installazione su Aruba
+
+1. Crea un sottodominio `studio.<dominio>` con la sua cartella.
+2. Crea un database MySQL **separato da quello di WordPress**, con un
+   utente dedicato.
+3. Carica `app/` via FTP e applica `db/mysql/migrations/0001_schema.sql`
+   da phpMyAdmin.
+4. Configura le credenziali (vedi `app/config.example.php`).
+
+Il motivo della separazione: l'app tratta PAR-Q e storico infortuni, che
+sono dati sanitari. Un WordPress compromesso non deve poterci arrivare.
+
+## In alternativa, sul NAS (percorso PostgreSQL)
 
 1. Copia la cartella sul NAS.
 2. Crea un file `.env` accanto a `docker-compose.yml`:
