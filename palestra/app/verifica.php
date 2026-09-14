@@ -222,9 +222,23 @@ if ($provaPosta) {
     } elseif (empty($cfg['smtp_host'])) {
         esito('Invio email', 'errore', 'SMTP non configurato in config.php');
     } else {
-        Studio\Posta::invia($a, 'Prova di invio', '<p>Funziona.</p>', 'Funziona.')
-            ? esito('Invio email', 'ok', "messaggio inviato a $a — controlla la posta, anche lo spam")
-            : esito('Invio email', 'errore', 'invio fallito: controlla i dati SMTP nel log degli errori');
+        esito('Dati usati per la posta', 'avviso', sprintf(
+            'server "%s" · porta %d · utente "%s" · password di %d caratteri',
+            $cfg['smtp_host'], (int) $cfg['smtp_port'], $cfg['smtp_user'],
+            strlen((string) ($cfg['smtp_password'] ?? ''))
+        ));
+
+        if (!str_contains((string) $cfg['smtp_user'], '@')) {
+            esito('Utente SMTP', 'errore',
+                  'deve essere l\'indirizzo email completo, con la chiocciola');
+        }
+
+        if (Studio\Posta::invia($a, 'Prova di invio', '<p>Funziona.</p>', 'Funziona.')) {
+            esito('Invio email', 'ok', "messaggio inviato a $a — controlla la posta, anche lo spam");
+        } else {
+            esito('Invio email', 'errore',
+                  Studio\Posta::$ultimoErrore ?? 'invio fallito senza un motivo riportato');
+        }
     }
 }
 

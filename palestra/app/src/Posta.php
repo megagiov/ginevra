@@ -19,6 +19,15 @@ final class Posta
     /** @var list<array{a:string,oggetto:string,testo:string}> messaggi raccolti in modalita' prova */
     public static array $inviateInProva = [];
 
+    /**
+     * Motivo dell'ultimo invio fallito.
+     *
+     * Serve alla pagina di diagnostica: il solo "invio fallito" non basta a
+     * capire se il server rifiuta le credenziali, se non risponde o se il
+     * certificato non va. Il messaggio SMTP non contiene mai la password.
+     */
+    public static ?string $ultimoErrore = null;
+
     public static function invia(string $a, string $oggetto, string $testoHtml, string $testoSemplice): bool
     {
         $cfg = Config::tutto();
@@ -62,7 +71,8 @@ final class Posta
 
         $socket = @fsockopen($host, $porta, $errno, $errstr, 15);
         if (!$socket) {
-            error_log("SMTP non raggiungibile: $errstr ($errno)");
+            self::$ultimoErrore = "server non raggiungibile su $host:$porta — $errstr ($errno)";
+            error_log('SMTP: ' . self::$ultimoErrore);
             return false;
         }
         stream_set_timeout($socket, 15);
@@ -71,32 +81,36 @@ final class Posta
 
         try {
             self::attendi($socket, '220');
-            self::comanda($socket, 'EHLO ' . (parse_url($cfg['base_url'], PHP_URL_HOST) ?: 'localhost'), '250');
+            $saluto = 'EHLO ' . (parse_url($cfg['base_url'], PHP_URL_HOST) ?: 'localhost');
+            self::comanda($socket, $saluto, '250', 'saluto iniziale (EHLO)');
 
             // Sulla 587 la connessione parte in chiaro e va promossa a TLS.
             if ($porta === 587) {
-                self::comanda($socket, 'STARTTLS', '220');
+                self::comanda($socket, 'STARTTLS', '220', 'avvio della cifratura (STARTTLS)');
                 if (!stream_socket_enable_crypto($socket, true, STREAM_CRYPTO_METHOD_TLS_CLIENT)) {
-                    throw new \RuntimeException('STARTTLS fallito');
+                    throw new \RuntimeException('cifratura STARTTLS non riuscita');
                 }
-                self::comanda($socket, 'EHLO ' . (parse_url($cfg['base_url'], PHP_URL_HOST) ?: 'localhost'), '250');
+                self::comanda($socket, $saluto, '250', 'saluto dopo la cifratura');
             }
 
-            self::comanda($socket, 'AUTH LOGIN', '334');
-            self::comanda($socket, base64_encode((string) $cfg['smtp_user']), '334');
-            self::comanda($socket, base64_encode((string) $cfg['smtp_password']), '235');
+            self::comanda($socket, 'AUTH LOGIN', '334', 'richiesta di autenticazione');
+            self::comanda($socket, base64_encode((string) $cfg['smtp_user']), '334',
+                          'utente rifiutato');
+            self::comanda($socket, base64_encode((string) $cfg['smtp_password']), '235',
+                          'password rifiutata');
 
-            self::comanda($socket, "MAIL FROM:<$mittente>", '250');
-            self::comanda($socket, "RCPT TO:<$destinatario>", '250');
-            self::comanda($socket, 'DATA', '354');
+            self::comanda($socket, "MAIL FROM:<$mittente>", '250', 'indirizzo mittente rifiutato');
+            self::comanda($socket, "RCPT TO:<$destinatario>", '250', 'indirizzo destinatario rifiutato');
+            self::comanda($socket, 'DATA', '354', 'invio del messaggio');
 
             // Un punto a inizio riga chiuderebbe il messaggio in anticipo.
             fwrite($socket, preg_replace('/^\./m', '..', $messaggio) . "\r\n.\r\n");
             self::attendi($socket, '250');
 
-            self::comanda($socket, 'QUIT', '221');
+            self::comanda($socket, 'QUIT', '221', 'chiusura');
         } catch (\Throwable $e) {
-            error_log('Invio email fallito: ' . $e->getMessage());
+            self::$ultimoErrore = $e->getMessage();
+            error_log('Invio email fallito: ' . self::$ultimoErrore);
             fclose($socket);
             return false;
         }
@@ -105,10 +119,23 @@ final class Posta
         return true;
     }
 
-    private static function comanda($socket, string $comando, string $atteso): void
+    /**
+     * Manda un comando e verifica la risposta.
+     *
+     * L'etichetta e' quella che comparira' nell'errore, e va passata sempre
+     * a mano: ricavarla dal comando significherebbe stampare le righe
+     * dell'AUTH, che contengono utenza e password in base64 — cioe' in
+     * chiaro, per chiunque sappia decodificarle.
+     */
+    private static function comanda($socket, string $comando, string $atteso, string $etichetta): void
     {
         fwrite($socket, $comando . "\r\n");
-        self::attendi($socket, $atteso);
+
+        try {
+            self::attendi($socket, $atteso);
+        } catch (\Throwable $e) {
+            throw new \RuntimeException("$etichetta: " . $e->getMessage());
+        }
     }
 
     private static function attendi($socket, string $atteso): void
