@@ -17,6 +17,16 @@ ok() { if [ "$2" = "1" ]; then echo "PASS  $1"; PASSATI=$((PASSATI+1));
 contiene() { grep -qF "$2" <<<"$1" && echo 1 || echo 0; }
 manca()    { grep -qF "$2" <<<"$1" && echo 0 || echo 1; }
 
+# Il link dell'email e' un primo tocco (GET, non consuma) piu' un invio vero
+# (POST): serve a non farsi bruciare il codice monouso da uno scanner di
+# posta che apre il link da solo, prima che il cliente lo clicchi davvero.
+entra_con_token() {
+  local pagina token_campo
+  pagina=$("${C[@]}" "$U/entra?token=$1")
+  token_campo=$(grep -o 'name="token" value="[^"]*"' <<<"$pagina" | head -1 | cut -d'"' -f4)
+  "${C[@]}" -o /dev/null -d "token=$token_campo" "$U/entra"
+}
+
 rm -rf "$RADICE_SITO"; mkdir -p "$RADICE_SITO"
 cp -r "$APP" "$RADICE_SITO/studio"
 
@@ -43,8 +53,10 @@ ok "Il modulo invia a /studio/accedi"     "$(contiene "$P" 'action="/studio/acce
 ok "Nessun link punta fuori dalla cartella" "$(manca "$P" 'href="/stile.css"')"
 
 TK=$(php "$APP/test/token-di-prova.php" anna@test.it)
-R=$("${C[@]}" -o /dev/null "$U/entra?token=$TK")
-ok "Il link di accesso apre la sessione" "$(contiene "$R" "/studio/")"
+P=$("${C[@]}" "$U/entra?token=$TK")
+ok "La pagina di conferma resta dentro /studio" "$(contiene "$P" 'action="/studio/entra"')"
+R=$(entra_con_token "$TK")
+ok "L'invio del modulo apre la sessione" "$(contiene "$R" "/studio/")"
 ok "Il cookie vale solo sotto /studio"   "$(grep -qE '/studio' "$B" && echo 1 || echo 0)"
 
 # --- le risorse statiche esistono davvero --------------------------------

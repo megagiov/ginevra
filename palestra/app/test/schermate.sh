@@ -21,6 +21,16 @@ contiene() { grep -qF "$2" <<<"$1" && echo 1 || echo 0; }
 
 mysql_q() { mariadb -N -B -u "$DB_USER" -h "$DB_HOST" "$DB_NAME" -e "$1"; }
 
+# Il link dell'email e' un primo tocco (GET, non consuma nulla) piu' un
+# invio vero (POST): uno scanner di posta che apre il link da solo non deve
+# poter bruciare il codice monouso al posto del cliente.
+entra_con_token() {
+  local pagina token_campo
+  pagina=$("${C[@]}" "http://127.0.0.1:$PORTA/entra?token=$1")
+  token_campo=$(grep -o 'name="token" value="[^"]*"' <<<"$pagina" | head -1 | cut -d'"' -f4)
+  "${C[@]}" -o /dev/null -d "token=$token_campo" "http://127.0.0.1:$PORTA/entra"
+}
+
 # --- preparazione ---------------------------------------------------------
 php "$APP/test/prepara-schermate.php" || exit 1
 
@@ -54,11 +64,20 @@ ok "Un'email sconosciuta riceve la stessa risposta" "$(contiene "$R" 'inviata=1'
 
 # --- 3. entrata -----------------------------------------------------------
 TOKEN=$(php "$APP/test/token-di-prova.php" anna@test.it)
-R=$("${C[@]}" -o /dev/null "http://127.0.0.1:$PORTA/entra?token=$TOKEN")
-ok "Il link apre la sessione" "$(contiene "$R" '303|')"
+
+PAGINA_ENTRA=$("${C[@]}" "http://127.0.0.1:$PORTA/entra?token=$TOKEN")
+ok "Il primo tocco (GET) mostra la pagina di conferma, senza ancora aprire nulla" \
+   "$(contiene "$PAGINA_ENTRA" 'name="token"')"
+
+# Un'apertura automatica del link (uno scanner di posta) e' proprio questo:
+# una richiesta GET che non arriva mai a inviare il modulo. Ripeterla non
+# deve consumare il codice.
+"${C[@]}" -o /dev/null "http://127.0.0.1:$PORTA/entra?token=$TOKEN" >/dev/null
+R=$(entra_con_token "$TOKEN")
+ok "L'invio del modulo apre davvero la sessione" "$(contiene "$R" '303|')"
 ok "Il cookie di sessione e' HttpOnly" "$(grep -q 'HttpOnly' "$BISCOTTI" && echo 1 || echo 0)"
 
-R=$("${C[@]}" -o /dev/null "http://127.0.0.1:$PORTA/entra?token=$TOKEN")
+R=$(entra_con_token "$TOKEN")
 ok "Lo stesso link non riapre una seconda sessione" "$(contiene "$R" 'errore=')"
 
 # --- 4. prenotazione ------------------------------------------------------

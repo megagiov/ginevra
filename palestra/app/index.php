@@ -130,8 +130,23 @@ try {
             header('Location: ' . Vista::u('/accedi?inviata=1'), true, 303);
             exit;
 
+        // Il link nell'email non accede da solo: mostra una pagina che si
+        // invia da sola (o con un tocco, se il JavaScript e' spento). Cosi'
+        // un'apertura automatica del link — Gmail e gli antivirus lo fanno
+        // di continuo per controllarlo — non consuma il codice monouso
+        // prima che l'utente vero possa usarlo.
         case 'GET /entra':
             $token = (string) ($_GET['token'] ?? '');
+
+            if ($token === '' || !Accesso::tokenValido($token)) {
+                vaiA('/accedi', null, 'Link scaduto o gia\' usato. Chiedine un altro.');
+            }
+
+            require __DIR__ . '/pagine/entra.php';
+            break;
+
+        case 'POST /entra':
+            $token = (string) ($_POST['token'] ?? '');
             $sessione = $token !== ''
                 ? Accesso::entra($token, $_SERVER['HTTP_USER_AGENT'] ?? null)
                 : null;

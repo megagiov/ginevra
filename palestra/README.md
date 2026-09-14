@@ -13,12 +13,12 @@ sottodominio dedicato. Nessun servizio cloud a pagamento.
 |---|---|
 | Schema MySQL e vincoli | completo — 26 asserzioni |
 | Regole di prenotazione in PHP | complete — 24 asserzioni |
-| Accesso con link via email | completo — 21 asserzioni |
-| Schermate cliente (PWA) | complete — 27 asserzioni end-to-end |
+| Accesso con link via email | completo — 27 asserzioni |
+| Schermate cliente (PWA) | complete — 28 asserzioni end-to-end |
 | Schermate amministratore | complete — 41 asserzioni end-to-end |
-| Installazione in sottocartella | supportata — 18 asserzioni |
+| Installazione in sottocartella | supportata — 19 asserzioni |
 
-**157 asserzioni verdi in totale.**
+**165 asserzioni verdi in totale.**
 
 Sette schermate, una sola applicazione: il ruolo decide cosa si vede.
 
@@ -27,7 +27,13 @@ Sette schermate, una sola applicazione: il ruolo decide cosa si vede.
   disponibilita'), clienti, scheda cliente (crediti, prenotazione per suo
   conto, storico)
 
-L'accesso avviene con un link inviato per email, senza password.
+L'accesso avviene con un link inviato per email, senza password. Il primo
+tocco del link (GET) non consuma nulla: solo l'invio del modulo che ne
+segue (automatico via JavaScript, o manuale col pulsante) apre davvero la
+sessione. Serve perche' Gmail e molti antivirus aprono da soli i link
+dentro un'email per controllarli prima che il cliente li clicchi — se
+quell'apertura consumasse il codice monouso, il cliente vero si
+troverebbe sempre un link "gia' usato".
 
 ### Due implementazioni
 
@@ -82,10 +88,10 @@ mariadb studio_dev < db/mysql/migrations/0001_schema.sql
 ```bash
 mariadb -t studio_test < db/mysql/test/01_vincoli.sql   # 26 — cosa garantisce il database
 php app/test/regole.php                                 # 24 — le regole di prenotazione
-php app/test/accesso.php                                # 21 — accesso senza password
-bash app/test/schermate.sh                              # 27 — percorso cliente via HTTP
+php app/test/accesso.php                                # 27 — accesso senza password
+bash app/test/schermate.sh                              # 28 — percorso cliente via HTTP
 bash app/test/admin.sh                                  # 41 — percorso amministratore
-bash app/test/sottocartella.sh                          # 18 — app dentro una sottocartella
+bash app/test/sottocartella.sh                          # 19 — app dentro una sottocartella
 ```
 
 `schermate.sh` avvia il server integrato di PHP e percorre l'app come

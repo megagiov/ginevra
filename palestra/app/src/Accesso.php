@@ -110,6 +110,31 @@ final class Accesso
      *
      * @return string|null il token di sessione da mettere nel cookie
      */
+    /**
+     * Il link vale senza consumarlo, in vista di essere mostrato.
+     *
+     * Serve al primo tocco: molti client di posta (Gmail e gli antivirus in
+     * particolare) aprono da soli i link dentro un'email per controllarli
+     * prima che l'utente li clicchi davvero. Se quell'apertura consumasse il
+     * codice monouso, l'utente vero si troverebbe sempre un link "gia'
+     * usato" — sembra un loop, ma e' lo scanner che arriva prima.
+     */
+    public static function tokenValido(string $token): bool
+    {
+        $q = Db::pdo()->prepare(
+            'SELECT scade_il FROM codici_accesso WHERE hash_codice = ? AND usato_il IS NULL'
+        );
+        $q->execute([hash('sha256', $token)]);
+        $scadeIl = $q->fetchColumn();
+
+        if ($scadeIl === false) {
+            return false;
+        }
+
+        $scadenza = new \DateTimeImmutable($scadeIl, new \DateTimeZone('UTC'));
+        return $scadenza >= new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
+    }
+
     public static function entra(string $token, ?string $userAgent = null): ?string
     {
         return Db::transazione(function (\PDO $pdo) use ($token, $userAgent): ?string {

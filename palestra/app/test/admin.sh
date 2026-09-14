@@ -20,6 +20,17 @@ uguale()   { [ "$1" = "$2" ] && echo 1 || echo 0; }
 mysql_q()  { mariadb -N -B -u "$DB_USER" -h "$DB_HOST" "$DB_NAME" -e "$1"; }
 gettone()  { grep -o 'name="gettone" value="[^"]*"' <<<"$1" | head -1 | cut -d'"' -f4; }
 
+# Il link dell'email ora e' un primo tocco (GET, non consuma) piu' un invio
+# vero (POST): serve a non farsi bruciare il codice monouso da uno scanner
+# di posta che apre il link da solo. I test rifanno lo stesso doppio passo.
+entra_con_token() {
+  local jar="$1" token="$2"
+  local pagina token_campo
+  pagina=$(curl -s -c "$jar" -b "$jar" "$U/entra?token=$token")
+  token_campo=$(grep -o 'name="token" value="[^"]*"' <<<"$pagina" | head -1 | cut -d'"' -f4)
+  curl -s -c "$jar" -b "$jar" -o /dev/null -d "token=$token_campo" "$U/entra"
+}
+
 php "$APP/test/prepara-admin.php" || exit 1
 
 php -S "127.0.0.1:$PORTA" -t "$APP" "$APP/test/server-prova.php" >/tmp/server-admin.log 2>&1 &
@@ -32,7 +43,7 @@ U="http://127.0.0.1:$PORTA"
 # --- 1. un cliente non entra nell'area riservata --------------------------
 BC=$(mktemp); CL=(curl -s -c "$BC" -b "$BC" -w '\n%{http_code}')
 TK=$(php "$APP/test/token-di-prova.php" anna@test.it)
-"${CL[@]}" -o /dev/null "$U/entra?token=$TK" >/dev/null
+entra_con_token "$BC" "$TK"
 
 R=$("${CL[@]}" -o /dev/null "$U/admin")
 ok "Un cliente non accede all'area amministratore" "$(contiene "$R" '403')"
@@ -44,7 +55,7 @@ ok "Nemmeno creando clienti via POST"              "$(contiene "$R" '403')"
 # --- 2. accesso amministratore -------------------------------------------
 BA=$(mktemp); A=(curl -s -c "$BA" -b "$BA" -w '\n%{http_code}|%{redirect_url}')
 TK=$(php "$APP/test/token-di-prova.php" admin@studio.test)
-"${A[@]}" -o /dev/null "$U/entra?token=$TK" >/dev/null
+entra_con_token "$BA" "$TK"
 
 R=$("${A[@]}" -o /dev/null "$U/")
 ok "Per l'amministratore la home e' la sua agenda" "$(contiene "$R" '/admin')"

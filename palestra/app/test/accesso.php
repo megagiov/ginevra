@@ -33,6 +33,9 @@ $pdo->exec("INSERT INTO utenti (id, email, nome, ruolo) VALUES
 $pdo->exec("INSERT INTO utenti (id, email, nome, attivo) VALUES
   ('c9', 'uscita@test.it', 'Ex cliente', 0)");
 
+$pdo->exec("INSERT INTO utenti (id, email, nome) VALUES
+  ('c8', 'carla@test.it', 'Carla')");
+
 // ---------------------------------------------------------------------------
 // 1. Richiesta del link
 // ---------------------------------------------------------------------------
@@ -74,8 +77,16 @@ ok('Dopo 5 richieste in un\'ora le successive vengono rifiutate', $bloccato);
 // 2. Uso del link
 // ---------------------------------------------------------------------------
 
+// La verifica non consuma nulla: e' la pagina che uno scanner di posta
+// apre da solo prima che il cliente clicchi davvero. Ripeterla non deve
+// bruciare il codice.
+ok('Il link e\' valido prima di essere usato', Accesso::tokenValido($token));
+ok('Controllarlo piu\' volte non lo consuma', Accesso::tokenValido($token));
+
 $sessione = Accesso::entra($token, 'Mozilla/5.0 Prova');
 ok('Il token apre la sessione', is_string($sessione) && strlen($sessione) === 64);
+
+ok('Dopo l\'uso non e\' piu\' valido', !Accesso::tokenValido($token));
 
 $utente = Accesso::utenteDaSessione($sessione);
 ok('La sessione identifica il cliente giusto', ($utente['email'] ?? null) === 'anna@test.it');
@@ -83,12 +94,31 @@ ok('La sessione identifica il cliente giusto', ($utente['email'] ?? null) === 'a
 ok('Lo stesso link non vale una seconda volta', Accesso::entra($token) === null);
 
 ok('Un token inventato non apre nulla', Accesso::entra(bin2hex(random_bytes(32))) === null);
+ok('Un token inventato non risulta valido', !Accesso::tokenValido(bin2hex(random_bytes(32))));
 
 $s = $pdo->query("SELECT id FROM sessioni")->fetchColumn();
 ok('Anche della sessione si salva solo l\'impronta', $s === hash('sha256', $sessione));
 
 ok('L\'accesso aggiorna la data di ultimo ingresso',
    $pdo->query("SELECT ultimo_accesso_il FROM utenti WHERE id = 'c1'")->fetchColumn() !== null);
+
+// ---------------------------------------------------------------------------
+// 2b. Lo scenario reale: uno scanner di posta apre il link da solo
+// ---------------------------------------------------------------------------
+
+$tGmail = Accesso::richiediLink('carla@test.it');
+
+// Gmail (o un antivirus) apre il link piu' volte per controllarlo, di
+// solito nei secondi dopo la consegna, ben prima che l'utente lo clicchi.
+Accesso::tokenValido($tGmail);
+Accesso::tokenValido($tGmail);
+Accesso::tokenValido($tGmail);
+
+ok('Dopo le aperture automatiche dello scanner il link e\' ancora valido',
+   Accesso::tokenValido($tGmail));
+
+$sessioneVera = Accesso::entra($tGmail, 'Mozilla/5.0 Cliente vero');
+ok('Il cliente vero riesce comunque a entrare', is_string($sessioneVera));
 
 // ---------------------------------------------------------------------------
 // 3. Scadenze
