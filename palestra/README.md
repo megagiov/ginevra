@@ -28,12 +28,14 @@ Sette schermate, una sola applicazione: il ruolo decide cosa si vede.
   conto, storico)
 
 L'accesso avviene con un link inviato per email, senza password. Il primo
-tocco del link (GET) non consuma nulla: solo l'invio del modulo che ne
-segue (automatico via JavaScript, o manuale col pulsante) apre davvero la
-sessione. Serve perche' Gmail e molti antivirus aprono da soli i link
-dentro un'email per controllarli prima che il cliente li clicchi — se
-quell'apertura consumasse il codice monouso, il cliente vero si
-troverebbe sempre un link "gia' usato".
+tocco del link (GET) non consuma nulla: mostra una pagina con un pulsante
+"Entra", e solo l'invio di quel modulo (POST) apre davvero la sessione.
+Niente invio automatico via JavaScript: alcuni controlli antiphishing
+aprono il link ed eseguono anche lo script della pagina, quindi un invio
+automatico verrebbe consumato da loro. Serve perche' Gmail e molti
+antivirus aprono da soli i link dentro un'email per controllarli prima
+che il cliente li clicchi — se quell'apertura consumasse il codice
+monouso, il cliente vero si troverebbe sempre un link "gia' usato".
 
 ### Due implementazioni
 

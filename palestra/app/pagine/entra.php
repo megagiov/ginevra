@@ -6,18 +6,16 @@ echo Vista::intestazione('Entra');
 ?>
 <div class="riquadro accesso">
   <h1>Bentornato</h1>
-  <p>Stiamo completando l'accesso...</p>
+  <p>Tocca il pulsante per completare l'accesso.</p>
 
-  <!-- Un client di posta o un antivirus che apre questo link da solo non
-       esegue il JavaScript qui sotto: vede solo questa pagina e non invia
-       mai il modulo, quindi non consuma il codice al posto tuo. -->
-  <form id="modulo-entra" method="post" action="<?= Vista::u('/entra') ?>">
+  <!-- Il consumo del codice avviene solo qui, con l'invio di questo modulo.
+       Niente invio automatico: alcuni controlli antiphishing eseguono anche
+       il JavaScript delle pagine che aprono, quindi un invio automatico
+       verrebbe eseguito anche da loro. Un tocco vero non lo replicano. -->
+  <form method="post" action="<?= Vista::u('/entra') ?>">
     <input type="hidden" name="token" value="<?= Vista::e($token) ?>">
-    <noscript>
-      <button type="submit" class="principale">Entra</button>
-    </noscript>
+    <button type="submit" class="principale">Entra</button>
   </form>
 </div>
-<script>document.getElementById('modulo-entra').submit();</script>
 <?php
 echo Vista::chiusura();

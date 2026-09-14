@@ -130,11 +130,12 @@ try {
             header('Location: ' . Vista::u('/accedi?inviata=1'), true, 303);
             exit;
 
-        // Il link nell'email non accede da solo: mostra una pagina che si
-        // invia da sola (o con un tocco, se il JavaScript e' spento). Cosi'
-        // un'apertura automatica del link — Gmail e gli antivirus lo fanno
-        // di continuo per controllarlo — non consuma il codice monouso
-        // prima che l'utente vero possa usarlo.
+        // Il link nell'email non accede da solo: mostra una pagina che
+        // aspetta un tocco vero sul pulsante "Entra". Nessun invio
+        // automatico via JavaScript: alcuni controlli antiphishing aprono
+        // il link ed eseguono anche lo script della pagina, quindi un invio
+        // automatico verrebbe consumato da loro allo stesso modo di un GET
+        // semplice. Solo un tocco reale del cliente apre la sessione.
         case 'GET /entra':
             $token = (string) ($_GET['token'] ?? '');
 
