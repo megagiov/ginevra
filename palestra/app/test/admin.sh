@@ -173,6 +173,7 @@ G=$(gettone "$P")
 ok "La scheda mostra le note del cliente" "$(contiene "$P" 'Spalla destra da riabilitare')"
 ok "E il suo telefono"                    "$(contiene "$P" '333111')"
 ok "E lo storico dei movimenti"           "$(contiene "$P" 'Pacchetto iniziale')"
+ok "Prenota per suo conto fa scegliere prima il giorno" "$(contiene "$P" 'id="giorno-prenota"')"
 
 R=$("${A[@]}" -o /dev/null -d "gettone=$G&cliente=c1&quantita=10&tipo=gruppo&causale=acquisto&importo=250.00&nota=Rinnovo" "$U/admin/accredita")
 ok "La ricarica aggiorna il saldo (5-1+10=14)" "$(uguale "$(mysql_q "SELECT COALESCE(SUM(delta),0) FROM movimenti WHERE cliente_id='c1' AND tipo='gruppo'")" '14')"

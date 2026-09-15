@@ -109,7 +109,38 @@ echo Vista::intestazione($c['nome'], $utente, 'clienti');
   </p>
 </details>
 
-<?php if ($c['attivo'] && $prenotabili !== []): ?>
+<?php
+  // Raggruppate per giorno, cosi' il modulo qui sotto fa scegliere prima
+  // il giorno e solo dopo l'ora: una tendina di poche righe invece di uno
+  // scorrimento lungo quanto tutte le lezioni disponibili.
+  $opzioniPerGiorno = [];
+  foreach ($prenotabili as $giornoChiave => $giornoSlot) {
+    foreach ($giornoSlot as $s) {
+      if ((int) $s['posti_liberi'] <= 0 || $s['mia']) { continue; }
+
+      $etichetta = Vista::ora($s['locale']) . ' — '
+                 . ($s['tipo'] === 'gruppo' ? 'gruppo' : 'individuale')
+                 . ' (' . (int) $s['posti_liberi'] . ' liberi)';
+
+      if (count($s['maestri']) > 1) {
+        // Con piu' maestri candidati, ogni combinazione slot+maestro e'
+        // un'opzione a se': non c'e' un secondo campo da mostrare.
+        foreach ($s['maestri'] as $m) {
+          $opzioniPerGiorno[$giornoChiave][] = [
+            'valore'    => $s['id'] . '|' . $m['id'],
+            'etichetta' => $etichetta . ' — con ' . $m['nome'],
+          ];
+        }
+      } else {
+        $opzioniPerGiorno[$giornoChiave][] = [
+          'valore'    => $s['id'],
+          'etichetta' => $etichetta . ($s['maestri'] !== [] ? ' — con ' . $s['maestri'][0]['nome'] : ''),
+        ];
+      }
+    }
+  }
+?>
+<?php if ($c['attivo'] && $opzioniPerGiorno !== []): ?>
 <details class="riquadro pubblica">
   <summary>Prenota per suo conto</summary>
 
@@ -119,38 +150,48 @@ echo Vista::intestazione($c['nome'], $utente, 'clienti');
     <?= Vista::campoGettone() ?>
     <input type="hidden" name="cliente" value="<?= Vista::e($c['id']) ?>">
 
-    <div class="larga">
-      <label for="slot">Lezione</label>
-      <select id="slot" name="slot" required>
-      <?php foreach ($prenotabili as $giornoSlot): ?>
-        <?php foreach ($giornoSlot as $s):
-          if ((int) $s['posti_liberi'] <= 0 || $s['mia']) { continue; }
-
-          $etichetta = Vista::giorno($s['locale']) . ', ' . Vista::ora($s['locale']) . ' — '
-                     . ($s['tipo'] === 'gruppo' ? 'gruppo' : 'individuale')
-                     . ' (' . (int) $s['posti_liberi'] . ' liberi)';
-        ?>
-          <?php if (count($s['maestri']) > 1): ?>
-            <!-- Con piu' maestri candidati, ogni combinazione slot+maestro
-                 e' un'opzione a se': non c'e' un secondo campo da mostrare. -->
-            <?php foreach ($s['maestri'] as $m): ?>
-              <option value="<?= Vista::e($s['id']) ?>|<?= Vista::e($m['id']) ?>">
-                <?= Vista::e($etichetta) ?> — con <?= Vista::e($m['nome']) ?>
-              </option>
-            <?php endforeach; ?>
-          <?php else: ?>
-            <option value="<?= Vista::e($s['id']) ?>">
-              <?= Vista::e($etichetta) ?><?= $s['maestri'] !== [] ? ' — con ' . Vista::e($s['maestri'][0]['nome']) : '' ?>
-            </option>
-          <?php endif; ?>
+    <div>
+      <label for="giorno-prenota">Giorno</label>
+      <select id="giorno-prenota">
+        <?php foreach (array_keys($opzioniPerGiorno) as $giornoChiave): ?>
+          <option value="<?= Vista::e($giornoChiave) ?>">
+            <?= Vista::e(Vista::giorno(new DateTimeImmutable($giornoChiave))) ?>
+          </option>
         <?php endforeach; ?>
-      <?php endforeach; ?>
       </select>
+    </div>
+
+    <div>
+      <label for="slot">Ora</label>
+      <select id="slot" name="slot" required></select>
     </div>
 
     <button type="submit" class="principale">Prenota</button>
   </form>
 </details>
+
+<script type="application/json" id="dati-prenota-conto"><?= json_encode($opzioniPerGiorno) ?></script>
+<script>
+  (function () {
+    var dati = JSON.parse(document.getElementById('dati-prenota-conto').textContent);
+    var giornoSel = document.getElementById('giorno-prenota');
+    var oraSel = document.getElementById('slot');
+
+    function aggiorna() {
+      var opzioni = dati[giornoSel.value] || [];
+      oraSel.innerHTML = '';
+      opzioni.forEach(function (o) {
+        var opt = document.createElement('option');
+        opt.value = o.valore;
+        opt.textContent = o.etichetta;
+        oraSel.appendChild(opt);
+      });
+    }
+
+    giornoSel.addEventListener('change', aggiorna);
+    aggiorna();
+  })();
+</script>
 <?php endif; ?>
 
 <?php if ($scheda['prossime'] !== []): ?>
