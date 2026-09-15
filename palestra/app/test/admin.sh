@@ -84,7 +84,7 @@ P=$("${A[@]}" "$U/admin/calendario")
 G=$(gettone "$P")
 LUN=$(date -d 'next monday' +%F)
 
-R=$("${A[@]}" -o /dev/null -d "gettone=$G&da=$LUN&data=$LUN&ora=07:00&tipo=gruppo&capienza=4&ripetizioni=4" "$U/admin/slot")
+R=$("${A[@]}" -o /dev/null -d "gettone=$G&da=$LUN&giorni[]=1&ore[]=07:00&tipo=gruppo&capienza=4&ripetizioni=4" "$U/admin/slot")
 ok "Pubblica quattro settimane in un colpo" "$(uguale "$(mysql_q "SELECT COUNT(*) FROM slot WHERE tipo='gruppo' AND id<>'oggi1'")" '4')"
 # Le ripetizioni si contano in giorni locali, non in ore: fra una e l'altra
 # devono passare esattamente sette giorni anche a cavallo del cambio d'ora.
@@ -92,22 +92,40 @@ ok "A distanza di sette giorni l'una dall'altra" "$(uguale "$(mysql_q "SELECT CO
 ok "Le lezioni create sono di gruppo da 4"  "$(uguale "$(mysql_q "SELECT COUNT(DISTINCT capienza) FROM slot WHERE tipo='gruppo' AND id<>'oggi1'")" '1')"
 
 # La stessa ora e lo stesso tipo: quel tipo e' occupato, va saltato.
-R=$("${A[@]}" -o /dev/null -d "gettone=$G&da=$LUN&data=$LUN&ora=07:00&tipo=gruppo&capienza=4&ripetizioni=1" "$U/admin/slot")
+R=$("${A[@]}" -o /dev/null -d "gettone=$G&da=$LUN&giorni[]=1&ore[]=07:00&tipo=gruppo&capienza=4&ripetizioni=1" "$U/admin/slot")
 ok "Una sovrapposizione dello stesso tipo viene rifiutata e spiegata" "$(contiene "$R" 'errore=')"
 ok "E non crea nulla in piu'" "$(uguale "$(mysql_q "SELECT COUNT(*) FROM slot WHERE tipo='gruppo' AND id<>'oggi1'")" '4')"
 
 # Con un secondo maestro, un'individuale nello stesso orario di un gruppo va bene.
-R=$("${A[@]}" -o /dev/null -d "gettone=$G&da=$LUN&data=$LUN&ora=07:00&tipo=individuale&capienza=1&ripetizioni=1" "$U/admin/slot")
+R=$("${A[@]}" -o /dev/null -d "gettone=$G&da=$LUN&giorni[]=1&ore[]=07:00&tipo=individuale&capienza=1&ripetizioni=1" "$U/admin/slot")
 ok "Un'individuale nello stesso orario di un gruppo (due maestri) viene accettata" \
    "$(uguale "$(mysql_q "SELECT COUNT(*) FROM slot WHERE tipo='individuale' AND id<>'fut1'")" '1')"
 
 # "Entrambi" pubblica le due lezioni in un colpo solo.
-R=$("${A[@]}" -o /dev/null -d "gettone=$G&da=$LUN&data=$LUN&ora=10:00&tipo=entrambi&capienza=3&ripetizioni=1" "$U/admin/slot")
+R=$("${A[@]}" -o /dev/null -d "gettone=$G&da=$LUN&giorni[]=1&ore[]=10:00&tipo=entrambi&capienza=3&ripetizioni=1" "$U/admin/slot")
 ok "\"Entrambi\" pubblica anche un'individuale in piu'" "$(uguale "$(mysql_q "SELECT COUNT(*) FROM slot WHERE tipo='individuale' AND id<>'fut1'")" '2')"
 ok "\"Entrambi\" pubblica anche un gruppo in piu'" "$(uguale "$(mysql_q "SELECT COUNT(*) FROM slot WHERE tipo='gruppo' AND id<>'oggi1'")" '5')"
 
-R=$("${A[@]}" -o /dev/null -d "gettone=$G&da=$LUN&data=$LUN&ora=09:00&tipo=gruppo&capienza=9&ripetizioni=1" "$U/admin/slot")
+R=$("${A[@]}" -o /dev/null -d "gettone=$G&da=$LUN&giorni[]=1&ore[]=09:00&tipo=gruppo&capienza=9&ripetizioni=1" "$U/admin/slot")
 ok "Un gruppo da 9 posti viene rifiutato" "$(contiene "$R" 'errore=')"
+
+# Piu' giorni e piu' ore in un solo invio: il prodotto di ogni combinazione.
+PRIMA=$(mysql_q "SELECT COUNT(*) FROM slot WHERE tipo='individuale'")
+R=$("${A[@]}" -o /dev/null -d "gettone=$G&da=$LUN&giorni[]=2&giorni[]=4&ore[]=11:00&ore[]=12:00&tipo=individuale&capienza=1&ripetizioni=1" "$U/admin/slot")
+DOPO=$(mysql_q "SELECT COUNT(*) FROM slot WHERE tipo='individuale'")
+ok "Piu' giorni e piu' ore pubblicano tutte le combinazioni (2x2=4)" "$(uguale "$((DOPO - PRIMA))" '4')"
+
+# "Ripeti per" ripete lo stesso schema di giorni/ore anche nelle settimane dopo.
+PRIMA=$(mysql_q "SELECT COUNT(*) FROM slot WHERE tipo='individuale'")
+R=$("${A[@]}" -o /dev/null -d "gettone=$G&da=$LUN&giorni[]=6&ore[]=07:00&tipo=individuale&capienza=1&ripetizioni=2" "$U/admin/slot")
+DOPO=$(mysql_q "SELECT COUNT(*) FROM slot WHERE tipo='individuale'")
+ok "\"Ripeti per\" ripete lo schema anche nella settimana dopo (2 sabati)" "$(uguale "$((DOPO - PRIMA))" '2')"
+
+R=$("${A[@]}" -o /dev/null -d "gettone=$G&da=$LUN&ore[]=07:00&tipo=individuale&capienza=1&ripetizioni=1" "$U/admin/slot")
+ok "Senza nessun giorno spuntato viene rifiutato" "$(contiene "$R" 'errore=')"
+
+R=$("${A[@]}" -o /dev/null -d "gettone=$G&da=$LUN&giorni[]=3&tipo=individuale&capienza=1&ripetizioni=1" "$U/admin/slot")
+ok "Senza nessun'ora spuntata viene rifiutato" "$(contiene "$R" 'errore=')"
 
 # --- 5. chiusura ed eliminazione -----------------------------------------
 SLOT=$(mysql_q "SELECT id FROM slot WHERE tipo='gruppo' AND id<>'oggi1' ORDER BY inizio LIMIT 1")
@@ -229,7 +247,7 @@ ok "L'elenco maestri mostra quello appena creato" "$(contiene "$P" 'Marco')"
 R=$("${A[@]}" -o /dev/null -d "gettone=$G&cliente=c2&quantita=5&tipo=individuale&causale=omaggio" "$U/admin/accredita")
 
 # Un solo maestro candidato: l'assegnazione e' automatica, il cliente non sceglie nulla.
-R=$("${A[@]}" -o /dev/null -d "gettone=$G&da=$LUN&data=$LUN&ora=08:00&tipo=individuale&capienza=1&ripetizioni=1&maestri_individuale[]=$MID_MARCO" "$U/admin/slot")
+R=$("${A[@]}" -o /dev/null -d "gettone=$G&da=$LUN&giorni[]=1&ore[]=08:00&tipo=individuale&capienza=1&ripetizioni=1&maestri_individuale[]=$MID_MARCO" "$U/admin/slot")
 SLOT_MARCO=$(mysql_q "SELECT slot_id FROM slot_maestri GROUP BY slot_id HAVING COUNT(*) = 1")
 ok "Pubblica la lezione con il maestro candidato" "$([ -n "$SLOT_MARCO" ] && echo 1 || echo 0)"
 
@@ -247,7 +265,7 @@ ok "Il cliente prenota senza dover scegliere il maestro (ce n'e' uno solo)" \
 R=$("${A[@]}" -o /dev/null -d "gettone=$G&nome=Giulia" "$U/admin/maestri")
 MID_GIULIA=$(mysql_q "SELECT id FROM maestri WHERE nome='Giulia'")
 
-R=$("${A[@]}" -o /dev/null -d "gettone=$G&da=$LUN&data=$LUN&ora=09:00&tipo=individuale&capienza=1&ripetizioni=1&maestri_individuale[]=$MID_MARCO&maestri_individuale[]=$MID_GIULIA" "$U/admin/slot")
+R=$("${A[@]}" -o /dev/null -d "gettone=$G&da=$LUN&giorni[]=1&ore[]=09:00&tipo=individuale&capienza=1&ripetizioni=1&maestri_individuale[]=$MID_MARCO&maestri_individuale[]=$MID_GIULIA" "$U/admin/slot")
 SLOT_DOPPIO=$(mysql_q "SELECT slot_id FROM slot_maestri GROUP BY slot_id HAVING COUNT(*) = 2")
 ok "Pubblica la lezione con due maestri candidati" "$([ -n "$SLOT_DOPPIO" ] && echo 1 || echo 0)"
 

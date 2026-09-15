@@ -24,20 +24,24 @@ echo Vista::intestazione('Calendario', $utente, 'calendario');
     <?= Vista::campoGettone() ?>
     <input type="hidden" name="da" value="<?= $qui ?>">
 
-    <div>
-      <label for="data">Giorno</label>
-      <input id="data" name="data" type="date" required
-             value="<?= $qui ?>" min="<?= (new DateTimeImmutable('today'))->format('Y-m-d') ?>">
-      <p class="sommesso piccolo" id="giorno-nome"></p>
+    <div class="larga">
+      <span class="etichetta-gruppo">Giorni (nella settimana qui sopra)</span>
+      <?php foreach (['1'=>'Lun','2'=>'Mar','3'=>'Mer','4'=>'Gio','5'=>'Ven','6'=>'Sab','7'=>'Dom'] as $val => $etichetta): ?>
+        <label class="scelta">
+          <input type="checkbox" name="giorni[]" value="<?= $val ?>">
+          <?= $etichetta ?>
+        </label>
+      <?php endforeach; ?>
     </div>
 
-    <div>
-      <label for="ora">Ora d'inizio</label>
-      <select id="ora" name="ora" required>
-        <?php foreach (range(7, 20) as $h): $val = sprintf('%02d:00', $h); ?>
-          <option value="<?= $val ?>" <?= $val === '18:00' ? 'selected' : '' ?>><?= $val ?></option>
-        <?php endforeach; ?>
-      </select>
+    <div class="larga">
+      <span class="etichetta-gruppo">Ore</span>
+      <?php foreach (range(7, 20) as $h): $val = sprintf('%02d:00', $h); ?>
+        <label class="scelta">
+          <input type="checkbox" name="ore[]" value="<?= $val ?>">
+          <?= $val ?>
+        </label>
+      <?php endforeach; ?>
     </div>
 
     <div>
@@ -97,29 +101,15 @@ echo Vista::intestazione('Calendario', $utente, 'calendario');
   </form>
 
   <p class="sommesso piccolo">
-    Le lezioni durano 60 minuti. Le ripetizioni che cadono su un orario gia'
+    Le lezioni durano 60 minuti. Spunta piu' giorni e piu' ore per pubblicare
+    tutta una settimana tipo in un colpo solo: ogni combinazione giorno/ora
+    diventa una lezione. "Ripeti per" ripete lo stesso schema anche nelle
+    settimane successive. Le combinazioni che cadono su un orario gia'
     occupato vengono saltate e te lo dico quali. "Entrambi" serve quando hai
     un secondo maestro disponibile: pubblica un'individuale e un gruppo
-    nello stesso orario in un colpo solo.
+    nello stesso orario.
   </p>
 </details>
-
-<script>
-  // Solo per mostrare "lun", "mar", ecc. accanto alla data scelta: non
-  // cambia cosa viene inviato al server, che riceve sempre la data intera.
-  (function () {
-    var giorni = ['dom', 'lun', 'mar', 'mer', 'gio', 'ven', 'sab'];
-    var campo = document.getElementById('data');
-    var etichetta = document.getElementById('giorno-nome');
-    function aggiorna() {
-      if (!campo.value) { etichetta.textContent = ''; return; }
-      var d = new Date(campo.value + 'T00:00:00');
-      etichetta.textContent = giorni[d.getDay()];
-    }
-    campo.addEventListener('input', aggiorna);
-    aggiorna();
-  })();
-</script>
 
 <?php foreach ($settimana as $data => $slot):
   $giorno = new DateTimeImmutable($data, new DateTimeZone('Europe/Rome'));

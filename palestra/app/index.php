@@ -287,8 +287,9 @@ try {
             try {
                 $esito = Amministrazione::creaSlot(
                     $utente['id'],
-                    (string) ($_POST['data'] ?? ''),
-                    (string) ($_POST['ora'] ?? ''),
+                    (string) ($_POST['da'] ?? ''),
+                    array_values(array_filter(array_map('strval', (array) ($_POST['giorni'] ?? [])))),
+                    array_values(array_filter(array_map('strval', (array) ($_POST['ore'] ?? [])))),
                     (string) ($_POST['tipo'] ?? ''),
                     (int) ($_POST['capienza'] ?? 4),
                     (int) ($_POST['ripetizioni'] ?? 1),

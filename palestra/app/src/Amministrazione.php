@@ -130,23 +130,33 @@ final class Amministrazione
      *
      * @return array{creati:int, saltati:list<string>}
      */
+    /** Da valore del modulo ('1'..'7', come DateTime::format('N')) a offset in giorni dal lunedi'. */
+    private const GIORNI_SETTIMANA_VALIDI = ['1', '2', '3', '4', '5', '6', '7'];
+
     /**
-     * Crea una lezione, eventualmente ripetuta, di un tipo o di entrambi.
+     * Crea lezioni per piu' giorni della settimana e piu' orari in un colpo
+     * solo, di un tipo o di entrambi, eventualmente ripetute per piu'
+     * settimane.
      *
-     * "Entrambi" serve a chi ha un secondo maestro disponibile: pubblica
-     * un'individuale e un gruppo nello stesso orario in un colpo solo,
-     * invece di ripetere il modulo due volte.
+     * Pensato per organizzare tutta una settimana tipo in una volta sola:
+     * si spuntano i giorni (come le ore) invece di ripetere il modulo una
+     * volta per ogni combinazione. "Entrambi" pubblica un'individuale e un
+     * gruppo nello stesso orario, per chi ha un secondo maestro disponibile.
      *
+     * @param string $lunediSettimana Y-m-d, il lunedi' della settimana da cui partire (ora locale)
+     * @param list<string> $giorni '1' (lunedi') .. '7' (domenica)
+     * @param list<string> $ore 'H:i', ora locale
      * @param array{individuale?:list<string>, gruppo?:list<string>} $maestriPerTipo
-     *        id dei maestri candidati per ciascun tipo creato. Con uno solo
-     *        per tipo l'assegnazione e' automatica alla prenotazione, senza
-     *        nulla da scegliere; con zero non cambia nulla rispetto a prima
-     *        di avere i maestri in app.
+     *        id dei maestri candidati per ciascun tipo creato, applicati a
+     *        tutte le lezioni di questo invio. Con uno solo per tipo
+     *        l'assegnazione e' automatica alla prenotazione; con zero non
+     *        cambia nulla rispetto a prima di avere i maestri in app.
      */
     public static function creaSlot(
         string $attoreId,
-        string $data,          // Y-m-d, ora locale
-        string $ora,           // H:i,   ora locale
+        string $lunediSettimana,
+        array  $giorni,
+        array  $ore,
         string $tipo,
         int    $capienza,
         int    $ripetizioni = 1,
@@ -164,62 +174,83 @@ final class Amministrazione
             throw new RegolaViolata('Un gruppo puo\' avere da 2 a 4 posti');
         }
 
+        if ($giorni === [] || $ore === []) {
+            throw new RegolaViolata('Scegli almeno un giorno e un\'ora');
+        }
+
+        if (array_diff($giorni, self::GIORNI_SETTIMANA_VALIDI) !== []) {
+            throw new RegolaViolata('Giorno della settimana non valido');
+        }
+
+        foreach ($ore as $ora) {
+            if (!preg_match('/^([01]\d|2[0-3]):00$/', $ora)) {
+                throw new RegolaViolata('Ora non valida');
+            }
+        }
+
         $ripetizioni = max(1, min(52, $ripetizioni));
 
-        $inizio = \DateTimeImmutable::createFromFormat(
-            'Y-m-d H:i', "$data $ora", self::fuso()
-        );
-
-        if ($inizio === false) {
-            throw new RegolaViolata('Data od ora non valide');
+        $lunedi = \DateTimeImmutable::createFromFormat('Y-m-d', $lunediSettimana, self::fuso());
+        if ($lunedi === false) {
+            throw new RegolaViolata('Data non valida');
         }
+        $lunedi = $lunedi->setTime(0, 0);
 
         $creati = 0;
         $saltati = [];
 
-        for ($i = 0; $i < $ripetizioni; $i++) {
-            // Si aggiungono settimane sull'ora locale, non sull'UTC: cosi'
-            // dopo il cambio d'ora la lezione resta alle 18:00 per il
-            // cliente, invece di spostarsi alle 17:00.
-            $questo = $inizio->modify('+' . ($i * 7) . ' days');
+        for ($settimana = 0; $settimana < $ripetizioni; $settimana++) {
+            foreach ($giorni as $giornoIso) {
+                // Si aggiungono giorni sull'ora locale, non sull'UTC: cosi'
+                // dopo il cambio d'ora la lezione resta alla sua ora per il
+                // cliente, invece di spostarsi di un'ora.
+                $giornoData = $lunedi->modify('+' . ((int) $giornoIso - 1 + $settimana * 7) . ' days');
 
-            foreach ($tipiDaCreare as $unTipo) {
-                $capienzaEffettiva = $unTipo === 'individuale' ? 1 : $capienza;
-                $slotId = Db::uuid();
-                $maestri = $maestriPerTipo[$unTipo] ?? [];
+                foreach ($ore as $ora) {
+                    $inizio = \DateTimeImmutable::createFromFormat(
+                        'Y-m-d H:i', $giornoData->format('Y-m-d') . " $ora", self::fuso()
+                    );
 
-                try {
-                    Db::transazione(function (\PDO $pdo) use (
-                        $slotId, $questo, $unTipo, $capienzaEffettiva, $maestri
-                    ): void {
-                        $pdo->prepare(
-                            'INSERT INTO slot (id, inizio, fine, tipo, capienza) VALUES (?,?,?,?,?)'
-                        )->execute([
-                            $slotId,
-                            self::utc($questo),
-                            self::utc($questo->modify('+' . self::DURATA_MINUTI . ' minutes')),
-                            $unTipo,
-                            $capienzaEffettiva,
-                        ]);
+                    foreach ($tipiDaCreare as $unTipo) {
+                        $capienzaEffettiva = $unTipo === 'individuale' ? 1 : $capienza;
+                        $slotId = Db::uuid();
+                        $maestri = $maestriPerTipo[$unTipo] ?? [];
 
-                        $q = $pdo->prepare(
-                            'INSERT INTO slot_maestri (slot_id, maestro_id) VALUES (?, ?)'
-                        );
-                        foreach ($maestri as $maestroId) {
-                            $q->execute([$slotId, $maestroId]);
+                        try {
+                            Db::transazione(function (\PDO $pdo) use (
+                                $slotId, $inizio, $unTipo, $capienzaEffettiva, $maestri
+                            ): void {
+                                $pdo->prepare(
+                                    'INSERT INTO slot (id, inizio, fine, tipo, capienza) VALUES (?,?,?,?,?)'
+                                )->execute([
+                                    $slotId,
+                                    self::utc($inizio),
+                                    self::utc($inizio->modify('+' . self::DURATA_MINUTI . ' minutes')),
+                                    $unTipo,
+                                    $capienzaEffettiva,
+                                ]);
+
+                                $q = $pdo->prepare(
+                                    'INSERT INTO slot_maestri (slot_id, maestro_id) VALUES (?, ?)'
+                                );
+                                foreach ($maestri as $maestroId) {
+                                    $q->execute([$slotId, $maestroId]);
+                                }
+                            });
+                            $creati++;
+                        } catch (PDOException $e) {
+                            // 45000 e' il trigger anti-sovrapposizione dello
+                            // stesso tipo; 23000 l'unicita' su orario+tipo
+                            // (o un maestro inesistente). In tutti i casi
+                            // non si crea la lezione.
+                            if (in_array($e->getCode(), ['45000', '23000'], true)) {
+                                $saltati[] = Vista::giorno($inizio) . ' alle ' . $inizio->format('H:i')
+                                           . (count($tipiDaCreare) > 1 ? " ($unTipo)" : '');
+                                continue;
+                            }
+                            throw $e;
                         }
-                    });
-                    $creati++;
-                } catch (PDOException $e) {
-                    // 45000 e' il trigger anti-sovrapposizione dello stesso
-                    // tipo; 23000 l'unicita' su orario+tipo (o un maestro
-                    // inesistente). In tutti i casi non si crea la lezione.
-                    if (in_array($e->getCode(), ['45000', '23000'], true)) {
-                        $saltati[] = Vista::giorno($questo) . ' alle ' . $questo->format('H:i')
-                                   . (count($tipiDaCreare) > 1 ? " ($unTipo)" : '');
-                        continue;
                     }
-                    throw $e;
                 }
             }
         }
