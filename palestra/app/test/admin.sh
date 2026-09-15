@@ -282,7 +282,7 @@ ok "Pubblica la lezione con due maestri candidati" "$([ -n "$SLOT_DOPPIO" ] && e
 R=$("${B[@]}" -o /dev/null -d "gettone=$GB&slot=$SLOT_DOPPIO" "$U/prenota")
 ok "Senza scegliere il maestro la prenotazione viene rifiutata" "$(contiene "$R" 'errore=')"
 
-R=$("${B[@]}" -o /dev/null -d "gettone=$GB&slot=$SLOT_DOPPIO&maestro=$MID_GIULIA" "$U/prenota")
+R=$("${B[@]}" -o /dev/null -d "gettone=$GB&slot=$SLOT_DOPPIO|$MID_GIULIA" "$U/prenota")
 ok "Scegliendo Giulia la prenotazione risulta a suo nome" \
    "$(uguale "$(mysql_q "SELECT maestro_id FROM prenotazioni WHERE slot_id='$SLOT_DOPPIO' AND cliente_id='c2'")" "$MID_GIULIA")"
 

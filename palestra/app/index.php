@@ -195,8 +195,15 @@ try {
             verificaGettone();
 
             try {
-                $maestro = trim((string) ($_POST['maestro'] ?? '')) ?: null;
-                Regole::prenota((string) ($_POST['slot'] ?? ''), $utente['id'], $utente['id'], $maestro);
+                // Quando l'orario scelto ha piu' maestri candidati, il
+                // valore porta "id-slot|id-maestro" invece del solo id: una
+                // riga sola da toccare, senza un secondo campo da scegliere.
+                $scelta = (string) ($_POST['slot'] ?? '');
+                [$slotScelto, $maestroScelto] = str_contains($scelta, '|')
+                    ? explode('|', $scelta, 2)
+                    : [$scelta, null];
+
+                Regole::prenota($slotScelto, $utente['id'], $utente['id'], $maestroScelto);
                 vaiA('/prenotazioni', 'Prenotazione confermata.');
             } catch (RegolaViolata $e) {
                 vaiA('/', null, $e->getMessage());

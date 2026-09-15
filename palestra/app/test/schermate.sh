@@ -94,7 +94,10 @@ ok "E i posti liberi scritti, non solo colorati" "$(contiene "$PAGINA" 'posti li
 ok "Il saldo e' visibile prima di prenotare" "$(contiene "$PAGINA" 'lezioni individuali')"
 
 GETTONE=$(grep -o 'name="gettone" value="[^"]*"' <<<"$PAGINA" | head -1 | cut -d'"' -f4)
-SLOT=$(grep -o 'name="slot" value="[^"]*"' <<<"$PAGINA" | head -1 | cut -d'"' -f4)
+# Gli orari prenotabili arrivano al browser gia' pronti in un blocco JSON,
+# e solo il Javascript li trasforma in righe da toccare: qui si legge
+# direttamente quel blocco, come farebbe lo script della pagina.
+SLOT=$(grep -o '"valore":"[^"]*"' <<<"$PAGINA" | head -1 | cut -d'"' -f4)
 
 R=$("${C[@]}" -o /dev/null -d "gettone=$GETTONE&slot=$SLOT" "http://127.0.0.1:$PORTA/prenota")
 ok "La prenotazione va a buon fine" "$(contiene "$R" 'esito=')"

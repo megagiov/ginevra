@@ -129,15 +129,15 @@ ul.slot { list-style: none; margin: 0; padding: 0; display: grid; gap: .6rem; }
 .slot-voce.mia    { border-left-color: var(--primario); }
 .slot-voce.pieno  { opacity: .72; }
 
-/* Sulla schermata del cliente il modulo puo' contenere anche la scelta
-   del maestro: va sempre su una riga sua, larga quanto tutta la voce,
-   invece di competere per lo spazio con orario e stato sulla stessa
-   riga — su schermo stretto traboccherebbe. Le altre schermate (che
-   usano .azioni, non .prenota-riga) restano su una riga sola. */
-.slot-voce:has(.prenota-riga) { grid-template-rows: auto auto; }
-.slot-voce:has(.prenota-riga) .quando { grid-column: 1; grid-row: 1; }
-.slot-voce:has(.prenota-riga) .segno  { grid-column: 3; grid-row: 1; justify-self: end; }
-.slot-voce:has(.prenota-riga) .prenota-riga { grid-column: 1 / -1; grid-row: 2; }
+/* .slot-contenitore non deve creare una sua scatola: quando/segno/pallino
+   restano celle dirette della griglia di .slot-voce, sia che il
+   contenitore sia un <label> (riga scelta con un tocco) sia un <div>
+   (riga non prenotabile: completa, gia' prenotata). */
+.slot-voce .slot-contenitore { display: contents; }
+.slot-voce .slot-scegli { cursor: pointer; }
+.slot-voce input[type=radio] {
+  justify-self: end; width: 1.4rem; height: 1.4rem; accent-color: var(--primario);
+}
 
 .quando { display: flex; flex-direction: column; }
 .orario { font-family: 'Barlow Condensed', sans-serif; font-size: 1.5rem; font-weight: 700; }
@@ -256,15 +256,8 @@ ul.movimenti li, ul.storico li {
 
 .esci { margin-top: 2.5rem; text-align: center; }
 
-.prenota-riga { display: flex; gap: .5rem; align-items: center; }
-.prenota-riga select { width: auto; min-width: 8.5rem; }
-
-.prenota-riga button { flex: 1; min-width: 6rem; }
-
-@media (max-width: 380px) {
-  .prenota-riga { flex-direction: column; align-items: stretch; }
-  .prenota-riga select { width: 100%; }
-}
+#giorno-prenota { margin-bottom: .8rem; }
+.conferma-prenota { width: 100%; margin-top: 1rem; }
 
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; animation: none !important; }

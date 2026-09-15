@@ -71,7 +71,7 @@ ok "La home mostra le lezioni"          "$(contiene "$P" 'Prenota una lezione')"
 ok "La barra punta a /studio/saldo"     "$(contiene "$P" 'href="/studio/saldo"')"
 
 G=$(grep -o 'name="gettone" value="[^"]*"' <<<"$P" | head -1 | cut -d'"' -f4)
-S=$(grep -o 'name="slot" value="[^"]*"' <<<"$P" | head -1 | cut -d'"' -f4)
+S=$(grep -o '"valore":"[^"]*"' <<<"$P" | head -1 | cut -d'"' -f4)
 
 R=$("${C[@]}" -o /dev/null -d "gettone=$G&slot=$S" "$U/prenota")
 ok "La prenotazione funziona e rimanda dentro /studio" "$(contiene "$R" "/studio/prenotazioni")"
