@@ -30,6 +30,15 @@ header('X-Content-Type-Options: nosniff');
 header('X-Frame-Options: DENY');
 header('Referrer-Policy: same-origin');
 
+// Ogni pagina qui e' generata al momento e cambia in continuazione (saldi,
+// prenotazioni, calendario): non deve mai restare in una cache del
+// browser o di un proxy intermedio, ne' essere richiamata con il tasto
+// "indietro" dopo un'uscita. Le risorse statiche (stile.css, le icone, il
+// service worker) non passano da qui, quindi restano cache-abili per conto
+// loro.
+header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+header('Pragma: no-cache');
+
 // L'indirizzo richiesto puo' contenere la sottocartella in cui l'app e'
 // installata: la si toglie qui, una volta, cosi' le rotte restano scritte
 // come se l'app fosse alla radice.

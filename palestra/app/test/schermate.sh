@@ -83,6 +83,12 @@ ok "Lo stesso link non riapre una seconda sessione" "$(contiene "$R" 'errore=')"
 # --- 4. prenotazione ------------------------------------------------------
 PAGINA=$("${C[@]}" "http://127.0.0.1:$PORTA/")
 ok "La home mostra le lezioni disponibili"  "$(contiene "$PAGINA" 'Prenota una lezione')"
+
+# Ogni pagina cambia in continuazione (saldi, prenotazioni): un browser o
+# un proxy intermedio non deve mai poterne tenere una copia vecchia.
+INTESTAZIONI=$(curl -s -b "$BISCOTTI" -D - -o /dev/null "http://127.0.0.1:$PORTA/")
+ok "La pagina dice esplicitamente di non essere mai messa in cache" \
+   "$(contiene "$INTESTAZIONI" 'Cache-Control: no-store')"
 ok "Con l'orario della lezione"             "$(contiene "$PAGINA" '18:00')"
 ok "E i posti liberi scritti, non solo colorati" "$(contiene "$PAGINA" 'posti liberi')"
 ok "Il saldo e' visibile prima di prenotare" "$(contiene "$PAGINA" 'lezioni individuali')"
