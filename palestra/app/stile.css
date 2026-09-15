@@ -139,6 +139,17 @@ ul.slot { list-style: none; margin: 0; padding: 0; display: grid; gap: .6rem; }
   justify-self: end; width: 1.4rem; height: 1.4rem; accent-color: var(--primario);
 }
 
+/* La scelta del maestro viene dopo quella dell'orario, non alla pari: va
+   su una riga sua, piu' piccola e rientrata, con un'etichetta sommessa. */
+.slot-voce .slot-maestro {
+  grid-column: 1 / -1; margin-top: -.2rem; padding-left: 2.2rem;
+}
+.slot-voce .slot-maestro label {
+  display: flex; flex-direction: column; gap: .2rem;
+  font-size: .78rem; font-weight: normal; margin: 0; color: var(--testo-tenue);
+}
+.slot-voce .slot-maestro select { min-height: 38px; max-width: 14rem; }
+
 .quando { display: flex; flex-direction: column; }
 .orario { font-family: 'Barlow Condensed', sans-serif; font-size: 1.5rem; font-weight: 700; }
 .tipo   { font-size: .82rem; color: var(--testo-tenue); }

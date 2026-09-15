@@ -195,13 +195,13 @@ try {
             verificaGettone();
 
             try {
-                // Quando l'orario scelto ha piu' maestri candidati, il
-                // valore porta "id-slot|id-maestro" invece del solo id: una
-                // riga sola da toccare, senza un secondo campo da scegliere.
-                $scelta = (string) ($_POST['slot'] ?? '');
-                [$slotScelto, $maestroScelto] = str_contains($scelta, '|')
-                    ? explode('|', $scelta, 2)
-                    : [$scelta, null];
+                // Quando l'orario scelto ha piu' maestri candidati, la
+                // pagina manda anche "maestro_<id-slot>": un campo secondario
+                // per quello slot, non un valore incollato al primo.
+                $slotScelto    = (string) ($_POST['slot'] ?? '');
+                $maestroScelto = $slotScelto !== ''
+                    ? (trim((string) ($_POST['maestro_' . $slotScelto] ?? '')) ?: null)
+                    : null;
 
                 Regole::prenota($slotScelto, $utente['id'], $utente['id'], $maestroScelto);
                 vaiA('/prenotazioni', 'Prenotazione confermata.');

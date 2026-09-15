@@ -4,10 +4,10 @@ use Studio\Vista;
 
 echo Vista::intestazione('Prenota', $utente, 'prenota');
 
-// Raggruppate per giorno, e "appiattite" in righe scelte con un tocco:
-// quando un orario ha piu' maestri candidati, ogni maestro e' una riga a
-// se' — scegliere il maestro fa parte della stessa domanda "quale lezione",
-// non un passo in piu' dopo.
+// Raggruppate per giorno, una riga per orario: quando ci sono piu' maestri
+// candidati non si duplica la riga (stesso orario ripetuto piu' volte), ma
+// compare una tendina secondaria per scegliere chi, sotto l'orario gia'
+// scelto — la lezione prima, il maestro dopo, non le due cose alla pari.
 $righePerGiorno = [];
 foreach ($giorni as $giornoChiave => $slot) {
     $relativo = Vista::giornoRelativo($slot[0]['locale']);
@@ -30,31 +30,19 @@ foreach ($giorni as $giornoChiave => $slot) {
 
         $selezionabile = !$mia && $liberi > 0;
         $tipoTesto     = $gruppo ? 'Gruppo' : 'Individuale';
-        $pallino       = $selezionabile && !$gruppo;
+        $conUnSolo      = count($s['maestri']) === 1 ? ' · con ' . $s['maestri'][0]['nome'] : '';
+        $maestriDaScegliere = $selezionabile && count($s['maestri']) > 1 ? $s['maestri'] : [];
 
-        if ($selezionabile && count($s['maestri']) > 1) {
-            foreach ($s['maestri'] as $m) {
-                $righe[] = [
-                    'valore'        => $s['id'] . '|' . $m['id'],
-                    'orario'        => Vista::ora($s['locale']),
-                    'tipo'          => $tipoTesto . ' · con ' . $m['nome'],
-                    'stato'         => $stato,
-                    'etichetta'     => $etichetta,
-                    'pallino'       => $pallino,
-                    'selezionabile' => true,
-                ];
-            }
-        } else {
-            $righe[] = [
-                'valore'        => $s['id'],
-                'orario'        => Vista::ora($s['locale']),
-                'tipo'          => $tipoTesto . (count($s['maestri']) === 1 ? ' · con ' . $s['maestri'][0]['nome'] : ''),
-                'stato'         => $stato,
-                'etichetta'     => $etichetta,
-                'pallino'       => $pallino,
-                'selezionabile' => $selezionabile,
-            ];
-        }
+        $righe[] = [
+            'valore'        => $s['id'],
+            'orario'        => Vista::ora($s['locale']),
+            'tipo'          => $tipoTesto . $conUnSolo,
+            'stato'         => $stato,
+            'etichetta'     => $etichetta,
+            'pallino'       => $selezionabile && !$gruppo,
+            'selezionabile' => $selezionabile,
+            'maestri'       => $maestriDaScegliere,
+        ];
     }
 
     $righePerGiorno[$giornoChiave] = ['intestazione' => $intestazione, 'righe' => $righe];
@@ -129,8 +117,9 @@ foreach ($giorni as $giornoChiave => $slot) {
 
         contenitore.append(quando, segno);
 
+        var radio = null;
         if (r.selezionabile) {
-          var radio = document.createElement('input');
+          radio = document.createElement('input');
           radio.type = 'radio';
           radio.name = 'slot';
           radio.value = r.valore;
@@ -139,6 +128,45 @@ foreach ($giorni as $giornoChiave => $slot) {
         }
 
         li.appendChild(contenitore);
+
+        // Il maestro si sceglie dopo, non alla pari dell'orario: una
+        // tendina piu' piccola nella stessa riga, non un'altra riga
+        // uguale ripetuta per ogni maestro possibile.
+        if (r.maestri && r.maestri.length > 0) {
+          var blocco = document.createElement('div');
+          blocco.className = 'slot-maestro';
+
+          var etichettaMaestro = document.createElement('label');
+          etichettaMaestro.className = 'sommesso piccolo';
+          etichettaMaestro.textContent = 'Maestro';
+          var selectMaestro = document.createElement('select');
+          selectMaestro.name = 'maestro_' + r.valore;
+          etichettaMaestro.appendChild(selectMaestro);
+
+          var vuota = document.createElement('option');
+          vuota.value = '';
+          vuota.disabled = true;
+          vuota.selected = true;
+          vuota.textContent = 'Scegli il maestro';
+          selectMaestro.appendChild(vuota);
+
+          r.maestri.forEach(function (m) {
+            var opt = document.createElement('option');
+            opt.value = m.id;
+            opt.textContent = m.nome;
+            selectMaestro.appendChild(opt);
+          });
+
+          // Scegliere il maestro qui seleziona anche l'orario: un tocco
+          // solo, non due.
+          if (radio) {
+            selectMaestro.addEventListener('change', function () { radio.checked = true; });
+          }
+
+          blocco.appendChild(etichettaMaestro);
+          li.appendChild(blocco);
+        }
+
         return li;
       }
 
