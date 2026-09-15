@@ -54,7 +54,7 @@ echo Vista::intestazione('Clienti', $utente, 'clienti');
     $inEsaurimento = $scarso($c['saldo_individuale']) || $scarso($c['saldo_gruppo']);
   ?>
     <li class="<?= $c['attivo'] ? '' : 'inattivo' ?>">
-      <a class="nome" href="/admin/cliente?id=<?= Vista::e($c['id']) ?>">
+      <a class="nome" href="<?= Vista::u('/admin/cliente') ?>?id=<?= Vista::e($c['id']) ?>">
         <?= Vista::e($c['nome']) ?>
         <?php if (!$c['attivo']): ?><span class="segno">disattivato</span><?php endif; ?>
       </a>

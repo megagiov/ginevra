@@ -16,9 +16,9 @@ sottodominio dedicato. Nessun servizio cloud a pagamento.
 | Accesso con link via email | completo — 27 asserzioni |
 | Schermate cliente (PWA) | complete — 28 asserzioni end-to-end |
 | Schermate amministratore | complete — 41 asserzioni end-to-end |
-| Installazione in sottocartella | supportata — 19 asserzioni |
+| Installazione in sottocartella | supportata — 24 asserzioni |
 
-**165 asserzioni verdi in totale.**
+**170 asserzioni verdi in totale.**
 
 Sette schermate, una sola applicazione: il ruolo decide cosa si vede.
 
@@ -93,7 +93,7 @@ php app/test/regole.php                                 # 24 — le regole di pr
 php app/test/accesso.php                                # 27 — accesso senza password
 bash app/test/schermate.sh                              # 28 — percorso cliente via HTTP
 bash app/test/admin.sh                                  # 41 — percorso amministratore
-bash app/test/sottocartella.sh                          # 19 — app dentro una sottocartella
+bash app/test/sottocartella.sh                          # 24 — app dentro una sottocartella
 ```
 
 `schermate.sh` avvia il server integrato di PHP e percorre l'app come

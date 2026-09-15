@@ -9,9 +9,9 @@ $oggiVero = (new DateTimeImmutable('now', new DateTimeZone('Europe/Rome')));
 echo Vista::intestazione('Oggi', $utente, 'oggi');
 ?>
 <div class="navigazione-giorno">
-  <a class="freccia" href="/admin?giorno=<?= $ieri ?>" aria-label="Giorno precedente">&larr;</a>
+  <a class="freccia" href="<?= Vista::u('/admin') ?>?giorno=<?= $ieri ?>" aria-label="Giorno precedente">&larr;</a>
   <h1><?= Vista::e(ucfirst(Vista::giornoRelativo($giorno))) ?></h1>
-  <a class="freccia" href="/admin?giorno=<?= $domani ?>" aria-label="Giorno successivo">&rarr;</a>
+  <a class="freccia" href="<?= Vista::u('/admin') ?>?giorno=<?= $domani ?>" aria-label="Giorno successivo">&rarr;</a>
 </div>
 
 <?= Vista::avviso('errore', $_GET['errore'] ?? null) ?>
@@ -32,7 +32,7 @@ echo Vista::intestazione('Oggi', $utente, 'oggi');
 
 <?php if ($agenda === []): ?>
   <p class="vuoto">Nessuna lezione in calendario.
-     <a href="/admin/calendario?da=<?= $giorno->format('Y-m-d') ?>">Pubblica disponibilita'</a>.</p>
+     <a href="<?= Vista::u('/admin/calendario') ?>?da=<?= $giorno->format('Y-m-d') ?>">Pubblica disponibilita'</a>.</p>
 <?php else: ?>
   <?php foreach ($agenda as $s):
     $passata = $s['locale'] < $oggiVero;
@@ -53,7 +53,7 @@ echo Vista::intestazione('Oggi', $utente, 'oggi');
         <ul class="partecipanti">
         <?php foreach ($s['partecipanti'] as $p): ?>
           <li>
-            <a class="nome" href="/admin/cliente?id=<?= Vista::e($p['cliente_id']) ?>">
+            <a class="nome" href="<?= Vista::u('/admin/cliente') ?>?id=<?= Vista::e($p['cliente_id']) ?>">
               <?= Vista::e($p['nome']) ?>
             </a>
 

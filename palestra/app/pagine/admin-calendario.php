@@ -9,9 +9,9 @@ $qui   = $lunedi->format('Y-m-d');
 echo Vista::intestazione('Calendario', $utente, 'calendario');
 ?>
 <div class="navigazione-giorno">
-  <a class="freccia" href="/admin/calendario?da=<?= $prima ?>" aria-label="Settimana precedente">&larr;</a>
+  <a class="freccia" href="<?= Vista::u('/admin/calendario') ?>?da=<?= $prima ?>" aria-label="Settimana precedente">&larr;</a>
   <h1 class="intervallo"><?= Vista::e(Vista::intervallo($lunedi, $lunedi->modify('+6 days'))) ?></h1>
-  <a class="freccia" href="/admin/calendario?da=<?= $dopo ?>" aria-label="Settimana successiva">&rarr;</a>
+  <a class="freccia" href="<?= Vista::u('/admin/calendario') ?>?da=<?= $dopo ?>" aria-label="Settimana successiva">&rarr;</a>
 </div>
 
 <?= Vista::avviso('errore', $_GET['errore'] ?? null) ?>

@@ -82,11 +82,45 @@ ok "La lezione compare fra le mie" "$(contiene "$P" 'Disdici')"
 P=$("${C[@]}" "$U/saldo")
 ok "Il saldo elenca i movimenti" "$(contiene "$P" 'Movimenti')"
 
+# --- amministratore --------------------------------------------------------
+#
+# Questo e' il caso che il bug reale ha superato: un link con una variabile
+# PHP incorporata (es. href="/admin/cliente?id=<?= ... ?>") non veniva
+# corretto dal prefisso automatico, e restava puntato alla radice del
+# dominio invece che dentro /studio. Alla radice il difetto e' invisibile
+# perche' "/admin/..." e' gia' l'indirizzo giusto: si vede solo qui, con
+# l'app dentro una sottocartella — esattamente come su Aruba.
+BA=$(mktemp); AC=(curl -s -c "$BA" -b "$BA" -w '\n%{http_code}|%{redirect_url}')
+entra_admin() {
+  local pagina token_campo
+  pagina=$("${AC[@]}" "$U/entra?token=$1")
+  token_campo=$(grep -o 'name="token" value="[^"]*"' <<<"$pagina" | head -1 | cut -d'"' -f4)
+  "${AC[@]}" -o /dev/null -d "token=$token_campo" "$U/entra"
+}
+
+TKA=$(php "$APP/test/token-di-prova.php" admin@studio.test)
+entra_admin "$TKA" >/dev/null
+
+P=$("${AC[@]}" "$U/admin")
+ok "L'agenda dell'amministratore risponde dentro /studio" "$(contiene "$P" 'Calendario')"
+ok "Le frecce di navigazione restano dentro /studio" "$(contiene "$P" "href=\"/studio/admin?giorno=")"
+
+P=$("${AC[@]}" "$U/admin/calendario")
+ok "Le frecce del calendario restano dentro /studio" "$(contiene "$P" "href=\"/studio/admin/calendario?da=")"
+
+P=$("${AC[@]}" "$U/admin/clienti")
+LINK_CLIENTE=$(grep -o 'href="/studio/admin/cliente?id=[^"]*"' <<<"$P" | head -1 | sed 's/href="//; s/"$//')
+ok "Il link a un cliente resta dentro /studio, non alla radice del dominio" \
+   "$([ -n "$LINK_CLIENTE" ] && echo 1 || echo 0)"
+
+P=$("${AC[@]}" -o /dev/null "http://127.0.0.1:$PORTA$LINK_CLIENTE")
+ok "Seguendo quel link si apre davvero la scheda cliente" "$(contiene "$P" '200')"
+
 # --- diagnostica ----------------------------------------------------------
 P=$(curl -s "$U/verifica.php")
 ok "La diagnostica indica il percorso giusto" "$(contiene "$P" '/studio/accedi')"
 
-rm -f "$B"
+rm -f "$B" "$BA"
 echo
 echo "$PASSATI passati, $FALLITI falliti, $((PASSATI+FALLITI)) totali"
 [ "$FALLITI" -eq 0 ]
