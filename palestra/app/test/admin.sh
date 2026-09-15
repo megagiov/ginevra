@@ -91,10 +91,20 @@ ok "Pubblica quattro settimane in un colpo" "$(uguale "$(mysql_q "SELECT COUNT(*
 ok "A distanza di sette giorni l'una dall'altra" "$(uguale "$(mysql_q "SELECT COUNT(DISTINCT DATEDIFF(inizio, (SELECT MIN(inizio) FROM (SELECT inizio FROM slot WHERE tipo='gruppo' AND id<>'oggi1') x)) % 7) FROM slot WHERE tipo='gruppo' AND id<>'oggi1'")" '1')"
 ok "Le lezioni create sono di gruppo da 4"  "$(uguale "$(mysql_q "SELECT COUNT(DISTINCT capienza) FROM slot WHERE tipo='gruppo' AND id<>'oggi1'")" '1')"
 
-# La stessa ora, di nuovo: la sala e' occupata, va saltata.
+# La stessa ora e lo stesso tipo: quel tipo e' occupato, va saltato.
+R=$("${A[@]}" -o /dev/null -d "gettone=$G&da=$LUN&data=$LUN&ora=07:00&tipo=gruppo&capienza=4&ripetizioni=1" "$U/admin/slot")
+ok "Una sovrapposizione dello stesso tipo viene rifiutata e spiegata" "$(contiene "$R" 'errore=')"
+ok "E non crea nulla in piu'" "$(uguale "$(mysql_q "SELECT COUNT(*) FROM slot WHERE tipo='gruppo' AND id<>'oggi1'")" '4')"
+
+# Con un secondo maestro, un'individuale nello stesso orario di un gruppo va bene.
 R=$("${A[@]}" -o /dev/null -d "gettone=$G&da=$LUN&data=$LUN&ora=07:00&tipo=individuale&capienza=1&ripetizioni=1" "$U/admin/slot")
-ok "Una sovrapposizione viene rifiutata e spiegata" "$(contiene "$R" 'errore=')"
-ok "E non crea nulla" "$(uguale "$(mysql_q "SELECT COUNT(*) FROM slot WHERE tipo='individuale' AND id<>'fut1'")" '0')"
+ok "Un'individuale nello stesso orario di un gruppo (due maestri) viene accettata" \
+   "$(uguale "$(mysql_q "SELECT COUNT(*) FROM slot WHERE tipo='individuale' AND id<>'fut1'")" '1')"
+
+# "Entrambi" pubblica le due lezioni in un colpo solo.
+R=$("${A[@]}" -o /dev/null -d "gettone=$G&da=$LUN&data=$LUN&ora=10:00&tipo=entrambi&capienza=3&ripetizioni=1" "$U/admin/slot")
+ok "\"Entrambi\" pubblica anche un'individuale in piu'" "$(uguale "$(mysql_q "SELECT COUNT(*) FROM slot WHERE tipo='individuale' AND id<>'fut1'")" '2')"
+ok "\"Entrambi\" pubblica anche un gruppo in piu'" "$(uguale "$(mysql_q "SELECT COUNT(*) FROM slot WHERE tipo='gruppo' AND id<>'oggi1'")" '5')"
 
 R=$("${A[@]}" -o /dev/null -d "gettone=$G&da=$LUN&data=$LUN&ora=09:00&tipo=gruppo&capienza=9&ripetizioni=1" "$U/admin/slot")
 ok "Un gruppo da 9 posti viene rifiutato" "$(contiene "$R" 'errore=')"

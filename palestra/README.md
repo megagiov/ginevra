@@ -2,7 +2,9 @@
 
 Prenotazioni per uno studio di personal training con **una sala**: lezioni da
 60 minuti, individuali o di gruppo fino a 4 posti, crediti gestiti a mano
-dall'amministratore, disdetta gratuita entro 24 ore.
+dall'amministratore, disdetta gratuita entro 24 ore. Con un secondo maestro
+disponibile, un'individuale e un gruppo possono girare nello stesso
+orario — ma mai due dello stesso tipo insieme.
 
 Gira sull'hosting Aruba Linux gia' in uso (PHP 8.3 + MySQL), su un
 sottodominio dedicato. Nessun servizio cloud a pagamento.
@@ -11,14 +13,14 @@ sottodominio dedicato. Nessun servizio cloud a pagamento.
 
 | Parte | Stato |
 |---|---|
-| Schema MySQL e vincoli | completo — 26 asserzioni |
+| Schema MySQL e vincoli | completo — 28 asserzioni |
 | Regole di prenotazione in PHP | complete — 24 asserzioni |
 | Accesso con link via email | completo — 27 asserzioni |
 | Schermate cliente (PWA) | complete — 29 asserzioni end-to-end |
-| Schermate amministratore | complete — 57 asserzioni end-to-end |
+| Schermate amministratore | complete — 60 asserzioni end-to-end |
 | Installazione in sottocartella | supportata — 24 asserzioni |
 
-**187 asserzioni verdi in totale.**
+**192 asserzioni verdi in totale.**
 
 Otto schermate, una sola applicazione: il ruolo decide cosa si vede.
 
@@ -89,11 +91,11 @@ for f in db/mysql/migrations/*.sql; do mariadb studio_dev < "$f"; done
 ### Test
 
 ```bash
-mariadb -t studio_test < db/mysql/test/01_vincoli.sql   # 26 — cosa garantisce il database
+mariadb -t studio_test < db/mysql/test/01_vincoli.sql   # 28 — cosa garantisce il database
 php app/test/regole.php                                 # 24 — le regole di prenotazione
 php app/test/accesso.php                                # 27 — accesso senza password
 bash app/test/schermate.sh                              # 29 — percorso cliente via HTTP
-bash app/test/admin.sh                                  # 57 — percorso amministratore
+bash app/test/admin.sh                                  # 60 — percorso amministratore
 bash app/test/sottocartella.sh                          # 24 — app dentro una sottocartella
 ```
 

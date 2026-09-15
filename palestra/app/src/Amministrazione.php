@@ -128,6 +128,13 @@ final class Amministrazione
      *
      * @return array{creati:int, saltati:list<string>}
      */
+    /**
+     * Crea una lezione, eventualmente ripetuta, di un tipo o di entrambi.
+     *
+     * "Entrambi" serve a chi ha un secondo maestro disponibile: pubblica
+     * un'individuale e un gruppo nello stesso orario in un colpo solo,
+     * invece di ripetere il modulo due volte.
+     */
     public static function creaSlot(
         string $attoreId,
         string $data,          // Y-m-d, ora locale
@@ -138,13 +145,13 @@ final class Amministrazione
     ): array {
         self::esigiAdmin($attoreId);
 
-        if (!in_array($tipo, ['individuale', 'gruppo'], true)) {
+        if (!in_array($tipo, ['individuale', 'gruppo', 'entrambi'], true)) {
             throw new RegolaViolata('Tipo di lezione non valido');
         }
 
-        $capienza = $tipo === 'individuale' ? 1 : $capienza;
+        $tipiDaCreare = $tipo === 'entrambi' ? ['individuale', 'gruppo'] : [$tipo];
 
-        if ($tipo === 'gruppo' && ($capienza < 2 || $capienza > 4)) {
+        if (in_array('gruppo', $tipiDaCreare, true) && ($capienza < 2 || $capienza > 4)) {
             throw new RegolaViolata('Un gruppo puo\' avere da 2 a 4 posti');
         }
 
@@ -167,26 +174,31 @@ final class Amministrazione
             // cliente, invece di spostarsi alle 17:00.
             $questo = $inizio->modify('+' . ($i * 7) . ' days');
 
-            try {
-                Db::pdo()->prepare(
-                    'INSERT INTO slot (id, inizio, fine, tipo, capienza) VALUES (?,?,?,?,?)'
-                )->execute([
-                    Db::uuid(),
-                    self::utc($questo),
-                    self::utc($questo->modify('+' . self::DURATA_MINUTI . ' minutes')),
-                    $tipo,
-                    $capienza,
-                ]);
-                $creati++;
-            } catch (PDOException $e) {
-                // 45000 e' il trigger anti-sovrapposizione; 23000 l'unicita'
-                // sull'orario di inizio. In entrambi i casi la sala e' gia'
-                // occupata a quell'ora.
-                if (in_array($e->getCode(), ['45000', '23000'], true)) {
-                    $saltati[] = Vista::giorno($questo) . ' alle ' . $questo->format('H:i');
-                    continue;
+            foreach ($tipiDaCreare as $unTipo) {
+                $capienzaEffettiva = $unTipo === 'individuale' ? 1 : $capienza;
+
+                try {
+                    Db::pdo()->prepare(
+                        'INSERT INTO slot (id, inizio, fine, tipo, capienza) VALUES (?,?,?,?,?)'
+                    )->execute([
+                        Db::uuid(),
+                        self::utc($questo),
+                        self::utc($questo->modify('+' . self::DURATA_MINUTI . ' minutes')),
+                        $unTipo,
+                        $capienzaEffettiva,
+                    ]);
+                    $creati++;
+                } catch (PDOException $e) {
+                    // 45000 e' il trigger anti-sovrapposizione dello stesso
+                    // tipo; 23000 l'unicita' su orario+tipo. In entrambi i
+                    // casi quel tipo di lezione e' gia' occupato a quell'ora.
+                    if (in_array($e->getCode(), ['45000', '23000'], true)) {
+                        $saltati[] = Vista::giorno($questo) . ' alle ' . $questo->format('H:i')
+                                   . (count($tipiDaCreare) > 1 ? " ($unTipo)" : '');
+                        continue;
+                    }
+                    throw $e;
                 }
-                throw $e;
             }
         }
 

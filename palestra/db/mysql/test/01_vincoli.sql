@@ -64,31 +64,47 @@ insert into slot (id, inizio, fine, tipo, capienza) values
   ('s2', '2027-03-01 18:00:00', '2027-03-01 19:00:00', 'gruppo',      4);
 
 -- ---------------------------------------------------------------------------
--- 1. Una sala sola
+-- 1. Una sala, al massimo un'individuale e un gruppo insieme
+--
+--    Con un secondo maestro disponibile, un'individuale e una di gruppo
+--    possono girare in parallelo nello stesso orario. Due dello stesso
+--    tipo insieme restano vietate: servirebbe un secondo maestro per lo
+--    stesso tipo, caso che questa app non prevede.
 -- ---------------------------------------------------------------------------
 
-call t_errore('Due slot non possono sovrapporsi',
+call t_errore('Due individuali non possono sovrapporsi',
   "insert into slot (id, inizio, fine, tipo, capienza)
-   values ('x1', '2027-03-01 09:30:00', '2027-03-01 10:30:00', 'gruppo', 4)");
+   values ('x1', '2027-03-01 09:30:00', '2027-03-01 10:30:00', 'individuale', 1)");
 
-call t_errore('Nemmeno uno slot che ne contiene un altro',
+call t_errore('Nemmeno un individuale che ne contiene un altro',
   "insert into slot (id, inizio, fine, tipo, capienza)
-   values ('x2', '2027-03-01 08:00:00', '2027-03-01 12:00:00', 'gruppo', 4)");
+   values ('x2', '2027-03-01 08:00:00', '2027-03-01 12:00:00', 'individuale', 1)");
 
-call t_errore('Nemmeno due slot che iniziano insieme',
+call t_errore('Nemmeno due individuali che iniziano insieme',
   "insert into slot (id, inizio, fine, tipo, capienza)
    values ('x3', '2027-03-01 09:00:00', '2027-03-01 09:30:00', 'individuale', 1)");
 
--- Il confronto e' stretto su entrambi i lati: due lezioni di fila devono
--- restare possibili, altrimenti l'agenda e' inutilizzabile.
+-- Un'individuale e un gruppo nello stesso orario: due maestri, due lezioni.
 insert into slot (id, inizio, fine, tipo, capienza, note)
-values ('s3', '2027-03-01 10:00:00', '2027-03-01 11:00:00', 'gruppo', 4, 'adiacente');
+values ('x4', '2027-03-01 09:00:00', '2027-03-01 10:00:00', 'gruppo', 4, 'doppio-maestro');
 
-call t_ok('Slot consecutivi (fine = inizio) restano ammessi',
+call t_ok('Un gruppo puo\' coesistere con un individuale nello stesso orario',
+  (select count(*) = 1 from slot where note = 'doppio-maestro'));
+
+call t_errore('Ma due gruppi nello stesso orario restano vietati',
+  "insert into slot (id, inizio, fine, tipo, capienza)
+   values ('x5', '2027-03-01 18:30:00', '2027-03-01 19:30:00', 'gruppo', 4)");
+
+-- Il confronto e' stretto su entrambi i lati: due lezioni dello stesso tipo
+-- di fila devono restare possibili, altrimenti l'agenda e' inutilizzabile.
+insert into slot (id, inizio, fine, tipo, capienza, note)
+values ('s3', '2027-03-01 10:00:00', '2027-03-01 11:00:00', 'individuale', 1, 'adiacente');
+
+call t_ok('Slot consecutivi dello stesso tipo (fine = inizio) restano ammessi',
   (select count(*) = 1 from slot where note = 'adiacente'));
 
-call t_errore('Nemmeno spostando uno slot sopra un altro (update)',
-  "update slot set inizio = '2027-03-01 18:30:00', fine = '2027-03-01 19:30:00'
+call t_errore('Nemmeno spostando un individuale sopra un altro dello stesso tipo (update)',
+  "update slot set inizio = '2027-03-01 10:30:00', fine = '2027-03-01 11:30:00'
     where id = 's1'");
 
 -- ---------------------------------------------------------------------------

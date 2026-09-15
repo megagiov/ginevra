@@ -28,11 +28,16 @@ echo Vista::intestazione('Calendario', $utente, 'calendario');
       <label for="data">Giorno</label>
       <input id="data" name="data" type="date" required
              value="<?= $qui ?>" min="<?= (new DateTimeImmutable('today'))->format('Y-m-d') ?>">
+      <p class="sommesso piccolo" id="giorno-nome"></p>
     </div>
 
     <div>
       <label for="ora">Ora d'inizio</label>
-      <input id="ora" name="ora" type="time" required value="18:00" step="300">
+      <select id="ora" name="ora" required>
+        <?php foreach (range(7, 20) as $h): $val = sprintf('%02d:00', $h); ?>
+          <option value="<?= $val ?>" <?= $val === '18:00' ? 'selected' : '' ?>><?= $val ?></option>
+        <?php endforeach; ?>
+      </select>
     </div>
 
     <div>
@@ -40,6 +45,7 @@ echo Vista::intestazione('Calendario', $utente, 'calendario');
       <select id="tipo" name="tipo">
         <option value="individuale">Individuale</option>
         <option value="gruppo">Gruppo</option>
+        <option value="entrambi">Entrambi (due maestri)</option>
       </select>
     </div>
 
@@ -65,9 +71,28 @@ echo Vista::intestazione('Calendario', $utente, 'calendario');
 
   <p class="sommesso piccolo">
     Le lezioni durano 60 minuti. Le ripetizioni che cadono su un orario gia'
-    occupato vengono saltate e te lo dico quali.
+    occupato vengono saltate e te lo dico quali. "Entrambi" serve quando hai
+    un secondo maestro disponibile: pubblica un'individuale e un gruppo
+    nello stesso orario in un colpo solo.
   </p>
 </details>
+
+<script>
+  // Solo per mostrare "lun", "mar", ecc. accanto alla data scelta: non
+  // cambia cosa viene inviato al server, che riceve sempre la data intera.
+  (function () {
+    var giorni = ['dom', 'lun', 'mar', 'mer', 'gio', 'ven', 'sab'];
+    var campo = document.getElementById('data');
+    var etichetta = document.getElementById('giorno-nome');
+    function aggiorna() {
+      if (!campo.value) { etichetta.textContent = ''; return; }
+      var d = new Date(campo.value + 'T00:00:00');
+      etichetta.textContent = giorni[d.getDay()];
+    }
+    campo.addEventListener('input', aggiorna);
+    aggiorna();
+  })();
+</script>
 
 <?php foreach ($settimana as $data => $slot):
   $giorno = new DateTimeImmutable($data, new DateTimeZone('Europe/Rome'));
