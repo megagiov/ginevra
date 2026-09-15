@@ -123,11 +123,30 @@ final class Vista
     // Guscio della pagina
     // ------------------------------------------------------------------
 
+    /**
+     * Data dell'ultima modifica di stile.css, usata come numero di versione
+     * nel suo indirizzo: cosi' il browser scarica la copia nuova appena il
+     * file cambia, invece di tenere in cache quella vecchia magari per
+     * settimane (le risorse statiche sono cache-abili apposta, per tutto il
+     * resto).
+     */
+    private static function versioneStile(): int
+    {
+        static $v = null;
+
+        if ($v === null) {
+            $mtime = @filemtime(__DIR__ . '/../stile.css');
+            $v = $mtime !== false ? $mtime : time();
+        }
+        return $v;
+    }
+
     public static function intestazione(string $titolo, ?array $utente = null, ?string $attiva = null): string
     {
         $studio = self::e((string) Config::v('nome_studio'));
         $t = self::e($titolo);
         $b = self::e(self::base());
+        $v = self::versioneStile();
 
         $nav = '';
         if ($utente !== null) {
@@ -168,7 +187,7 @@ final class Vista
               <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
               <title>$t · $studio</title>
               <link rel="manifest" href="$b/manifest.json">
-              <link rel="stylesheet" href="$b/stile.css">
+              <link rel="stylesheet" href="$b/stile.css?v=$v">
               <meta name="theme-color" content="#0284C7">
               <link rel="apple-touch-icon" href="$b/icona-180.png">
             </head>

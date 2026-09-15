@@ -47,7 +47,7 @@ ok "Senza sessione rimanda a /studio/accedi" "$(contiene "$R" "/studio/accedi")"
 
 P=$("${C[@]}" "$U/accedi")
 ok "La pagina di accesso risponde"        "$(contiene "$P" 'Mandami il link')"
-ok "Il foglio di stile punta a /studio"   "$(contiene "$P" 'href="/studio/stile.css"')"
+ok "Il foglio di stile punta a /studio"   "$(contiene "$P" 'href="/studio/stile.css?v=')"
 ok "Il manifest punta a /studio"          "$(contiene "$P" 'href="/studio/manifest.json"')"
 ok "Il modulo invia a /studio/accedi"     "$(contiene "$P" 'action="/studio/accedi"')"
 ok "Nessun link punta fuori dalla cartella" "$(manca "$P" 'href="/stile.css"')"
