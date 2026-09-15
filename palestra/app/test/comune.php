@@ -89,9 +89,15 @@ function preparaDatabase(): PDO
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
     ]);
 
-    $schema = file_get_contents(__DIR__ . '/../../db/mysql/migrations/0001_schema.sql');
-    foreach (spezzaSql($schema) as $statement) {
-        $pdo->exec($statement);
+    // Tutte le migrazioni in ordine, cosi' il database di prova resta
+    // identico a quello che si ottiene applicandole a mano da phpMyAdmin.
+    $migrazioni = glob(__DIR__ . '/../../db/mysql/migrations/*.sql');
+    sort($migrazioni);
+
+    foreach ($migrazioni as $file) {
+        foreach (spezzaSql(file_get_contents($file)) as $statement) {
+            $pdo->exec($statement);
+        }
     }
 
     return $pdo;

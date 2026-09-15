@@ -144,6 +144,7 @@ final class Vista
                     '/'             => ['Prenota',     'prenota'],
                     '/prenotazioni' => ['Le mie',      'prenotazioni'],
                     '/saldo'        => ['Saldo',       'saldo'],
+                    '/piano'        => ['Piano',       'piano'],
                   ];
 
             $nav = '<nav class="barra" aria-label="Sezioni">';

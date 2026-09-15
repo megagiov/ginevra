@@ -318,11 +318,13 @@ details.pubblica > *:last-child { padding-bottom: 1rem; }
 .modulo-griglia label { margin-top: .6rem; }
 
 input[type=text], input[type=tel], input[type=number],
-input[type=date], input[type=time], input:not([type]), select {
+input[type=date], input[type=time], input:not([type]), select, textarea {
   width: 100%; min-height: 46px; padding: .5rem .7rem;
   font: inherit; color: var(--testo); background: var(--sfondo);
   border: 1px solid var(--bordo); border-radius: 10px;
 }
+
+textarea { resize: vertical; }
 
 @media (max-width: 420px) {
   .modulo-griglia { grid-template-columns: 1fr; }
@@ -355,3 +357,5 @@ ul.clienti li.inattivo { opacity: .55; }
   padding: .7rem .9rem; border-radius: 0 var(--raggio) var(--raggio) 0;
   margin: .8rem 0; font-size: .95rem;
 }
+
+.testo-piano { line-height: 1.5; }

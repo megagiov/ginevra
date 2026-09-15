@@ -129,4 +129,31 @@ final class Calendario
             'gruppo'      => Regole::saldo($clienteId, 'gruppo'),
         ];
     }
+
+    /**
+     * Il piano scritto dall'amministratore per questo cliente, se c'e'.
+     *
+     * @return array{alimentare:?string, allenamento:?string, aggiornato_il:?\DateTimeImmutable}|null
+     *         null se non e' mai stato scritto nulla — diverso da un piano
+     *         vuoto, che invece si mostrerebbe come "nessun piano ancora".
+     */
+    public static function piano(string $clienteId): ?array
+    {
+        $q = Db::pdo()->prepare(
+            'SELECT piano_alimentare, piano_allenamento, piano_aggiornato_il
+               FROM utenti WHERE id = ?'
+        );
+        $q->execute([$clienteId]);
+        $riga = $q->fetch();
+
+        if (!$riga || $riga['piano_aggiornato_il'] === null) {
+            return null;
+        }
+
+        return [
+            'alimentare'    => $riga['piano_alimentare'],
+            'allenamento'   => $riga['piano_allenamento'],
+            'aggiornato_il' => Vista::locale($riga['piano_aggiornato_il']),
+        ];
+    }
 }

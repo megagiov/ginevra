@@ -154,6 +154,31 @@ ok "E il credito individuale e' stato scalato"      "$(uguale "$(mysql_q "SELECT
 R=$("${A[@]}" -o /dev/null -d "gettone=$G&cliente=c2&slot=fut1" "$U/admin/prenota")
 ok "Ma non oltre i posti disponibili" "$(contiene "$R" 'errore=')"
 
+# --- 7b. piano alimentare e allenamento -----------------------------------
+P=$("${CL[@]}" "$U/piano")
+ok "Senza un piano scritto il cliente vede il messaggio di default" \
+   "$(contiene "$P" 'non ha ancora scritto un piano')"
+
+R=$("${A[@]}" -o /dev/null -d "gettone=$G&cliente=c1&alimentare=Colazione+proteica&allenamento=" "$U/admin/cliente/piano")
+ok "L'amministratore scrive il piano alimentare" \
+   "$(uguale "$(mysql_q "SELECT piano_alimentare FROM utenti WHERE id='c1'")" 'Colazione proteica')"
+ok "Un campo lasciato vuoto resta NULL, non stringa vuota" \
+   "$(uguale "$(mysql_q "SELECT piano_allenamento IS NULL FROM utenti WHERE id='c1'")" '1')"
+
+P=$("${A[@]}" "$U/admin/cliente?id=c1")
+ok "La scheda cliente mostra il piano appena scritto" "$(contiene "$P" 'Colazione proteica')"
+
+P=$("${CL[@]}" "$U/piano")
+ok "Il cliente vede il proprio piano alimentare" "$(contiene "$P" 'Colazione proteica')"
+ok "Ma non la sezione allenamento, che e' vuota" "$(uguale "$(contiene "$P" 'Allenamento a casa')" '0')"
+
+CL2=$(mktemp); C2=(curl -s -c "$CL2" -b "$CL2" -w '\n%{http_code}')
+TK2=$(php "$APP/test/token-di-prova.php" bruno@test.it)
+entra_con_token "$CL2" "$TK2"
+R=$("${C2[@]}" -o /dev/null -d "gettone=$G&cliente=c1&alimentare=Rubo+il+piano&allenamento=" "$U/admin/cliente/piano")
+ok "Un cliente non puo' scrivere il piano di un altro" "$(contiene "$R" '403')"
+rm -f "$CL2"
+
 # --- 8. impostazioni --------------------------------------------------------
 P=$("${A[@]}" "$U/admin/impostazioni")
 G=$(gettone "$P")

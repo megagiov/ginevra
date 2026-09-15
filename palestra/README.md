@@ -15,17 +15,18 @@ sottodominio dedicato. Nessun servizio cloud a pagamento.
 | Regole di prenotazione in PHP | complete — 24 asserzioni |
 | Accesso con link via email | completo — 27 asserzioni |
 | Schermate cliente (PWA) | complete — 29 asserzioni end-to-end |
-| Schermate amministratore | complete — 50 asserzioni end-to-end |
+| Schermate amministratore | complete — 57 asserzioni end-to-end |
 | Installazione in sottocartella | supportata — 24 asserzioni |
 
-**180 asserzioni verdi in totale.**
+**187 asserzioni verdi in totale.**
 
-Sette schermate, una sola applicazione: il ruolo decide cosa si vede.
+Otto schermate, una sola applicazione: il ruolo decide cosa si vede.
 
-- **Cliente** — prenota, le mie lezioni, saldo
+- **Cliente** — prenota, le mie lezioni, saldo, piano (alimentazione e
+  allenamento a casa, scritto dal trainer)
 - **Amministratore** — oggi (agenda e presenze), calendario (pubblica la
   disponibilita'), clienti, scheda cliente (crediti, prenotazione per suo
-  conto, storico)
+  conto, storico, piano del cliente), impostazioni
 
 L'accesso avviene con un link inviato per email, senza password. Il primo
 tocco del link (GET) non consuma nulla: mostra una pagina con un pulsante
@@ -82,7 +83,7 @@ Serve MySQL 8 o MariaDB 10.3+ e PHP 8.1+.
 
 ```bash
 mariadb -e "CREATE DATABASE studio_dev CHARACTER SET utf8mb4"
-mariadb studio_dev < db/mysql/migrations/0001_schema.sql
+for f in db/mysql/migrations/*.sql; do mariadb studio_dev < "$f"; done
 ```
 
 ### Test
@@ -92,7 +93,7 @@ mariadb -t studio_test < db/mysql/test/01_vincoli.sql   # 26 — cosa garantisce
 php app/test/regole.php                                 # 24 — le regole di prenotazione
 php app/test/accesso.php                                # 27 — accesso senza password
 bash app/test/schermate.sh                              # 29 — percorso cliente via HTTP
-bash app/test/admin.sh                                  # 50 — percorso amministratore
+bash app/test/admin.sh                                  # 57 — percorso amministratore
 bash app/test/sottocartella.sh                          # 24 — app dentro una sottocartella
 ```
 
@@ -128,7 +129,9 @@ Aruba prima di fidarti dello schema.
    > ```
 2. Crea un database MySQL **separato da quello di WordPress**, con un
    utente dedicato.
-3. Applica `db/mysql/migrations/0001_schema.sql` da phpMyAdmin.
+3. Applica da phpMyAdmin tutti i file dentro `db/mysql/migrations/`,
+   **in ordine di numero** (`0001_...`, poi `0002_...`, e cosi' via): ogni
+   file aggiunge quello che manca rispetto al precedente, non lo sostituisce.
 4. Copia `app/config.example.php` in `app/config.php` e compilalo.
 5. Carica il contenuto di `app/` via FTP nella cartella del sottodominio.
    Le cartelle `src/`, `pagine/` e `test/` hanno gia' il loro `.htaccess`

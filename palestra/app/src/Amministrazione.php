@@ -312,6 +312,41 @@ final class Amministrazione
         return $id;
     }
 
+    /**
+     * Scrive o aggiorna il piano alimentare e di allenamento a casa del
+     * cliente. Testo libero, non validato oltre la lunghezza: e' consiglio
+     * del personal trainer, non una regola dell'app.
+     */
+    public static function salvaPiano(
+        string $attoreId,
+        string $clienteId,
+        ?string $alimentare,
+        ?string $allenamento
+    ): void {
+        self::esigiAdmin($attoreId);
+
+        $alimentare  = trim((string) $alimentare) ?: null;
+        $allenamento = trim((string) $allenamento) ?: null;
+
+        $q = Db::pdo()->prepare(
+            'UPDATE utenti SET piano_alimentare = ?, piano_allenamento = ?,
+                    piano_aggiornato_il = UTC_TIMESTAMP()
+              WHERE id = ?'
+        );
+        $q->execute([$alimentare, $allenamento, $clienteId]);
+
+        if ($q->rowCount() === 0) {
+            // rowCount a 0 vale anche per un salvataggio che non cambia
+            // nulla rispetto a prima: non e' un errore, si distingue
+            // controllando se il cliente esiste davvero.
+            $c = Db::pdo()->prepare('SELECT 1 FROM utenti WHERE id = ?');
+            $c->execute([$clienteId]);
+            if (!$c->fetchColumn()) {
+                throw new RegolaViolata('Cliente inesistente');
+            }
+        }
+    }
+
     public static function cambiaAttivazione(string $attoreId, string $clienteId, bool $attivo): void
     {
         self::esigiAdmin($attoreId);

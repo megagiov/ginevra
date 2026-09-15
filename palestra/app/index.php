@@ -236,6 +236,12 @@ try {
             require __DIR__ . '/pagine/saldo.php';
             break;
 
+        case 'GET /piano':
+            $utente = richiediAccesso($utente);
+            $piano  = Calendario::piano($utente['id']);
+            require __DIR__ . '/pagine/piano.php';
+            break;
+
         // ---------------------------------------------------------------
         // Amministrazione
         // ---------------------------------------------------------------
@@ -415,6 +421,24 @@ try {
             try {
                 Regole::prenota((string) ($_POST['slot'] ?? ''), $cliente, $utente['id']);
                 vaiA($ritorno, 'Prenotazione registrata per il cliente.');
+            } catch (RegolaViolata $e) {
+                vaiA($ritorno, null, $e->getMessage());
+            }
+
+        case 'POST /admin/cliente/piano':
+            $utente  = esigiAdmin($utente);
+            verificaGettone();
+            $cliente = (string) ($_POST['cliente'] ?? '');
+            $ritorno = '/admin/cliente?id=' . urlencode($cliente);
+
+            try {
+                Amministrazione::salvaPiano(
+                    $utente['id'],
+                    $cliente,
+                    (string) ($_POST['alimentare'] ?? ''),
+                    (string) ($_POST['allenamento'] ?? '')
+                );
+                vaiA($ritorno, 'Piano aggiornato.');
             } catch (RegolaViolata $e) {
                 vaiA($ritorno, null, $e->getMessage());
             }

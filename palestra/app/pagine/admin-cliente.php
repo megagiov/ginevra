@@ -82,6 +82,33 @@ echo Vista::intestazione($c['nome'], $utente, 'clienti');
   </p>
 </details>
 
+<details class="riquadro pubblica">
+  <summary>Piano alimentare e allenamento a casa</summary>
+
+  <form method="post" action="<?= Vista::u('/admin/cliente/piano') ?>" class="modulo-griglia">
+    <?= Vista::campoGettone() ?>
+    <input type="hidden" name="cliente" value="<?= Vista::e($c['id']) ?>">
+
+    <div class="larga">
+      <label for="alimentare">Alimentazione</label>
+      <textarea id="alimentare" name="alimentare" rows="5"
+                placeholder="Consigli su cosa e come mangiare"><?= Vista::e($c['piano_alimentare'] ?? '') ?></textarea>
+    </div>
+    <div class="larga">
+      <label for="allenamento">Allenamento a casa</label>
+      <textarea id="allenamento" name="allenamento" rows="5"
+                placeholder="Esercizi da fare senza attrezzi, tra una lezione e l'altra"><?= Vista::e($c['piano_allenamento'] ?? '') ?></textarea>
+    </div>
+
+    <button type="submit" class="principale">Salva piano</button>
+  </form>
+
+  <p class="sommesso piccolo">
+    Il cliente lo vede subito nella sua sezione "Piano". Lascia un campo
+    vuoto se per ora non c'e' nulla da scrivere in quella parte.
+  </p>
+</details>
+
 <?php if ($c['attivo'] && $prenotabili !== []): ?>
 <details class="riquadro pubblica">
   <summary>Prenota per suo conto</summary>
