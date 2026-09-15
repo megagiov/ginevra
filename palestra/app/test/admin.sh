@@ -51,6 +51,8 @@ R=$("${CL[@]}" -o /dev/null "$U/admin/clienti")
 ok "Nemmeno all'elenco clienti"                    "$(contiene "$R" '403')"
 R=$("${CL[@]}" -o /dev/null -d 'nome=X&email=x@y.it' "$U/admin/clienti")
 ok "Nemmeno creando clienti via POST"              "$(contiene "$R" '403')"
+R=$("${CL[@]}" -o /dev/null "$U/admin/impostazioni")
+ok "Nemmeno alle impostazioni"                     "$(contiene "$R" '403')"
 
 # --- 2. accesso amministratore -------------------------------------------
 BA=$(mktemp); A=(curl -s -c "$BA" -b "$BA" -w '\n%{http_code}|%{redirect_url}')
@@ -152,7 +154,32 @@ ok "E il credito individuale e' stato scalato"      "$(uguale "$(mysql_q "SELECT
 R=$("${A[@]}" -o /dev/null -d "gettone=$G&cliente=c2&slot=fut1" "$U/admin/prenota")
 ok "Ma non oltre i posti disponibili" "$(contiene "$R" 'errore=')"
 
-# --- 8. disattivazione ----------------------------------------------------
+# --- 8. impostazioni --------------------------------------------------------
+P=$("${A[@]}" "$U/admin/impostazioni")
+G=$(gettone "$P")
+ok "La pagina mostra il valore attuale della finestra di disdetta" \
+   "$(contiene "$P" 'value="24"')"
+ok "E la barra dell'amministratore ha la voce Impostazioni" \
+   "$(contiene "$P" 'Impostazioni')"
+
+R=$("${A[@]}" -o /dev/null -d "gettone=$G&finestra_disdetta_ore=12&anticipo_minimo_ore=1&max_prenotazioni_aperte=6&giorni_visibili=21" "$U/admin/impostazioni")
+ok "Salva le nuove impostazioni" \
+   "$(uguale "$(mysql_q "SELECT valore FROM impostazioni WHERE chiave='finestra_disdetta_ore'")" '12')"
+ok "Tutte e quattro le chiavi" \
+   "$(uguale "$(mysql_q "SELECT GROUP_CONCAT(valore ORDER BY chiave) FROM impostazioni")" '1,12,21,6')"
+
+R=$("${A[@]}" -o /dev/null -d "gettone=$G&finestra_disdetta_ore=12&anticipo_minimo_ore=1&max_prenotazioni_aperte=0&giorni_visibili=21" "$U/admin/impostazioni")
+ok "Rifiuta un valore fuori dai limiti (zero prenotazioni aperte)" "$(contiene "$R" 'errore=')"
+ok "E non scrive nulla di quel tentativo" \
+   "$(uguale "$(mysql_q "SELECT valore FROM impostazioni WHERE chiave='max_prenotazioni_aperte'")" '6')"
+
+R=$("${A[@]}" -o /dev/null -d "gettone=$G&finestra_disdetta_ore=abc&anticipo_minimo_ore=1&max_prenotazioni_aperte=6&giorni_visibili=21" "$U/admin/impostazioni")
+ok "Rifiuta un valore non numerico" "$(contiene "$R" 'errore=')"
+
+R=$("${CL[@]}" -o /dev/null -d "finestra_disdetta_ore=1&anticipo_minimo_ore=1&max_prenotazioni_aperte=6&giorni_visibili=21" "$U/admin/impostazioni")
+ok "Un cliente non puo' cambiare le impostazioni" "$(contiene "$R" '403')"
+
+# --- 9. disattivazione ----------------------------------------------------
 R=$("${A[@]}" -o /dev/null -d "gettone=$G&cliente=c1&attivo=0" "$U/admin/cliente/attivazione")
 ok "Disattiva un cliente" "$(uguale "$(mysql_q "SELECT attivo FROM utenti WHERE id='c1'")" '0')"
 ok "E gli chiude subito le sessioni aperte" "$(uguale "$(mysql_q "SELECT COUNT(*) FROM sessioni WHERE utente_id='c1'")" '0')"

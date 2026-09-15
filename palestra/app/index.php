@@ -329,6 +329,23 @@ try {
                 vaiA($ritorno, null, $e->getMessage());
             }
 
+        case 'GET /admin/impostazioni':
+            $utente = esigiAdmin($utente);
+            $righe  = Amministrazione::impostazioni($utente['id']);
+            require __DIR__ . '/pagine/admin-impostazioni.php';
+            break;
+
+        case 'POST /admin/impostazioni':
+            $utente = esigiAdmin($utente);
+            verificaGettone();
+
+            try {
+                Amministrazione::salvaImpostazioni($utente['id'], $_POST);
+                vaiA('/admin/impostazioni', 'Impostazioni aggiornate.');
+            } catch (RegolaViolata $e) {
+                vaiA('/admin/impostazioni', null, $e->getMessage());
+            }
+
         case 'GET /admin/clienti':
             $utente  = esigiAdmin($utente);
             $elenco  = Amministrazione::clienti($utente['id'], isset($_GET['tutti']));

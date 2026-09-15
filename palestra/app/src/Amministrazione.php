@@ -331,6 +331,68 @@ final class Amministrazione
     }
 
     // ------------------------------------------------------------------
+    // Impostazioni
+    //
+    // Le stesse quattro chiavi lette da Regole::impostazione(), ma con
+    // un'etichetta leggibile ed estremi larghi ma sensati: servono a non
+    // far scrivere per sbaglio un valore che romperebbe le prenotazioni
+    // (zero prenotazioni aperte, mesi di anticipo minimo), non a imporre
+    // una policy di gestione.
+    // ------------------------------------------------------------------
+
+    private const CAMPI_IMPOSTAZIONI = [
+        'finestra_disdetta_ore'   => ['etichetta' => 'Finestra di disdetta (ore)',              'min' => 0, 'max' => 168],
+        'anticipo_minimo_ore'     => ['etichetta' => 'Anticipo minimo per prenotare (ore)',      'min' => 0, 'max' => 168],
+        'max_prenotazioni_aperte' => ['etichetta' => 'Prenotazioni future aperte per cliente',   'min' => 1, 'max' => 20],
+        'giorni_visibili'         => ['etichetta' => 'Giorni di calendario mostrati al cliente', 'min' => 1, 'max' => 60],
+    ];
+
+    /** Le impostazioni nell'ordine in cui ha senso leggerle, non alfabetico. */
+    public static function impostazioni(string $attoreId): array
+    {
+        self::esigiAdmin($attoreId);
+
+        $q = Db::pdo()->query('SELECT chiave, valore, nota FROM impostazioni');
+        $perChiave = [];
+        foreach ($q->fetchAll() as $r) {
+            $perChiave[$r['chiave']] = $r;
+        }
+
+        $righe = [];
+        foreach (self::CAMPI_IMPOSTAZIONI as $chiave => $info) {
+            if (isset($perChiave[$chiave])) {
+                $righe[] = $perChiave[$chiave] + $info;
+            }
+        }
+        return $righe;
+    }
+
+    /** @param array<string,mixed> $valori chiave => nuovo valore, dal modulo */
+    public static function salvaImpostazioni(string $attoreId, array $valori): void
+    {
+        self::esigiAdmin($attoreId);
+
+        $nuovi = [];
+        foreach (self::CAMPI_IMPOSTAZIONI as $chiave => $info) {
+            $v = filter_var($valori[$chiave] ?? null, FILTER_VALIDATE_INT);
+
+            if ($v === false || $v < $info['min'] || $v > $info['max']) {
+                throw new RegolaViolata(
+                    "«{$info['etichetta']}» deve essere un numero tra {$info['min']} e {$info['max']}"
+                );
+            }
+            $nuovi[$chiave] = $v;
+        }
+
+        Db::transazione(function (PDO $pdo) use ($nuovi): void {
+            $q = $pdo->prepare('UPDATE impostazioni SET valore = ? WHERE chiave = ?');
+            foreach ($nuovi as $chiave => $valore) {
+                $q->execute([$valore, $chiave]);
+            }
+        });
+    }
+
+    // ------------------------------------------------------------------
     // Riepilogo per la schermata di oggi
     // ------------------------------------------------------------------
 

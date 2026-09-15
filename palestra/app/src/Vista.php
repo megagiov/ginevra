@@ -138,6 +138,7 @@ final class Vista
                     '/admin'            => ['Oggi',       'oggi'],
                     '/admin/calendario' => ['Calendario', 'calendario'],
                     '/admin/clienti'    => ['Clienti',    'clienti'],
+                    '/admin/impostazioni' => ['Impostazioni', 'impostazioni'],
                   ]
                 : [
                     '/'             => ['Prenota',     'prenota'],
