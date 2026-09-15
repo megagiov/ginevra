@@ -70,8 +70,10 @@ final class Amministrazione
 
         $segnaposto = implode(',', array_fill(0, count($slot), '?'));
         $p = Db::pdo()->prepare(
-            "SELECT p.id, p.slot_id, p.stato, u.id AS cliente_id, u.nome, u.telefono
+            "SELECT p.id, p.slot_id, p.stato, u.id AS cliente_id, u.nome, u.telefono,
+                    m.nome AS maestro_nome
                FROM prenotazioni p JOIN utenti u ON u.id = p.cliente_id
+               LEFT JOIN maestri m ON m.id = p.maestro_id
               WHERE p.slot_id IN ($segnaposto) AND p.stato <> 'disdetta'
               ORDER BY u.nome"
         );
@@ -134,6 +136,12 @@ final class Amministrazione
      * "Entrambi" serve a chi ha un secondo maestro disponibile: pubblica
      * un'individuale e un gruppo nello stesso orario in un colpo solo,
      * invece di ripetere il modulo due volte.
+     *
+     * @param array{individuale?:list<string>, gruppo?:list<string>} $maestriPerTipo
+     *        id dei maestri candidati per ciascun tipo creato. Con uno solo
+     *        per tipo l'assegnazione e' automatica alla prenotazione, senza
+     *        nulla da scegliere; con zero non cambia nulla rispetto a prima
+     *        di avere i maestri in app.
      */
     public static function creaSlot(
         string $attoreId,
@@ -141,7 +149,8 @@ final class Amministrazione
         string $ora,           // H:i,   ora locale
         string $tipo,
         int    $capienza,
-        int    $ripetizioni = 1
+        int    $ripetizioni = 1,
+        array  $maestriPerTipo = []
     ): array {
         self::esigiAdmin($attoreId);
 
@@ -176,22 +185,35 @@ final class Amministrazione
 
             foreach ($tipiDaCreare as $unTipo) {
                 $capienzaEffettiva = $unTipo === 'individuale' ? 1 : $capienza;
+                $slotId = Db::uuid();
+                $maestri = $maestriPerTipo[$unTipo] ?? [];
 
                 try {
-                    Db::pdo()->prepare(
-                        'INSERT INTO slot (id, inizio, fine, tipo, capienza) VALUES (?,?,?,?,?)'
-                    )->execute([
-                        Db::uuid(),
-                        self::utc($questo),
-                        self::utc($questo->modify('+' . self::DURATA_MINUTI . ' minutes')),
-                        $unTipo,
-                        $capienzaEffettiva,
-                    ]);
+                    Db::transazione(function (\PDO $pdo) use (
+                        $slotId, $questo, $unTipo, $capienzaEffettiva, $maestri
+                    ): void {
+                        $pdo->prepare(
+                            'INSERT INTO slot (id, inizio, fine, tipo, capienza) VALUES (?,?,?,?,?)'
+                        )->execute([
+                            $slotId,
+                            self::utc($questo),
+                            self::utc($questo->modify('+' . self::DURATA_MINUTI . ' minutes')),
+                            $unTipo,
+                            $capienzaEffettiva,
+                        ]);
+
+                        $q = $pdo->prepare(
+                            'INSERT INTO slot_maestri (slot_id, maestro_id) VALUES (?, ?)'
+                        );
+                        foreach ($maestri as $maestroId) {
+                            $q->execute([$slotId, $maestroId]);
+                        }
+                    });
                     $creati++;
                 } catch (PDOException $e) {
                     // 45000 e' il trigger anti-sovrapposizione dello stesso
-                    // tipo; 23000 l'unicita' su orario+tipo. In entrambi i
-                    // casi quel tipo di lezione e' gia' occupato a quell'ora.
+                    // tipo; 23000 l'unicita' su orario+tipo (o un maestro
+                    // inesistente). In tutti i casi non si crea la lezione.
                     if (in_array($e->getCode(), ['45000', '23000'], true)) {
                         $saltati[] = Vista::giorno($questo) . ' alle ' . $questo->format('H:i')
                                    . (count($tipiDaCreare) > 1 ? " ($unTipo)" : '');
@@ -203,6 +225,47 @@ final class Amministrazione
         }
 
         return ['creati' => $creati, 'saltati' => $saltati];
+    }
+
+    // ------------------------------------------------------------------
+    // Maestri
+    // ------------------------------------------------------------------
+
+    /** Elenco maestri, i disattivati compresi se richiesto. */
+    public static function maestri(string $attoreId, bool $ancheInattivi = false): array
+    {
+        self::esigiAdmin($attoreId);
+
+        $filtro = $ancheInattivi ? '' : 'WHERE attivo = 1';
+        return Db::pdo()->query("SELECT * FROM maestri $filtro ORDER BY nome")->fetchAll();
+    }
+
+    public static function creaMaestro(string $attoreId, string $nome): string
+    {
+        self::esigiAdmin($attoreId);
+
+        $nome = trim($nome);
+        if ($nome === '') {
+            throw new RegolaViolata('Il nome del maestro e\' obbligatorio');
+        }
+
+        $id = Db::uuid();
+        Db::pdo()->prepare('INSERT INTO maestri (id, nome) VALUES (?, ?)')->execute([$id, $nome]);
+
+        return $id;
+    }
+
+    /**
+     * Disattivare non tocca gli slot gia' pubblicati con questo maestro tra
+     * i candidati: resta valido dove gia' assegnato, semplicemente non lo si
+     * puo' piu' scegliere per le prossime lezioni.
+     */
+    public static function cambiaAttivazioneMaestro(string $attoreId, string $maestroId, bool $attivo): void
+    {
+        self::esigiAdmin($attoreId);
+
+        Db::pdo()->prepare('UPDATE maestri SET attivo = ? WHERE id = ?')
+                 ->execute([$attivo ? 1 : 0, $maestroId]);
     }
 
     public static function cambiaStatoSlot(string $attoreId, string $slotId, string $stato): void

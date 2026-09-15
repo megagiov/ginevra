@@ -77,15 +77,24 @@ final class Regole
      *
      * @param string $attoreId chi sta agendo: il cliente stesso oppure
      *                         l'amministratore che prenota per suo conto
+     * @param ?string $maestroId chi ha scelto il cliente, quando lo slot ha
+     *                           piu' di un maestro candidato. Con uno solo
+     *                           candidato si assegna da solo, e questo
+     *                           parametro viene ignorato; con zero resta
+     *                           null, come prima di avere i maestri in app.
      * @return string id della prenotazione
      */
-    public static function prenota(string $slotId, string $clienteId, string $attoreId): string
-    {
+    public static function prenota(
+        string $slotId,
+        string $clienteId,
+        string $attoreId,
+        ?string $maestroId = null
+    ): string {
         if ($attoreId !== $clienteId && !self::eAdmin($attoreId)) {
             throw new RegolaViolata('Non puoi prenotare per un altro cliente');
         }
 
-        return Db::transazione(function (PDO $pdo) use ($slotId, $clienteId, $attoreId): string {
+        return Db::transazione(function (PDO $pdo) use ($slotId, $clienteId, $attoreId, $maestroId): string {
 
             $q = $pdo->prepare('SELECT id, attivo FROM utenti WHERE id = ? FOR UPDATE');
             $q->execute([$clienteId]);
@@ -161,10 +170,23 @@ final class Regole
                 throw new RegolaViolata("Hai gia' $massimo prenotazioni future aperte");
             }
 
+            $q = $pdo->prepare('SELECT maestro_id FROM slot_maestri WHERE slot_id = ?');
+            $q->execute([$slotId]);
+            $candidati = $q->fetchAll(\PDO::FETCH_COLUMN);
+
+            $maestroScelto = match (count($candidati)) {
+                0       => null,
+                1       => $candidati[0],
+                default => in_array($maestroId, $candidati, true)
+                    ? $maestroId
+                    : throw new RegolaViolata('Scegli con quale maestro vuoi fare questa lezione'),
+            };
+
             $id = Db::uuid();
 
-            $pdo->prepare('INSERT INTO prenotazioni (id, slot_id, cliente_id) VALUES (?, ?, ?)')
-                ->execute([$id, $slotId, $clienteId]);
+            $pdo->prepare(
+                'INSERT INTO prenotazioni (id, slot_id, cliente_id, maestro_id) VALUES (?, ?, ?, ?)'
+            )->execute([$id, $slotId, $clienteId, $maestroScelto]);
 
             // Il credito si scala adesso, non alla presenza: altrimenti con un
             // credito solo si bloccherebbero quattro lezioni.

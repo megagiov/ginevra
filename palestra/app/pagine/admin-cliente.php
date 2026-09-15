@@ -124,13 +124,25 @@ echo Vista::intestazione($c['nome'], $utente, 'clienti');
       <select id="slot" name="slot" required>
       <?php foreach ($prenotabili as $giornoSlot): ?>
         <?php foreach ($giornoSlot as $s):
-          if ((int) $s['posti_liberi'] <= 0 || $s['mia']) { continue; } ?>
-          <option value="<?= Vista::e($s['id']) ?>">
-            <?= Vista::e(Vista::giorno($s['locale'])) ?>,
-            <?= Vista::e(Vista::ora($s['locale'])) ?> —
-            <?= $s['tipo'] === 'gruppo' ? 'gruppo' : 'individuale' ?>
-            (<?= (int) $s['posti_liberi'] ?> liberi)
-          </option>
+          if ((int) $s['posti_liberi'] <= 0 || $s['mia']) { continue; }
+
+          $etichetta = Vista::giorno($s['locale']) . ', ' . Vista::ora($s['locale']) . ' — '
+                     . ($s['tipo'] === 'gruppo' ? 'gruppo' : 'individuale')
+                     . ' (' . (int) $s['posti_liberi'] . ' liberi)';
+        ?>
+          <?php if (count($s['maestri']) > 1): ?>
+            <!-- Con piu' maestri candidati, ogni combinazione slot+maestro
+                 e' un'opzione a se': non c'e' un secondo campo da mostrare. -->
+            <?php foreach ($s['maestri'] as $m): ?>
+              <option value="<?= Vista::e($s['id']) ?>|<?= Vista::e($m['id']) ?>">
+                <?= Vista::e($etichetta) ?> — con <?= Vista::e($m['nome']) ?>
+              </option>
+            <?php endforeach; ?>
+          <?php else: ?>
+            <option value="<?= Vista::e($s['id']) ?>">
+              <?= Vista::e($etichetta) ?><?= $s['maestri'] !== [] ? ' — con ' . Vista::e($s['maestri'][0]['nome']) : '' ?>
+            </option>
+          <?php endif; ?>
         <?php endforeach; ?>
       <?php endforeach; ?>
       </select>

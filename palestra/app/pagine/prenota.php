@@ -36,7 +36,12 @@ echo Vista::intestazione('Prenota', $utente, 'prenota');
         <li class="slot-voce <?= $stato ?>">
           <div class="quando">
             <span class="orario"><?= Vista::e(Vista::ora($s['locale'])) ?></span>
-            <span class="tipo"><?= $gruppo ? 'Gruppo' : 'Individuale' ?></span>
+            <span class="tipo">
+              <?= $gruppo ? 'Gruppo' : 'Individuale' ?>
+              <?php if (count($s['maestri']) === 1): ?>
+                · con <?= Vista::e($s['maestri'][0]['nome']) ?>
+              <?php endif; ?>
+            </span>
           </div>
 
           <!-- L'etichetta non e' decorativa: il colore da solo non basta
@@ -44,9 +49,17 @@ echo Vista::intestazione('Prenota', $utente, 'prenota');
           <span class="segno"><?= Vista::e($etichetta) ?></span>
 
           <?php if (!$mia && $liberi > 0): ?>
-            <form method="post" action="<?= Vista::u('/prenota') ?>">
+            <form method="post" action="<?= Vista::u('/prenota') ?>" class="prenota-riga">
               <?= Vista::campoGettone() ?>
               <input type="hidden" name="slot" value="<?= Vista::e($s['id']) ?>">
+              <?php if (count($s['maestri']) > 1): ?>
+                <select name="maestro" aria-label="Scegli il maestro" required>
+                  <option value="" disabled selected>Scegli il maestro</option>
+                  <?php foreach ($s['maestri'] as $m): ?>
+                    <option value="<?= Vista::e($m['id']) ?>"><?= Vista::e($m['nome']) ?></option>
+                  <?php endforeach; ?>
+                </select>
+              <?php endif; ?>
               <button type="submit" class="principale">Prenota</button>
             </form>
           <?php endif; ?>

@@ -56,6 +56,9 @@ echo Vista::intestazione('Oggi', $utente, 'oggi');
             <a class="nome" href="<?= Vista::u('/admin/cliente') ?>?id=<?= Vista::e($p['cliente_id']) ?>">
               <?= Vista::e($p['nome']) ?>
             </a>
+            <?php if ($p['maestro_nome']): ?>
+              <span class="sommesso piccolo">con <?= Vista::e($p['maestro_nome']) ?></span>
+            <?php endif; ?>
 
             <?php if ($p['stato'] === 'prenotata'): ?>
               <!-- Due pulsanti, non una spunta: in sala si tocca una volta

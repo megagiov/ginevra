@@ -195,7 +195,8 @@ try {
             verificaGettone();
 
             try {
-                Regole::prenota((string) ($_POST['slot'] ?? ''), $utente['id'], $utente['id']);
+                $maestro = trim((string) ($_POST['maestro'] ?? '')) ?: null;
+                Regole::prenota((string) ($_POST['slot'] ?? ''), $utente['id'], $utente['id'], $maestro);
                 vaiA('/prenotazioni', 'Prenotazione confermata.');
             } catch (RegolaViolata $e) {
                 vaiA('/', null, $e->getMessage());
@@ -274,6 +275,7 @@ try {
             $utente    = esigiAdmin($utente);
             $lunedi    = lunediRichiesto($_GET['da'] ?? null);
             $settimana = Amministrazione::settimana($utente['id'], $lunedi);
+            $maestri   = Amministrazione::maestri($utente['id']);
             require __DIR__ . '/pagine/admin-calendario.php';
             break;
 
@@ -289,7 +291,11 @@ try {
                     (string) ($_POST['ora'] ?? ''),
                     (string) ($_POST['tipo'] ?? ''),
                     (int) ($_POST['capienza'] ?? 4),
-                    (int) ($_POST['ripetizioni'] ?? 1)
+                    (int) ($_POST['ripetizioni'] ?? 1),
+                    [
+                        'individuale' => array_filter((array) ($_POST['maestri_individuale'] ?? [])),
+                        'gruppo'      => array_filter((array) ($_POST['maestri_gruppo'] ?? [])),
+                    ]
                 );
 
                 $messaggio = $esito['creati'] === 1
@@ -336,10 +342,33 @@ try {
             }
 
         case 'GET /admin/impostazioni':
-            $utente = esigiAdmin($utente);
-            $righe  = Amministrazione::impostazioni($utente['id']);
+            $utente  = esigiAdmin($utente);
+            $righe   = Amministrazione::impostazioni($utente['id']);
+            $maestri = Amministrazione::maestri($utente['id'], true);
             require __DIR__ . '/pagine/admin-impostazioni.php';
             break;
+
+        case 'POST /admin/maestri':
+            $utente = esigiAdmin($utente);
+            verificaGettone();
+
+            try {
+                Amministrazione::creaMaestro($utente['id'], (string) ($_POST['nome'] ?? ''));
+                vaiA('/admin/impostazioni', 'Maestro aggiunto.');
+            } catch (RegolaViolata $e) {
+                vaiA('/admin/impostazioni', null, $e->getMessage());
+            }
+
+        case 'POST /admin/maestro/attivazione':
+            $utente = esigiAdmin($utente);
+            verificaGettone();
+
+            Amministrazione::cambiaAttivazioneMaestro(
+                $utente['id'],
+                (string) ($_POST['maestro'] ?? ''),
+                ($_POST['attivo'] ?? '') === '1'
+            );
+            vaiA('/admin/impostazioni', 'Maestro aggiornato.');
 
         case 'POST /admin/impostazioni':
             $utente = esigiAdmin($utente);
@@ -419,7 +448,15 @@ try {
             $ritorno = '/admin/cliente?id=' . urlencode($cliente);
 
             try {
-                Regole::prenota((string) ($_POST['slot'] ?? ''), $cliente, $utente['id']);
+                // Quando lo slot scelto ha piu' maestri candidati, l'opzione
+                // del modulo porta "id-slot|id-maestro" invece del solo id:
+                // un'unica tendina, senza bisogno di un secondo campo.
+                $scelta = (string) ($_POST['slot'] ?? '');
+                [$slotScelto, $maestroScelto] = str_contains($scelta, '|')
+                    ? explode('|', $scelta, 2)
+                    : [$scelta, null];
+
+                Regole::prenota($slotScelto, $cliente, $utente['id'], $maestroScelto);
                 vaiA($ritorno, 'Prenotazione registrata per il cliente.');
             } catch (RegolaViolata $e) {
                 vaiA($ritorno, null, $e->getMessage());

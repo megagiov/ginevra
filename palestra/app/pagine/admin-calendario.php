@@ -1,5 +1,5 @@
 <?php
-/** @var array $utente @var DateTimeImmutable $lunedi @var array $settimana */
+/** @var array $utente @var DateTimeImmutable $lunedi @var array $settimana @var array $maestri */
 use Studio\Vista;
 
 $prima = $lunedi->modify('-7 days')->format('Y-m-d');
@@ -65,6 +65,33 @@ echo Vista::intestazione('Calendario', $utente, 'calendario');
         <option value="12">12 settimane</option>
       </select>
     </div>
+
+    <?php if ($maestri !== []): ?>
+      <div class="larga">
+        <span class="etichetta-gruppo">Maestri liberi per l'individuale</span>
+        <?php foreach ($maestri as $m): ?>
+          <label class="scelta">
+            <input type="checkbox" name="maestri_individuale[]" value="<?= Vista::e($m['id']) ?>">
+            <?= Vista::e($m['nome']) ?>
+          </label>
+        <?php endforeach; ?>
+      </div>
+      <div class="larga">
+        <span class="etichetta-gruppo">Maestri liberi per il gruppo</span>
+        <?php foreach ($maestri as $m): ?>
+          <label class="scelta">
+            <input type="checkbox" name="maestri_gruppo[]" value="<?= Vista::e($m['id']) ?>">
+            <?= Vista::e($m['nome']) ?>
+          </label>
+        <?php endforeach; ?>
+      </div>
+    <?php else: ?>
+      <p class="sommesso piccolo larga">
+        Nessun maestro configurato: la lezione si pubblica comunque, senza
+        chiedere nulla al cliente. Puoi aggiungerne dalle
+        <a href="<?= Vista::u('/admin/impostazioni') ?>">Impostazioni</a>.
+      </p>
+    <?php endif; ?>
 
     <button type="submit" class="principale">Pubblica</button>
   </form>

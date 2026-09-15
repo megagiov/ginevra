@@ -4,7 +4,8 @@ Prenotazioni per uno studio di personal training con **una sala**: lezioni da
 60 minuti, individuali o di gruppo fino a 4 posti, crediti gestiti a mano
 dall'amministratore, disdetta gratuita entro 24 ore. Con un secondo maestro
 disponibile, un'individuale e un gruppo possono girare nello stesso
-orario — ma mai due dello stesso tipo insieme.
+orario — ma mai due dello stesso tipo insieme. Quando per una lezione c'e'
+piu' di un maestro libero, sceglie il cliente in prenotazione.
 
 Gira sull'hosting Aruba Linux gia' in uso (PHP 8.3 + MySQL), su un
 sottodominio dedicato. Nessun servizio cloud a pagamento.
@@ -17,18 +18,20 @@ sottodominio dedicato. Nessun servizio cloud a pagamento.
 | Regole di prenotazione in PHP | complete — 24 asserzioni |
 | Accesso con link via email | completo — 27 asserzioni |
 | Schermate cliente (PWA) | complete — 29 asserzioni end-to-end |
-| Schermate amministratore | complete — 60 asserzioni end-to-end |
+| Schermate amministratore | complete — 72 asserzioni end-to-end |
 | Installazione in sottocartella | supportata — 24 asserzioni |
 
-**192 asserzioni verdi in totale.**
+**204 asserzioni verdi in totale.**
 
 Otto schermate, una sola applicazione: il ruolo decide cosa si vede.
 
-- **Cliente** — prenota, le mie lezioni, saldo, piano (alimentazione e
-  allenamento a casa, scritto dal trainer)
-- **Amministratore** — oggi (agenda e presenze), calendario (pubblica la
-  disponibilita'), clienti, scheda cliente (crediti, prenotazione per suo
-  conto, storico, piano del cliente), impostazioni
+- **Cliente** — prenota (con scelta del maestro quando ce n'e' piu' di uno
+  libero), le mie lezioni, saldo, piano (alimentazione e allenamento a casa,
+  scritto dal trainer)
+- **Amministratore** — oggi (agenda e presenze, con il maestro assegnato a
+  ciascun cliente), calendario (pubblica la disponibilita', indicando quali
+  maestri sono liberi), clienti, scheda cliente (crediti, prenotazione per
+  suo conto, storico, piano del cliente), impostazioni (regole e maestri)
 
 L'accesso avviene con un link inviato per email, senza password. Il primo
 tocco del link (GET) non consuma nulla: mostra una pagina con un pulsante
@@ -95,7 +98,7 @@ mariadb -t studio_test < db/mysql/test/01_vincoli.sql   # 28 — cosa garantisce
 php app/test/regole.php                                 # 24 — le regole di prenotazione
 php app/test/accesso.php                                # 27 — accesso senza password
 bash app/test/schermate.sh                              # 29 — percorso cliente via HTTP
-bash app/test/admin.sh                                  # 60 — percorso amministratore
+bash app/test/admin.sh                                  # 72 — percorso amministratore
 bash app/test/sottocartella.sh                          # 24 — app dentro una sottocartella
 ```
 

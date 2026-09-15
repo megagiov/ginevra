@@ -214,6 +214,65 @@ ok "Rifiuta un valore non numerico" "$(contiene "$R" 'errore=')"
 R=$("${CL[@]}" -o /dev/null -d "finestra_disdetta_ore=1&anticipo_minimo_ore=1&max_prenotazioni_aperte=6&giorni_visibili=21" "$U/admin/impostazioni")
 ok "Un cliente non puo' cambiare le impostazioni" "$(contiene "$R" '403')"
 
+# --- 8b. maestri ------------------------------------------------------------
+R=$("${A[@]}" -o /dev/null -d "gettone=$G&nome=" "$U/admin/maestri")
+ok "Rifiuta un nome vuoto" "$(contiene "$R" 'errore=')"
+
+R=$("${A[@]}" -o /dev/null -d "gettone=$G&nome=Marco" "$U/admin/maestri")
+ok "Crea un maestro" "$(uguale "$(mysql_q "SELECT COUNT(*) FROM maestri WHERE nome='Marco'")" '1')"
+MID_MARCO=$(mysql_q "SELECT id FROM maestri WHERE nome='Marco'")
+
+P=$("${A[@]}" "$U/admin/impostazioni")
+ok "L'elenco maestri mostra quello appena creato" "$(contiene "$P" 'Marco')"
+
+# Bruno non ha ancora nessun credito individuale: gliene serve per le prove.
+R=$("${A[@]}" -o /dev/null -d "gettone=$G&cliente=c2&quantita=5&tipo=individuale&causale=omaggio" "$U/admin/accredita")
+
+# Un solo maestro candidato: l'assegnazione e' automatica, il cliente non sceglie nulla.
+R=$("${A[@]}" -o /dev/null -d "gettone=$G&da=$LUN&data=$LUN&ora=08:00&tipo=individuale&capienza=1&ripetizioni=1&maestri_individuale[]=$MID_MARCO" "$U/admin/slot")
+SLOT_MARCO=$(mysql_q "SELECT slot_id FROM slot_maestri GROUP BY slot_id HAVING COUNT(*) = 1")
+ok "Pubblica la lezione con il maestro candidato" "$([ -n "$SLOT_MARCO" ] && echo 1 || echo 0)"
+
+BB=$(mktemp); B=(curl -s -c "$BB" -b "$BB" -w '\n%{http_code}|%{redirect_url}')
+TKB=$(php "$APP/test/token-di-prova.php" bruno@test.it)
+entra_con_token "$BB" "$TKB"
+PB=$("${B[@]}" "$U/")
+GB=$(gettone "$PB")
+
+R=$("${B[@]}" -o /dev/null -d "gettone=$GB&slot=$SLOT_MARCO" "$U/prenota")
+ok "Il cliente prenota senza dover scegliere il maestro (ce n'e' uno solo)" \
+   "$(uguale "$(mysql_q "SELECT maestro_id FROM prenotazioni WHERE slot_id='$SLOT_MARCO' AND cliente_id='c2'")" "$MID_MARCO")"
+
+# Due maestri candidati: stavolta la scelta e' del cliente.
+R=$("${A[@]}" -o /dev/null -d "gettone=$G&nome=Giulia" "$U/admin/maestri")
+MID_GIULIA=$(mysql_q "SELECT id FROM maestri WHERE nome='Giulia'")
+
+R=$("${A[@]}" -o /dev/null -d "gettone=$G&da=$LUN&data=$LUN&ora=09:00&tipo=individuale&capienza=1&ripetizioni=1&maestri_individuale[]=$MID_MARCO&maestri_individuale[]=$MID_GIULIA" "$U/admin/slot")
+SLOT_DOPPIO=$(mysql_q "SELECT slot_id FROM slot_maestri GROUP BY slot_id HAVING COUNT(*) = 2")
+ok "Pubblica la lezione con due maestri candidati" "$([ -n "$SLOT_DOPPIO" ] && echo 1 || echo 0)"
+
+R=$("${B[@]}" -o /dev/null -d "gettone=$GB&slot=$SLOT_DOPPIO" "$U/prenota")
+ok "Senza scegliere il maestro la prenotazione viene rifiutata" "$(contiene "$R" 'errore=')"
+
+R=$("${B[@]}" -o /dev/null -d "gettone=$GB&slot=$SLOT_DOPPIO&maestro=$MID_GIULIA" "$U/prenota")
+ok "Scegliendo Giulia la prenotazione risulta a suo nome" \
+   "$(uguale "$(mysql_q "SELECT maestro_id FROM prenotazioni WHERE slot_id='$SLOT_DOPPIO' AND cliente_id='c2'")" "$MID_GIULIA")"
+
+P=$("${B[@]}" "$U/prenotazioni")
+ok "Il cliente vede con chi ha la lezione, nelle sue prenotazioni" "$(contiene "$P" 'con Giulia')"
+
+# Disattivare un maestro non tocca dove e' gia' assegnato, ma sparisce dalle nuove scelte.
+R=$("${A[@]}" -o /dev/null -d "gettone=$G&maestro=$MID_GIULIA&attivo=0" "$U/admin/maestro/attivazione")
+ok "Disattiva un maestro" "$(uguale "$(mysql_q "SELECT attivo FROM maestri WHERE id='$MID_GIULIA'")" '0')"
+ok "La prenotazione di Bruno con Giulia resta valida" \
+   "$(uguale "$(mysql_q "SELECT maestro_id FROM prenotazioni WHERE slot_id='$SLOT_DOPPIO' AND cliente_id='c2'")" "$MID_GIULIA")"
+
+P=$("${A[@]}" "$U/admin/calendario")
+ok "Un maestro disattivato non compare piu' tra le scelte per una nuova lezione" \
+   "$([ "$(grep -c "value=\"$MID_GIULIA\"" <<<"$P")" = "0" ] && echo 1 || echo 0)"
+
+rm -f "$BB"
+
 # --- 9. disattivazione ----------------------------------------------------
 R=$("${A[@]}" -o /dev/null -d "gettone=$G&cliente=c1&attivo=0" "$U/admin/cliente/attivazione")
 ok "Disattiva un cliente" "$(uguale "$(mysql_q "SELECT attivo FROM utenti WHERE id='c1'")" '0')"

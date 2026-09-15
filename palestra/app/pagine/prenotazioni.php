@@ -21,6 +21,7 @@ echo Vista::intestazione('Le mie lezioni', $utente, 'prenotazioni');
         <span class="tipo">
           <?= Vista::e(Vista::giornoRelativo($p['locale'])) ?> ·
           <?= $p['tipo'] === 'gruppo' ? 'Gruppo' : 'Individuale' ?>
+          <?php if ($p['maestro_nome']): ?> · con <?= Vista::e($p['maestro_nome']) ?><?php endif; ?>
         </span>
       </div>
 

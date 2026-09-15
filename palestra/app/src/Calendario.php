@@ -40,21 +40,59 @@ final class Calendario
         $q->bindValue(':giorni', $giorni, \PDO::PARAM_INT);
         $q->execute();
 
+        $righe   = $q->fetchAll();
+        $maestri = self::maestriPerSlot(array_column($righe, 'id'));
+
         $perGiorno = [];
-        foreach ($q->fetchAll() as $slot) {
+        foreach ($righe as $slot) {
             $locale = Vista::locale($slot['inizio']);
-            $perGiorno[$locale->format('Y-m-d')][] = $slot + ['locale' => $locale];
+            $perGiorno[$locale->format('Y-m-d')][] = $slot + [
+                'locale'  => $locale,
+                'maestri' => $maestri[$slot['id']] ?? [],
+            ];
         }
 
         return $perGiorno;
+    }
+
+    /**
+     * I maestri candidati per ciascuno slot, quelli tenuti anche se nel
+     * frattempo disattivati: uno slot gia' pubblicato resta valido cosi'
+     * com'e'.
+     *
+     * @param list<string> $slotIds
+     * @return array<string, list<array{id:string,nome:string}>>
+     */
+    private static function maestriPerSlot(array $slotIds): array
+    {
+        if ($slotIds === []) {
+            return [];
+        }
+
+        $segnaposto = implode(',', array_fill(0, count($slotIds), '?'));
+        $q = Db::pdo()->prepare(
+            "SELECT sm.slot_id, m.id, m.nome FROM slot_maestri sm
+               JOIN maestri m ON m.id = sm.maestro_id
+              WHERE sm.slot_id IN ($segnaposto)
+              ORDER BY m.nome"
+        );
+        $q->execute($slotIds);
+
+        $perSlot = [];
+        foreach ($q->fetchAll() as $r) {
+            $perSlot[$r['slot_id']][] = ['id' => $r['id'], 'nome' => $r['nome']];
+        }
+        return $perSlot;
     }
 
     /** @return list<array> prenotazioni future, dalla piu' vicina */
     public static function prossime(string $clienteId): array
     {
         $q = Db::pdo()->prepare(
-            "SELECT p.id, p.stato, s.inizio, s.fine, s.tipo, s.capienza
+            "SELECT p.id, p.stato, s.inizio, s.fine, s.tipo, s.capienza,
+                    m.nome AS maestro_nome
                FROM prenotazioni p JOIN slot s ON s.id = p.slot_id
+               LEFT JOIN maestri m ON m.id = p.maestro_id
               WHERE p.cliente_id = ? AND p.stato = 'prenotata'
                 AND s.inizio > UTC_TIMESTAMP()
               ORDER BY s.inizio"
