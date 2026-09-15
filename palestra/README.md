@@ -18,10 +18,10 @@ sottodominio dedicato. Nessun servizio cloud a pagamento.
 | Regole di prenotazione in PHP | complete — 24 asserzioni |
 | Accesso con link via email | completo — 27 asserzioni |
 | Schermate cliente (PWA) | complete — 29 asserzioni end-to-end |
-| Schermate amministratore | complete — 76 asserzioni end-to-end |
+| Schermate amministratore | complete — 80 asserzioni end-to-end |
 | Installazione in sottocartella | supportata — 24 asserzioni |
 
-**208 asserzioni verdi in totale.**
+**212 asserzioni verdi in totale.**
 
 Otto schermate, una sola applicazione: il ruolo decide cosa si vede.
 
@@ -98,7 +98,7 @@ mariadb -t studio_test < db/mysql/test/01_vincoli.sql   # 28 — cosa garantisce
 php app/test/regole.php                                 # 24 — le regole di prenotazione
 php app/test/accesso.php                                # 27 — accesso senza password
 bash app/test/schermate.sh                              # 29 — percorso cliente via HTTP
-bash app/test/admin.sh                                  # 76 — percorso amministratore
+bash app/test/admin.sh                                  # 80 — percorso amministratore
 bash app/test/sottocartella.sh                          # 24 — app dentro una sottocartella
 ```
 

@@ -26,22 +26,26 @@ echo Vista::intestazione('Calendario', $utente, 'calendario');
 
     <div class="larga">
       <span class="etichetta-gruppo">Giorni (nella settimana qui sopra)</span>
-      <?php foreach (['1'=>'Lun','2'=>'Mar','3'=>'Mer','4'=>'Gio','5'=>'Ven','6'=>'Sab','7'=>'Dom'] as $val => $etichetta): ?>
-        <label class="scelta">
-          <input type="checkbox" name="giorni[]" value="<?= $val ?>">
-          <?= $etichetta ?>
-        </label>
-      <?php endforeach; ?>
+      <div class="scelte-griglia">
+        <?php foreach (['1'=>'Lun','2'=>'Mar','3'=>'Mer','4'=>'Gio','5'=>'Ven','6'=>'Sab','7'=>'Dom'] as $val => $etichetta): ?>
+          <label class="scelta">
+            <input type="checkbox" name="giorni[]" value="<?= $val ?>">
+            <?= $etichetta ?>
+          </label>
+        <?php endforeach; ?>
+      </div>
     </div>
 
     <div class="larga">
       <span class="etichetta-gruppo">Ore</span>
-      <?php foreach (range(7, 20) as $h): $val = sprintf('%02d:00', $h); ?>
-        <label class="scelta">
-          <input type="checkbox" name="ore[]" value="<?= $val ?>">
-          <?= $val ?>
-        </label>
-      <?php endforeach; ?>
+      <div class="scelte-griglia">
+        <?php foreach (range(7, 20) as $h): $val = sprintf('%02d:00', $h); ?>
+          <label class="scelta">
+            <input type="checkbox" name="ore[]" value="<?= $val ?>">
+            <?= $val ?>
+          </label>
+        <?php endforeach; ?>
+      </div>
     </div>
 
     <div>
@@ -73,21 +77,25 @@ echo Vista::intestazione('Calendario', $utente, 'calendario');
     <?php if ($maestri !== []): ?>
       <div class="larga">
         <span class="etichetta-gruppo">Maestri liberi per l'individuale</span>
-        <?php foreach ($maestri as $m): ?>
-          <label class="scelta">
-            <input type="checkbox" name="maestri_individuale[]" value="<?= Vista::e($m['id']) ?>">
-            <?= Vista::e($m['nome']) ?>
-          </label>
-        <?php endforeach; ?>
+        <div class="scelte-griglia">
+          <?php foreach ($maestri as $m): ?>
+            <label class="scelta">
+              <input type="checkbox" name="maestri_individuale[]" value="<?= Vista::e($m['id']) ?>">
+              <?= Vista::e($m['nome']) ?>
+            </label>
+          <?php endforeach; ?>
+        </div>
       </div>
       <div class="larga">
         <span class="etichetta-gruppo">Maestri liberi per il gruppo</span>
-        <?php foreach ($maestri as $m): ?>
-          <label class="scelta">
-            <input type="checkbox" name="maestri_gruppo[]" value="<?= Vista::e($m['id']) ?>">
-            <?= Vista::e($m['nome']) ?>
-          </label>
-        <?php endforeach; ?>
+        <div class="scelte-griglia">
+          <?php foreach ($maestri as $m): ?>
+            <label class="scelta">
+              <input type="checkbox" name="maestri_gruppo[]" value="<?= Vista::e($m['id']) ?>">
+              <?= Vista::e($m['nome']) ?>
+            </label>
+          <?php endforeach; ?>
+        </div>
       </div>
     <?php else: ?>
       <p class="sommesso piccolo larga">
@@ -108,6 +116,67 @@ echo Vista::intestazione('Calendario', $utente, 'calendario');
     occupato vengono saltate e te lo dico quali. "Entrambi" serve quando hai
     un secondo maestro disponibile: pubblica un'individuale e un gruppo
     nello stesso orario.
+  </p>
+</details>
+
+<details class="riquadro pubblica">
+  <summary>Cancella disponibilita'</summary>
+
+  <form method="post" action="<?= Vista::u('/admin/slot/cancella') ?>" class="modulo-griglia"
+        onsubmit="return confirm('Eliminare tutte le lezioni vuote che corrispondono a questa scelta? Quelle gia\' prenotate non vengono toccate.')">
+    <?= Vista::campoGettone() ?>
+    <input type="hidden" name="da" value="<?= $qui ?>">
+
+    <div class="larga">
+      <span class="etichetta-gruppo">Giorni (nella settimana qui sopra)</span>
+      <div class="scelte-griglia">
+        <?php foreach (['1'=>'Lun','2'=>'Mar','3'=>'Mer','4'=>'Gio','5'=>'Ven','6'=>'Sab','7'=>'Dom'] as $val => $etichetta): ?>
+          <label class="scelta">
+            <input type="checkbox" name="giorni[]" value="<?= $val ?>">
+            <?= $etichetta ?>
+          </label>
+        <?php endforeach; ?>
+      </div>
+    </div>
+
+    <div class="larga">
+      <span class="etichetta-gruppo">Ore</span>
+      <div class="scelte-griglia">
+        <?php foreach (range(7, 20) as $h): $val = sprintf('%02d:00', $h); ?>
+          <label class="scelta">
+            <input type="checkbox" name="ore[]" value="<?= $val ?>">
+            <?= $val ?>
+          </label>
+        <?php endforeach; ?>
+      </div>
+    </div>
+
+    <div>
+      <label for="tipo-cancella">Tipo</label>
+      <select id="tipo-cancella" name="tipo">
+        <option value="individuale">Individuale</option>
+        <option value="gruppo">Gruppo</option>
+        <option value="entrambi">Entrambi</option>
+      </select>
+    </div>
+
+    <div>
+      <label for="ripetizioni-cancella">Nelle prossime</label>
+      <select id="ripetizioni-cancella" name="ripetizioni">
+        <option value="1">questa settimana sola</option>
+        <option value="4">4 settimane</option>
+        <option value="8">8 settimane</option>
+        <option value="12">12 settimane</option>
+      </select>
+    </div>
+
+    <button type="submit" class="secondaria">Elimina</button>
+  </form>
+
+  <p class="sommesso piccolo">
+    Cancella tutte le lezioni vuote che corrispondono a giorni, ore e tipo
+    scelti. Le lezioni gia' prenotate non vengono mai toccate da qui: vanno
+    disdette prima, oppure eliminate una per una qui sotto.
   </p>
 </details>
 

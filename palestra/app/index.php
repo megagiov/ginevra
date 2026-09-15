@@ -342,6 +342,37 @@ try {
                 vaiA($ritorno, null, $e->getMessage());
             }
 
+        case 'POST /admin/slot/cancella':
+            $utente = esigiAdmin($utente);
+            verificaGettone();
+            $ritorno = '/admin/calendario?da=' . urlencode((string) ($_POST['da'] ?? ''));
+
+            try {
+                $esito = Amministrazione::cancellaSlot(
+                    $utente['id'],
+                    (string) ($_POST['da'] ?? ''),
+                    array_values(array_filter(array_map('strval', (array) ($_POST['giorni'] ?? [])))),
+                    array_values(array_filter(array_map('strval', (array) ($_POST['ore'] ?? [])))),
+                    (string) ($_POST['tipo'] ?? ''),
+                    (int) ($_POST['ripetizioni'] ?? 1)
+                );
+
+                $messaggio = $esito['eliminati'] === 1
+                    ? 'Lezione eliminata.'
+                    : $esito['eliminati'] . ' lezioni eliminate.';
+
+                if ($esito['saltati'] !== []) {
+                    $messaggio .= ' Non toccate perche\' gia\' prenotate: '
+                                . implode('; ', $esito['saltati']) . '.';
+                }
+
+                $esito['eliminati'] > 0
+                    ? vaiA($ritorno, $messaggio)
+                    : vaiA($ritorno, null, 'Nessuna lezione eliminata. ' . $messaggio);
+            } catch (RegolaViolata $e) {
+                vaiA($ritorno, null, $e->getMessage());
+            }
+
         case 'GET /admin/impostazioni':
             $utente  = esigiAdmin($utente);
             $righe   = Amministrazione::impostazioni($utente['id']);

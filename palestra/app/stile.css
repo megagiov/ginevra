@@ -336,11 +336,17 @@ textarea { resize: vertical; }
 }
 
 .etichetta-gruppo { display: block; font-weight: 600; margin: .6rem 0 .3rem; }
+.scelte-griglia { display: flex; flex-wrap: wrap; gap: .4rem; margin: 0 0 .8rem; }
 .scelta {
   display: inline-flex; align-items: center; gap: .35rem;
-  margin: 0 .8rem .4rem 0; font-weight: normal; min-height: 0;
+  padding: .35rem .7rem; border: 1px solid var(--bordo); border-radius: 999px;
+  font-weight: normal; font-size: .85rem; min-height: 0; cursor: pointer;
+  user-select: none;
 }
-.scelta input { width: auto; min-height: 0; }
+.scelta input { width: auto; min-height: 0; margin: 0; }
+.scelta:has(input:checked) {
+  background: var(--primario); border-color: var(--primario); color: #fff;
+}
 
 /* --- elenco clienti ------------------------------------------------------- */
 

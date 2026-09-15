@@ -258,6 +258,98 @@ final class Amministrazione
         return ['creati' => $creati, 'saltati' => $saltati];
     }
 
+    /**
+     * Elimina, in un colpo solo, le lezioni vuote che corrispondono a una
+     * combinazione di giorni/ore/tipo — lo stesso schema con cui si
+     * pubblicano, ma al contrario.
+     *
+     * Le lezioni gia' prenotate non vengono mai toccate da qui: compaiono
+     * tra le "saltate" invece di sparire, cosi' restano visibili e vanno
+     * disdette prima, o eliminate una per una.
+     *
+     * @param list<string> $giorni '1' (lunedi') .. '7' (domenica)
+     * @param list<string> $ore 'H:i', ora locale
+     * @return array{eliminati:int, saltati:list<string>}
+     */
+    public static function cancellaSlot(
+        string $attoreId,
+        string $lunediSettimana,
+        array  $giorni,
+        array  $ore,
+        string $tipo,
+        int    $ripetizioni = 1
+    ): array {
+        self::esigiAdmin($attoreId);
+
+        if (!in_array($tipo, ['individuale', 'gruppo', 'entrambi'], true)) {
+            throw new RegolaViolata('Tipo di lezione non valido');
+        }
+
+        $tipiDaCancellare = $tipo === 'entrambi' ? ['individuale', 'gruppo'] : [$tipo];
+
+        if ($giorni === [] || $ore === []) {
+            throw new RegolaViolata('Scegli almeno un giorno e un\'ora');
+        }
+
+        if (array_diff($giorni, self::GIORNI_SETTIMANA_VALIDI) !== []) {
+            throw new RegolaViolata('Giorno della settimana non valido');
+        }
+
+        foreach ($ore as $ora) {
+            if (!preg_match('/^([01]\d|2[0-3]):00$/', $ora)) {
+                throw new RegolaViolata('Ora non valida');
+            }
+        }
+
+        $ripetizioni = max(1, min(52, $ripetizioni));
+
+        $lunedi = \DateTimeImmutable::createFromFormat('Y-m-d', $lunediSettimana, self::fuso());
+        if ($lunedi === false) {
+            throw new RegolaViolata('Data non valida');
+        }
+        $lunedi = $lunedi->setTime(0, 0);
+
+        $eliminati = 0;
+        $saltati = [];
+
+        for ($settimana = 0; $settimana < $ripetizioni; $settimana++) {
+            foreach ($giorni as $giornoIso) {
+                $giornoData = $lunedi->modify('+' . ((int) $giornoIso - 1 + $settimana * 7) . ' days');
+
+                foreach ($ore as $ora) {
+                    $inizio = \DateTimeImmutable::createFromFormat(
+                        'Y-m-d H:i', $giornoData->format('Y-m-d') . " $ora", self::fuso()
+                    );
+
+                    foreach ($tipiDaCancellare as $unTipo) {
+                        $q = Db::pdo()->prepare('SELECT id FROM slot WHERE inizio = ? AND tipo = ?');
+                        $q->execute([self::utc($inizio), $unTipo]);
+                        $slotId = $q->fetchColumn();
+
+                        if ($slotId === false) {
+                            continue; // niente da cancellare a quest'ora: non e' un errore
+                        }
+
+                        $c = Db::pdo()->prepare('SELECT COUNT(*) FROM prenotazioni WHERE slot_id = ?');
+                        $c->execute([$slotId]);
+
+                        if ((int) $c->fetchColumn() > 0) {
+                            $saltati[] = Vista::giorno($inizio) . ' alle ' . $inizio->format('H:i')
+                                       . (count($tipiDaCancellare) > 1 ? " ($unTipo)" : '')
+                                       . ': ha gia\' prenotazioni';
+                            continue;
+                        }
+
+                        Db::pdo()->prepare('DELETE FROM slot WHERE id = ?')->execute([$slotId]);
+                        $eliminati++;
+                    }
+                }
+            }
+        }
+
+        return ['eliminati' => $eliminati, 'saltati' => $saltati];
+    }
+
     // ------------------------------------------------------------------
     // Maestri
     // ------------------------------------------------------------------

@@ -139,6 +139,15 @@ R=$("${A[@]}" -o /dev/null -d "gettone=$G&slot=oggi1&da=$LUN" "$U/admin/slot/eli
 ok "Ma non se qualcuno l'ha prenotata"  "$(contiene "$R" 'errore=')"
 ok "E quella lezione resta in calendario" "$(uguale "$(mysql_q "SELECT COUNT(*) FROM slot WHERE id='oggi1'")" '1')"
 
+# --- 5b. cancellazione multipla ---------------------------------------------
+PRIMA=$(mysql_q "SELECT COUNT(*) FROM slot WHERE tipo='individuale'")
+R=$("${A[@]}" -o /dev/null -d "gettone=$G&da=$LUN&giorni[]=2&giorni[]=4&ore[]=11:00&ore[]=12:00&tipo=individuale&ripetizioni=1" "$U/admin/slot/cancella")
+DOPO=$(mysql_q "SELECT COUNT(*) FROM slot WHERE tipo='individuale'")
+ok "Cancella in blocco le lezioni vuote che corrispondono (2x2=4)" "$(uguale "$((PRIMA - DOPO))" '4')"
+
+R=$("${A[@]}" -o /dev/null -d "gettone=$G&da=$LUN&giorni[]=2&ore[]=11:00&tipo=individuale&ripetizioni=1" "$U/admin/slot/cancella")
+ok "Rifatta sulle stesse ore, non trova piu' nulla da cancellare" "$(contiene "$R" 'errore=')"
+
 # --- 6. clienti -----------------------------------------------------------
 P=$("${A[@]}" "$U/admin/clienti")
 G=$(gettone "$P")
@@ -288,6 +297,11 @@ ok "La prenotazione di Bruno con Giulia resta valida" \
 P=$("${A[@]}" "$U/admin/calendario")
 ok "Un maestro disattivato non compare piu' tra le scelte per una nuova lezione" \
    "$([ "$(grep -c "value=\"$MID_GIULIA\"" <<<"$P")" = "0" ] && echo 1 || echo 0)"
+
+R=$("${A[@]}" -o /dev/null -d "gettone=$G&da=$LUN&giorni[]=1&ore[]=08:00&tipo=individuale&ripetizioni=1" "$U/admin/slot/cancella")
+ok "La cancellazione in blocco non tocca una lezione gia' prenotata" \
+   "$(uguale "$(mysql_q "SELECT COUNT(*) FROM slot WHERE id='$SLOT_MARCO'")" '1')"
+ok "E lo dice, invece di sparire in silenzio" "$(contiene "$R" 'errore=')"
 
 rm -f "$BB"
 
