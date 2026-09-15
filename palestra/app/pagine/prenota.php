@@ -18,9 +18,16 @@ echo Vista::intestazione('Prenota', $utente, 'prenota');
 <?php if ($giorni === []): ?>
   <p class="vuoto">Non ci sono lezioni disponibili nei prossimi giorni.</p>
 <?php else: ?>
-  <?php foreach ($giorni as $data => $slot): ?>
+  <?php foreach ($giorni as $data => $slot):
+    $relativo = Vista::giornoRelativo($slot[0]['locale']);
+    // "oggi"/"domani" da soli non dicono la data: qui la aggiungiamo,
+    // altrove giornoRelativo() la include gia' (es. "giovedi' 19 marzo").
+    $intestazione = in_array($relativo, ['oggi', 'domani'], true)
+        ? ucfirst($relativo) . ', ' . Vista::giornoBreve($slot[0]['locale'])
+        : ucfirst($relativo);
+  ?>
     <section class="giorno">
-      <h2><?= Vista::e(Vista::giornoRelativo($slot[0]['locale'])) ?></h2>
+      <h2><?= Vista::e($intestazione) ?></h2>
 
       <ul class="slot">
       <?php foreach ($slot as $s):
@@ -45,8 +52,15 @@ echo Vista::intestazione('Prenota', $utente, 'prenota');
           </div>
 
           <!-- L'etichetta non e' decorativa: il colore da solo non basta
-               a distinguere libero, pieno e gia' prenotato. -->
-          <span class="segno"><?= Vista::e($etichetta) ?></span>
+               a distinguere libero, pieno e gia' prenotato. Per
+               un'individuale libera, pero', non c'e' altro da dire oltre
+               "c'e' posto": un pallino basta, il testo resta per chi usa
+               uno screen reader. -->
+          <?php if ($stato === 'libero' && !$gruppo): ?>
+            <span class="segno pallino"><span class="sr-only"><?= Vista::e($etichetta) ?></span></span>
+          <?php else: ?>
+            <span class="segno"><?= Vista::e($etichetta) ?></span>
+          <?php endif; ?>
 
           <?php if (!$mia && $liberi > 0): ?>
             <form method="post" action="<?= Vista::u('/prenota') ?>" class="prenota-riga">

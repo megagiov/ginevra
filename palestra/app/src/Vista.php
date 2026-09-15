@@ -64,6 +64,12 @@ final class Vista
              . ' ' . self::MESI[(int) $d->format('n')];
     }
 
+    /** "giovedi 19", senza il mese: per le intestazioni dove lo spazio conta. */
+    public static function giornoBreve(\DateTimeImmutable $d): string
+    {
+        return self::GIORNI[(int) $d->format('w')] . ' ' . (int) $d->format('j');
+    }
+
     /** "14 – 20 settembre", oppure "28 settembre – 4 ottobre" a cavallo di mese. */
     public static function intervallo(\DateTimeImmutable $da, \DateTimeImmutable $a): string
     {
