@@ -1,6 +1,6 @@
 # Loghi — provenienza e conversione
 
-I due file qui dentro sono stati derivati dagli originali a colori forniti
+I file qui dentro sono stati derivati dagli originali a colori forniti
 dall'utente in chat, convertiti in bianco/nero puro perché la stampa delle
 LDV è in bianco e nero (niente sfumature: su una stampante monocromatica un
 grigio intermedio esce come retino/dithering, non come grigio pulito).
@@ -16,6 +16,10 @@ grigio intermedio esce come retino/dithering, non come grigio pulito).
   sopra diventa bianco. Soglie più alte (provate 80/110/140) rompevano i
   bordi arrotondati e l'area "lucida" della borsa in un retino sporco; 50
   è il punto in cui i contorni restano puliti.
+
+- **`gm-vegasi-tiktokshop-wordmark.png`** — badge con la sola scritta
+  "TikTok Shop", originale a colori (bianco, rosa) su sfondo nero pieno.
+  Stessa tecnica: scala di grigi poi soglia dura a 60/255.
 
 Se in futuro serve una versione a colori (social, sito), bisogna richiedere
 di nuovo i file originali: qui sono state tenute solo le versioni convertite,

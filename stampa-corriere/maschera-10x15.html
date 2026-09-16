@@ -60,25 +60,29 @@
     border-bottom: 0.3mm dashed #ccc;
   }
 
-  /* Zona bassa: solo il badge TikTok Shop, centrato e appoggiato in fondo
-     al foglio — piccolo apposta per stare lontano dall'area che il laser
-     del corriere legge sopra. */
+  /* Zona bassa: i due badge TikTok Shop, appoggiati in fondo al foglio e
+     centrati come coppia (partono dal centro ed espandono ai lati) —
+     piccoli apposta per stare lontano dall'area che il laser del corriere
+     legge sopra. */
   .zona-brand {
     height: calc(var(--page-h) - var(--zona-ldv-h));
     width: 100%;
     display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: flex-end;
+    flex-direction: row;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 3mm;
     padding-bottom: 4mm;
   }
 
   /*
-    Logo reale (cartella loghi/), già convertito in bianco/nero puro per la
-    stampa monocromatica: vedi loghi/README.md per com'è nato da quello a
-    colori fornito dall'utente.
+    Loghi reali (cartella loghi/), già convertiti in bianco/nero puro per la
+    stampa monocromatica: vedi loghi/README.md per come sono nati da quelli
+    a colori forniti dall'utente. Stessa altezza per entrambi ("proporzioni
+    uguali al primo").
   */
-  .badge-tiktokshop {
+  .badge-tiktokshop,
+  .badge-tiktokshop-wordmark {
     height: 14.4mm;
     width: auto;
     display: block;
@@ -96,6 +100,7 @@
 
     <div class="zona-brand">
       <img class="badge-tiktokshop" src="loghi/gm-vegasi-tiktokshop.png" alt="GM Vegasi su TikTok Shop">
+      <img class="badge-tiktokshop-wordmark" src="loghi/gm-vegasi-tiktokshop-wordmark.png" alt="TikTok Shop">
     </div>
   </div>
 </body>
