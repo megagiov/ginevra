@@ -11,7 +11,7 @@ Il layout è calcolato su una LDV **GLS** reale (105,0 × 148,2 mm, il classico
 foglio adesivo "10x15"): il blocco etichetta — intestazione mittente, città,
 barcode, riga GLS — arriva fino a circa 86 mm dall'alto. `maschera-10x15.html`
 lascia libera una fascia di 90 mm (5 mm di margine di sicurezza) e mette il
-badge piccolo (12mm) in fondo ai restanti ~58 mm, il più lontano possibile
+badge piccolo (14,4mm) in fondo ai restanti ~58 mm, il più lontano possibile
 dalla zona che il laser del corriere legge sopra.
 
 **Se usi anche altri corrieri** (BRT, SDA/Poste, ecc.) l'etichetta può avere
@@ -67,7 +67,7 @@ stati ottenuti dai file a colori originali.
 | Cosa cambiare | Dove |
 |---|---|
 | Altezza fascia LDV | argomento `--zona-ldv` (mm), oppure `--zona-ldv` di default in `applica_maschera.py` |
-| Dimensione del badge | `.badge-tiktokshop` in `maschera-10x15.html` (proprietà `height`, ora 12mm) |
+| Dimensione del badge | `.badge-tiktokshop` in `maschera-10x15.html` (proprietà `height`, ora 14,4mm) |
 | Distanza dal bordo inferiore | `.zona-brand { padding-bottom: ... }` in `maschera-10x15.html` |
 | Il badge stesso | sostituisci `loghi/gm-vegasi-tiktokshop.png`, oppure aggiorna il percorso `src=` nell'HTML |
 
