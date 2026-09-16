@@ -30,7 +30,7 @@ import sys
 import time
 from pathlib import Path
 
-import fitz  # PyMuPDF
+import pymupdf
 
 from applica_maschera import applica_maschera, ZONA_LDV_DEFAULT_MM, PT_PER_MM
 
@@ -45,7 +45,7 @@ PAROLA_MANUALE = "ldv"
 
 def sembra_etichetta(path: Path) -> bool:
     try:
-        doc = fitz.open(path)
+        doc = pymupdf.open(path)
         rect = doc[0].rect
         doc.close()
     except Exception:

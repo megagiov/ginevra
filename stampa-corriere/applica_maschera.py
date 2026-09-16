@@ -16,7 +16,7 @@ import os
 import tempfile
 from pathlib import Path
 
-import fitz  # PyMuPDF
+import pymupdf
 from playwright.sync_api import sync_playwright
 
 TEMPLATE = Path(__file__).parent / "maschera-10x15.html"
@@ -44,8 +44,8 @@ def genera_overlay_pdf(page, width_mm: float, height_mm: float, zona_ldv_mm: flo
 
 
 def applica_maschera(input_pdf: Path, output_pdf: Path, zona_ldv_mm: float, tmp_dir: Path) -> None:
-    doc = fitz.open(input_pdf)
-    overlay_cache: dict[tuple[float, float], fitz.Document] = {}
+    doc = pymupdf.open(input_pdf)
+    overlay_cache: dict[tuple[float, float], pymupdf.Document] = {}
     overlay_paths: list[Path] = []
 
     with sync_playwright() as p:
@@ -61,7 +61,7 @@ def applica_maschera(input_pdf: Path, output_pdf: Path, zona_ldv_mm: float, tmp_
             if key not in overlay_cache:
                 overlay_path = tmp_dir / f"_overlay_{key[0]}x{key[1]}.pdf"
                 genera_overlay_pdf(browser_page, w_mm, h_mm, zona_ldv_mm, overlay_path)
-                overlay_cache[key] = fitz.open(overlay_path)
+                overlay_cache[key] = pymupdf.open(overlay_path)
                 overlay_paths.append(overlay_path)
 
             pdf_page.show_pdf_page(pdf_page.rect, overlay_cache[key], 0)
