@@ -43,6 +43,18 @@ python3 applica_maschera.py etichetta.pdf --zona-ldv 94
 Poi si stampa `*_brandizzato.pdf` così com'è, invece del PDF originale del
 corriere.
 
+### Impostazioni di stampa
+
+Quando mandi in stampa `*_brandizzato.pdf`, nella finestra di stampa:
+
+- formato carta: quello che usi già per le LDV (105×148mm / "10x15" /
+  l'etichetta adesiva dedicata) — il PDF ha già quella dimensione esatta,
+  presa dal PDF del corriere;
+- scala: **100% / dimensioni reali**, mai "adatta alla pagina" — altrimenti
+  rimpicciolisce o ingrandisce tutto, badge compresi, e può disallineare il
+  barcode;
+- colore: indifferente, il contenuto è già bianco/nero puro.
+
 ### Come funziona sotto il cofano
 
 `maschera-10x15.html` è la grafica del logo/badge, con la parte in alto
