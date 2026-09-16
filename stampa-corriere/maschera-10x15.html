@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<title>Maschera pubblicitaria LDV 10x15 — GM Vegasi</title>
+<style>
+  @page {
+    size: 105mm 148mm;
+    margin: 0;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    width: 105mm;
+    height: 148mm;
+    font-family: "Helvetica Neue", Arial, sans-serif;
+    color: #111;
+    background: #fff;
+  }
+
+  .foglio {
+    position: relative;
+    width: 105mm;
+    height: 148mm;
+    overflow: hidden;
+  }
+
+  /*
+    Zona alta: qui sopra ci finisce la LDV del corriere quando la stampi
+    sullo stesso foglio, nel secondo passaggio in stampante. Va lasciata
+    vuota. L'altezza è misurata su un'etichetta GLS 105x148mm reale:
+    il blocco etichetta arriva a ~86mm, qui teniamo 90mm di margine
+    di sicurezza. Se usi un altro corriere controlla e regola questo
+    valore prima di stampare in serie.
+  */
+  .zona-ldv {
+    height: 90mm;
+    width: 100%;
+  }
+
+  /* Guida di allineamento: solo per il test di stampa, va tolta per la
+     stampa definitiva (vedi README). Aggiungi la classe "no-guida" al
+     tag <body> per nasconderla senza cancellare il codice. */
+  .zona-ldv {
+    border-bottom: 0.3mm dashed #ccc;
+  }
+  body.no-guida .zona-ldv {
+    border-bottom: none;
+  }
+
+  /* Zona bassa: la parte pubblicitaria, ~58mm rimanenti. */
+  .zona-brand {
+    height: 58mm;
+    width: 100%;
+    padding: 4mm 6mm;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 2mm;
+  }
+
+  .wordmark {
+    font-weight: 800;
+    font-size: 9mm;
+    letter-spacing: 0.5mm;
+    text-transform: uppercase;
+    margin: 0;
+  }
+
+  .tagline {
+    font-size: 4mm;
+    margin: 0;
+    color: #333;
+  }
+
+  .sito {
+    font-size: 3.6mm;
+    font-weight: 600;
+    margin: 1mm 0 0 0;
+  }
+
+  .riga-promo {
+    margin-top: 2mm;
+    padding-top: 2mm;
+    border-top: 0.2mm solid #ddd;
+    font-size: 3.4mm;
+    line-height: 1.4;
+  }
+
+  .placeholder {
+    /* Testo segnaposto: sostituire prima di stampare in serie. */
+    color: #666;
+    font-style: italic;
+  }
+
+  @media print {
+    body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  }
+</style>
+</head>
+<body>
+  <div class="foglio">
+    <div class="zona-ldv"></div>
+
+    <div class="zona-brand">
+      <p class="wordmark">GM Vegasi</p>
+      <p class="tagline">Grazie per il tuo acquisto!</p>
+      <p class="sito">gmvegasi.com</p>
+
+      <div class="riga-promo">
+        <span class="placeholder">
+          Seguici su Instagram e TikTok @[handle da confermare] —
+          usa il codice [CODICE] per uno sconto sul prossimo ordine.
+        </span>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
