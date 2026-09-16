@@ -23,6 +23,12 @@ controlla il risultato prima di stampare in serie.
 
 ## Installazione
 
+Su Windows: doppio click su `installa.bat`, che installa le librerie, scarica
+Chromium e verifica che tutto parta. Richiede che Python sia già installato
+(da python.org).
+
+A mano, o fuori da Windows:
+
 ```bash
 pip install PyMuPDF playwright
 playwright install chromium
