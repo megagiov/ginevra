@@ -51,9 +51,20 @@ corriere (finisce nei Download come sempre) viene brandizzata da sola e si
 apre già pronta per Ctrl+P — non devi più trascinare né lanciare niente per
 ogni spedizione.
 
-Per non toccare altri PDF che scarichi per altri motivi (fatture, cataloghi),
-vengono elaborati solo i file con una pagina piccola come un'etichetta
-corriere: un A4 o una Letter vengono ignorati automaticamente.
+Quali PDF tocca e quali no:
+
+- **automatico** — i PDF che il gestionale nomina come
+  `49313-1-1-20260916143218.pdf` (numero spedizione, due contatori, data e
+  ora a 14 cifre): riconosciuti da soli, non devi rinominare niente;
+- **a mano** — qualsiasi altro PDF che rinomini mettendoci dentro la parola
+  `ldv`, per le volte che ti serve brandizzarne uno fuori dal solito giro;
+- **mai** — tutto il resto, più qualsiasi file con una pagina troppo grande
+  per essere un'etichetta (oltre 200mm di lato): così se il gestionale nomina
+  allo stesso modo anche fatture o DDT in A4, quelli restano fuori.
+
+I due criteri sono in `osserva_cartella.py` (`NOME_GESTIONALE` e
+`PAROLA_MANUALE`): se un giorno il gestionale cambia il formato dei nomi,
+si aggiorna lì.
 
 Per fermarlo, chiudi la finestra. Se vuoi che riparta da solo ogni volta che
 accendi il PC, metti un collegamento a `avvia_osservatore.bat` nella cartella

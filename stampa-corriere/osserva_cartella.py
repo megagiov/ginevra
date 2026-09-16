@@ -11,13 +11,21 @@ Lascia questa finestra aperta. Scarichi la LDV dal corriere come sempre
 (finisce nei Download): dopo pochi secondi si apre da solo il PDF con i
 loghi già dentro, pronto per Ctrl+P. Il PDF originale non viene toccato.
 
-Per non brandizzare per sbaglio altri PDF che scarichi (fatture, cataloghi,
-...) vengono elaborati solo i file con una pagina piccola come un'etichetta
-corriere (entrambi i lati sotto i 200mm) — un A4 o una Letter vengono
-ignorati.
+Viene elaborato solo ciò che è davvero una LDV da brandizzare, in due modi:
+
+- **automatico**: i PDF che il gestionale nomina come
+  `49313-1-1-20260916143218.pdf` (numero spedizione, due contatori, data e
+  ora a 14 cifre);
+- **a mano**: qualsiasi altro PDF che rinomini mettendoci dentro la parola
+  `ldv`, se una volta ti serve brandizzarne uno fuori dal solito giro.
+
+In più la pagina dev'essere piccola come un'etichetta corriere (entrambi i
+lati sotto i 200mm): così se il gestionale nomina allo stesso modo anche
+fatture o DDT in A4, quelli restano fuori.
 """
 
 import os
+import re
 import sys
 import time
 from pathlib import Path
@@ -28,6 +36,11 @@ from applica_maschera import applica_maschera, ZONA_LDV_DEFAULT_MM, PT_PER_MM
 
 POLL_SECONDS = 2
 LATO_MASSIMO_ETICHETTA_MM = 200
+
+# Il gestionale scarica le LDV come "49313-1-1-20260916143218.pdf". La coda
+# " (1)" la aggiunge il browser quando riscarichi un file già presente.
+NOME_GESTIONALE = re.compile(r"^\d+-\d+-\d+-\d{14}(\s*\(\d+\))?$")
+PAROLA_MANUALE = "ldv"
 
 
 def sembra_etichetta(path: Path) -> bool:
@@ -40,6 +53,11 @@ def sembra_etichetta(path: Path) -> bool:
     larghezza_mm = rect.width / PT_PER_MM
     altezza_mm = rect.height / PT_PER_MM
     return larghezza_mm < LATO_MASSIMO_ETICHETTA_MM and altezza_mm < LATO_MASSIMO_ETICHETTA_MM
+
+
+def da_brandizzare(path: Path) -> bool:
+    riconosciuto = bool(NOME_GESTIONALE.match(path.stem)) or PAROLA_MANUALE in path.stem.lower()
+    return riconosciuto and sembra_etichetta(path)
 
 
 def is_stable(path: Path) -> bool:
@@ -85,8 +103,8 @@ def osserva(cartella: Path) -> None:
                 continue  # non ancora scritto del tutto, ricontrolla al giro dopo
 
             visti.add(pdf.name)
-            if not sembra_etichetta(pdf):
-                continue  # PDF troppo grande per essere una LDV, lo ignoro
+            if not da_brandizzare(pdf):
+                continue  # non è una LDV del gestionale, lo lascio stare
 
             print(f"Nuova LDV: {pdf.name} -> elaboro...")
             try:
