@@ -43,6 +43,19 @@ python3 applica_maschera.py etichetta.pdf --zona-ldv 94
 Poi si stampa `*_brandizzato.pdf` così com'è, invece del PDF originale del
 corriere.
 
+### Su Windows, senza riga di comando
+
+`stampa_brandizzata.bat` fa lo stesso lavoro senza aprire il Prompt dei
+comandi: trascina sopra la sua icona il PDF della LDV scaricato, si apre da
+solo il PDF brandizzato pronto per Ctrl+P. Richiede comunque l'installazione
+una tantum di Python/PyMuPDF/Playwright descritta sopra, e che `py` sia
+disponibile da riga di comando (l'installer di Python lo mette sul PATH di
+default).
+
+Non stampa da solo: apre il risultato e la stampa la lanci tu, così hai
+sempre modo di controllarlo prima — o di chiudere senza stampare se quella
+volta non ti serve la versione brandizzata.
+
 ### Impostazioni di stampa
 
 Quando mandi in stampa `*_brandizzato.pdf`, nella finestra di stampa:
