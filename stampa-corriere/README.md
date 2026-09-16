@@ -1,18 +1,18 @@
 # Maschera pubblicitaria per LDV corriere — GM Vegasi
 
 Scarichi la LDV dal corriere come sempre, lanci uno script, ed esce un unico
-PDF con l'etichetta originale **e** il logo GM Vegasi + badge TikTok Shop già
-dentro, nello spazio bianco sotto l'etichetta. Si stampa una volta sola,
-esattamente come si stampava prima il PDF del corriere — nessun doppio
-passaggio in stampante.
+PDF con l'etichetta originale **e** il badge TikTok Shop già dentro, piccolo
+e centrato in fondo al foglio. Si stampa una volta sola, esattamente come si
+stampava prima il PDF del corriere — nessun doppio passaggio in stampante.
 
 ## Come è nata la misura
 
 Il layout è calcolato su una LDV **GLS** reale (105,0 × 148,2 mm, il classico
 foglio adesivo "10x15"): il blocco etichetta — intestazione mittente, città,
 barcode, riga GLS — arriva fino a circa 86 mm dall'alto. `maschera-10x15.html`
-lascia libera una fascia di 90 mm (5 mm di margine di sicurezza) e usa i
-restanti ~58 mm per il logo e il badge.
+lascia libera una fascia di 90 mm (5 mm di margine di sicurezza) e mette il
+badge piccolo (12mm) in fondo ai restanti ~58 mm, il più lontano possibile
+dalla zona che il laser del corriere legge sopra.
 
 **Se usi anche altri corrieri** (BRT, SDA/Poste, ecc.) l'etichetta può avere
 un'impaginazione diversa: manda un PDF di esempio così misuro dove cade lo
@@ -56,18 +56,20 @@ bianco coprirebbe l'etichetta invece di lasciarla intravedere. Lo script:
 
 ## I loghi
 
-Cartella `loghi/`: `gm-vegasi-logo.png` e `gm-vegasi-tiktokshop.png`, entrambi
-convertiti in bianco/nero puro (niente sfumature di grigio) perché la stampa
-è in bianco e nero — vedi `loghi/README.md` per come sono stati ottenuti dai
-file a colori originali, nel caso servano altre varianti in futuro.
+Cartella `loghi/`: `gm-vegasi-tiktokshop.png` (in uso, badge in fondo al
+foglio) e `gm-vegasi-logo.png` (non usato al momento, tenuto per un utilizzo
+futuro), entrambi convertiti in bianco/nero puro (niente sfumature di grigio)
+perché la stampa è in bianco e nero — vedi `loghi/README.md` per come sono
+stati ottenuti dai file a colori originali.
 
 ## Personalizzare
 
 | Cosa cambiare | Dove |
 |---|---|
 | Altezza fascia LDV | argomento `--zona-ldv` (mm), oppure `--zona-ldv` di default in `applica_maschera.py` |
-| Dimensione dei loghi | `.logo-gmvegasi` / `.badge-tiktokshop` in `maschera-10x15.html` (proprietà `height`) |
-| I loghi stessi | sostituisci i file in `loghi/`, mantenendo gli stessi nomi oppure aggiornando i percorsi `src=` nell'HTML |
+| Dimensione del badge | `.badge-tiktokshop` in `maschera-10x15.html` (proprietà `height`, ora 12mm) |
+| Distanza dal bordo inferiore | `.zona-brand { padding-bottom: ... }` in `maschera-10x15.html` |
+| Il badge stesso | sostituisci `loghi/gm-vegasi-tiktokshop.png`, oppure aggiorna il percorso `src=` nell'HTML |
 
 ## Controllare la grafica da sola
 
