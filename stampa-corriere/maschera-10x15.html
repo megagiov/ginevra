@@ -14,9 +14,13 @@
   :root {
     --page-w: 105mm;
     --page-h: 148mm;
+    --box-left: 26mm;
     --box-top: 125mm;
-    --box-h: 22mm;
+    --box-w: 53mm;
+    --box-h: 18.4mm;
+    --direzione: row;
     --badge-h: 14.4mm;
+    --badge-w: auto;
     --gap-badge: 3mm;
   }
 
@@ -53,11 +57,11 @@
   .zona-brand {
     position: absolute;
     top: var(--box-top);
-    left: 0;
-    width: var(--page-w);
+    left: var(--box-left);
+    width: var(--box-w);
     height: var(--box-h);
     display: flex;
-    flex-direction: row;
+    flex-direction: var(--direzione);
     align-items: center;
     justify-content: center;
     gap: var(--gap-badge);
@@ -76,10 +80,12 @@
     a colori forniti dall'utente. Stessa altezza per entrambi ("proporzioni
     uguali al primo").
   */
+  /* Affiancati si dimensionano in altezza, impilati in larghezza: lo script
+     imposta a "auto" quella che deve seguire le proporzioni. */
   .badge-tiktokshop,
   .badge-tiktokshop-wordmark {
     height: var(--badge-h);
-    width: auto;
+    width: var(--badge-w);
     display: block;
     border-radius: 1.2mm;
   }

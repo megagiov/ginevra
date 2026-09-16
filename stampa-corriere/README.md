@@ -6,20 +6,22 @@ piccoli e centrati come coppia in fondo al foglio. Si stampa una volta sola,
 esattamente come si stampava prima il PDF del corriere — nessun doppio
 passaggio in stampante.
 
-## Come è nata la misura
+## Dove finiscono i badge
 
-Il layout è calcolato su una LDV **GLS** reale (105,0 × 148,2 mm, il classico
-foglio adesivo "10x15"): il blocco etichetta — intestazione mittente, città,
-barcode, riga GLS — arriva fino a circa 86 mm dall'alto. `maschera-10x15.html`
-lascia libera una fascia di 90 mm (5 mm di margine di sicurezza) e mette i
-due badge piccoli (14,4mm di altezza ciascuno) in fondo ai restanti ~58 mm,
-centrati come coppia, il più lontano possibile dalla zona che il laser del
-corriere legge sopra.
+Non c'è una misura fissa, perché ogni corriere impagina la LDV a modo suo.
+Lo script decide leggendo la pagina, in quest'ordine:
 
-**Se usi anche altri corrieri** (BRT, SDA/Poste, ecc.) l'etichetta può avere
-un'impaginazione diversa: manda un PDF di esempio così misuro dove cade lo
-spazio bianco su quel formato, oppure prova `--zona-ldv` (vedi sotto) e
-controlla il risultato prima di stampare in serie.
+1. **Se la pagina è più corta dell'etichetta fisica 10x15, la allarga.** Una
+   LDV Poste Delivery Business è 114×104mm: portata a 148mm restano 34mm di
+   striscia pulita sul lato lungo, e i badge vanno lì, impilati.
+2. **Altrimenti cerca il riquadro bianco più in basso.** Una LDV GLS
+   105×148mm lascia libero il fondo: lì i badge stanno affiancati a 14,4mm,
+   lontani dai barcode.
+3. **Se non c'è spazio, lascia la pagina intatta.** Meglio un'etichetta senza
+   badge che una con i badge sopra la lettera di vettura.
+
+Verificato su LDV reali GLS (2 esemplari) e Poste Delivery Business. Se un
+altro corriere dà un risultato storto, mandami quel PDF: il caso si aggiunge.
 
 ## Installazione
 
@@ -132,9 +134,11 @@ sono stati ottenuti dai file a colori originali:
 | Cosa cambiare | Dove |
 |---|---|
 | Altezza fascia LDV | argomento `--zona-ldv` (mm), oppure `--zona-ldv` di default in `applica_maschera.py` |
-| Dimensione dei badge | `.badge-tiktokshop, .badge-tiktokshop-wordmark` in `maschera-10x15.html` (proprietà `height`, ora 14,4mm per entrambi) |
-| Spazio fra i due badge | `.zona-brand { gap: ... }` in `maschera-10x15.html` |
-| Distanza dal bordo inferiore | `.zona-brand { padding-bottom: ... }` in `maschera-10x15.html` |
+| Dimensione dei badge affiancati | `BADGE_H_MM` in `applica_maschera.py` (ora 14,4mm) |
+| Dimensione dei badge impilati | `BADGE_W_MAX_MM` in `applica_maschera.py` (ora 32mm) |
+| Spazio fra i due badge | `GAP_BADGE_MM` in `applica_maschera.py` |
+| Aria fra badge e contenuto | `MARGINE_MM` in `applica_maschera.py` |
+| Misura dell'etichetta fisica | `ETICHETTA_LATO_CORTO_MM` / `ETICHETTA_LATO_LUNGO_MM` in `applica_maschera.py` |
 | I badge stessi | sostituisci i file in `loghi/`, oppure aggiorna i percorsi `src=` nell'HTML |
 
 ## Controllare la grafica da sola
