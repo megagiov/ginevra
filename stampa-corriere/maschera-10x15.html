@@ -4,8 +4,22 @@
 <meta charset="utf-8">
 <title>Maschera pubblicitaria LDV 10x15 — GM Vegasi</title>
 <style>
+  /*
+    Variabili di dimensione: lo script applica_maschera.py le sovrascrive
+    (add_style_tag) con le misure esatte della pagina della LDV da
+    brandizzare, quindi qui restano solo i valori di default per
+    l'anteprima standalone — la LDV GLS 105x148mm da cui è nata questa
+    maschera, con l'etichetta reale alta ~86mm (90mm di margine di
+    sicurezza).
+  */
+  :root {
+    --page-w: 105mm;
+    --page-h: 148mm;
+    --zona-ldv-h: 90mm;
+  }
+
   @page {
-    size: 105mm 148mm;
+    size: var(--page-w) var(--page-h);
     margin: 0;
   }
 
@@ -14,87 +28,67 @@
   html, body {
     margin: 0;
     padding: 0;
-    width: 105mm;
-    height: 148mm;
+    width: var(--page-w);
+    height: var(--page-h);
     font-family: "Helvetica Neue", Arial, sans-serif;
     color: #111;
-    background: #fff;
+    /* Trasparente e non bianco: questo file viene stampato come overlay
+       sopra il PDF della LDV (applica_maschera.py). Uno sfondo opaco
+       coprirebbe l'etichetta invece di lasciarla intravedere. */
+    background: transparent;
   }
 
   .foglio {
     position: relative;
-    width: 105mm;
-    height: 148mm;
+    width: var(--page-w);
+    height: var(--page-h);
     overflow: hidden;
   }
 
-  /*
-    Zona alta: qui sopra ci finisce la LDV del corriere quando la stampi
-    sullo stesso foglio, nel secondo passaggio in stampante. Va lasciata
-    vuota. L'altezza è misurata su un'etichetta GLS 105x148mm reale:
-    il blocco etichetta arriva a ~86mm, qui teniamo 90mm di margine
-    di sicurezza. Se usi un altro corriere controlla e regola questo
-    valore prima di stampare in serie.
-  */
+  /* Zona alta: qui sopra cade la LDV del corriere quando lo script fonde
+     questo overlay sul PDF scaricato. Va lasciata vuota. */
   .zona-ldv {
-    height: 90mm;
+    height: var(--zona-ldv-h);
     width: 100%;
   }
 
-  /* Guida di allineamento: solo per il test di stampa, va tolta per la
-     stampa definitiva (vedi README). Aggiungi la classe "no-guida" al
-     tag <body> per nasconderla senza cancellare il codice. */
-  .zona-ldv {
+  /* Guida di allineamento, solo per controllare visivamente l'anteprima:
+     di default è spenta (altrimenti finirebbe stampata sopra la LDV vera).
+     Per accenderla durante un test, aggiungi la classe "guida" al tag
+     <body>. */
+  body.guida .zona-ldv {
     border-bottom: 0.3mm dashed #ccc;
   }
-  body.no-guida .zona-ldv {
-    border-bottom: none;
-  }
 
-  /* Zona bassa: la parte pubblicitaria, ~58mm rimanenti. */
+  /* Zona bassa: la parte pubblicitaria. Due colonne: wordmark a sinistra,
+     badge TikTok Shop a destra — layout della bozza dell'utente. */
   .zona-brand {
-    height: 58mm;
+    height: calc(var(--page-h) - var(--zona-ldv-h));
     width: 100%;
-    padding: 4mm 6mm;
-    text-align: center;
+    padding: 0 7mm;
     display: flex;
-    flex-direction: column;
-    justify-content: center;
-    gap: 2mm;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
   }
 
-  .wordmark {
-    font-weight: 800;
-    font-size: 9mm;
-    letter-spacing: 0.5mm;
-    text-transform: uppercase;
-    margin: 0;
+  /*
+    Loghi reali (cartella loghi/), già convertiti in bianco/nero puro per
+    la stampa monocromatica: vedi loghi/README.md per come sono nati da
+    quelli a colori forniti dall'utente.
+  */
+  .logo-gmvegasi {
+    height: 38mm;
+    width: auto;
+    display: block;
   }
 
-  .tagline {
-    font-size: 4mm;
-    margin: 0;
-    color: #333;
-  }
-
-  .sito {
-    font-size: 3.6mm;
-    font-weight: 600;
-    margin: 1mm 0 0 0;
-  }
-
-  .riga-promo {
-    margin-top: 2mm;
-    padding-top: 2mm;
-    border-top: 0.2mm solid #ddd;
-    font-size: 3.4mm;
-    line-height: 1.4;
-  }
-
-  .placeholder {
-    /* Testo segnaposto: sostituire prima di stampare in serie. */
-    color: #666;
-    font-style: italic;
+  .badge-tiktokshop {
+    height: 38mm;
+    width: auto;
+    display: block;
+    border-radius: 3mm;
+    flex-shrink: 0;
   }
 
   @media print {
@@ -107,16 +101,8 @@
     <div class="zona-ldv"></div>
 
     <div class="zona-brand">
-      <p class="wordmark">GM Vegasi</p>
-      <p class="tagline">Grazie per il tuo acquisto!</p>
-      <p class="sito">gmvegasi.com</p>
-
-      <div class="riga-promo">
-        <span class="placeholder">
-          Seguici su Instagram e TikTok @[handle da confermare] —
-          usa il codice [CODICE] per uno sconto sul prossimo ordine.
-        </span>
-      </div>
+      <img class="logo-gmvegasi" src="loghi/gm-vegasi-logo.png" alt="GM Vegasi">
+      <img class="badge-tiktokshop" src="loghi/gm-vegasi-tiktokshop.png" alt="GM Vegasi su TikTok Shop">
     </div>
   </div>
 </body>

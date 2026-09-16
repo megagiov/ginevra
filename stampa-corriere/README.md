@@ -1,58 +1,78 @@
 # Maschera pubblicitaria per LDV corriere — GM Vegasi
 
-Foglio da 105×148 mm (il classico "10x15" adesivo) da pre-stampare **prima**
-di stampare la LDV vera e propria: la parte alta resta bianca per fare
-spazio all'etichetta del corriere, la parte bassa porta la pubblicità del
-brand.
+Scarichi la LDV dal corriere come sempre, lanci uno script, ed esce un unico
+PDF con l'etichetta originale **e** il logo GM Vegasi + badge TikTok Shop già
+dentro, nello spazio bianco sotto l'etichetta. Si stampa una volta sola,
+esattamente come si stampava prima il PDF del corriere — nessun doppio
+passaggio in stampante.
 
 ## Come è nata la misura
 
-Il layout è calcolato su una LDV **GLS** reale (105,0 × 148,2 mm): il blocco
-etichetta — intestazione mittente, città, barcode, riga GLS — arriva fino a
-circa 86 mm dall'alto. `maschera-10x15.html` lascia libera una fascia di
-90 mm (5 mm di margine di sicurezza) e usa i restanti ~58 mm per la grafica.
+Il layout è calcolato su una LDV **GLS** reale (105,0 × 148,2 mm, il classico
+foglio adesivo "10x15"): il blocco etichetta — intestazione mittente, città,
+barcode, riga GLS — arriva fino a circa 86 mm dall'alto. `maschera-10x15.html`
+lascia libera una fascia di 90 mm (5 mm di margine di sicurezza) e usa i
+restanti ~58 mm per il logo e il badge.
 
-**Se usi un corriere diverso da GLS** (BRT, SDA/Poste, ecc.) l'etichetta può
-avere un'impaginazione diversa: prima di stampare in serie, fai un test
-allineando la LDV a una maschera stampata e verifica che non si sovrappongano.
+**Se usi anche altri corrieri** (BRT, SDA/Poste, ecc.) l'etichetta può avere
+un'impaginazione diversa: manda un PDF di esempio così misuro dove cade lo
+spazio bianco su quel formato, oppure prova `--zona-ldv` (vedi sotto) e
+controlla il risultato prima di stampare in serie.
 
-## Come si usa
+## Installazione
 
-1. Apri `maschera-10x15.html` nel browser e stampalo su un foglio 10x15
-   bianco (o esportalo in PDF da lì e stampa il PDF).
-2. Ricarica lo stesso foglio nel vassoio/alimentatore della stampante.
-3. Stampa sopra la LDV del corriere come fai di solito: cadrà nella fascia
-   alta lasciata vuota.
+```bash
+pip install PyMuPDF playwright
+playwright install chromium
+```
 
-Prima di stampare in serie, fai **una prova** con un foglio scarto e
-controlla l'allineamento: la classe `.zona-ldv` in cima al foglio ha un
-bordo tratteggiato leggero pensato apposta come guida per il test. Quando
-sei sicuro dell'allineamento, aggiungi `no-guida` al tag `<body>` per
-toglierlo dalla stampa definitiva.
+## Uso
 
-## Cosa manca da confermare prima di stampare in serie
+```bash
+python3 applica_maschera.py etichetta.pdf
+# crea etichetta_brandizzato.pdf nella stessa cartella
 
-Il riquadro promozionale nella maschera contiene segnaposto da sostituire
-a mano nell'HTML:
+python3 applica_maschera.py etichetta.pdf -o pronta_da_stampare.pdf
 
-- **Handle social** — attualmente `@[handle da confermare]`. Se hai un
-  account Instagram/TikTok del brand, sostituiscilo con quello reale.
-- **Codice sconto** — attualmente `[CODICE]`, nessuno sconto reale è mai
-  stato deciso qui: va scelto (percentuale/importo, validità) prima di
-  promettere qualcosa in stampa.
-- **Logo** — qui c'è solo il nome "GM Vegasi" in tipografia. Se hai un file
-  logo puoi sostituire il paragrafo `.wordmark` con un tag `<img>`.
+# se un corriere diverso da GLS lascia uno spazio bianco più o meno alto:
+python3 applica_maschera.py etichetta.pdf --zona-ldv 94
+```
+
+Poi si stampa `*_brandizzato.pdf` così com'è, invece del PDF originale del
+corriere.
+
+### Come funziona sotto il cofano
+
+`maschera-10x15.html` è la grafica del logo/badge, con la parte in alto
+lasciata volutamente **trasparente** (non bianca): se avesse uno sfondo
+bianco coprirebbe l'etichetta invece di lasciarla intravedere. Lo script:
+
+1. legge le dimensioni reali della pagina del PDF scaricato;
+2. genera da `maschera-10x15.html` un overlay delle stesse dimensioni
+   (Playwright/Chromium headless);
+3. fonde l'overlay sopra ogni pagina del PDF originale (PyMuPDF), pixel
+   dove c'è grafica, trasparente altrove;
+4. salva il risultato come nuovo PDF.
+
+## I loghi
+
+Cartella `loghi/`: `gm-vegasi-logo.png` e `gm-vegasi-tiktokshop.png`, entrambi
+convertiti in bianco/nero puro (niente sfumature di grigio) perché la stampa
+è in bianco e nero — vedi `loghi/README.md` per come sono stati ottenuti dai
+file a colori originali, nel caso servano altre varianti in futuro.
 
 ## Personalizzare
 
-| Cosa cambiare | Dove in `maschera-10x15.html` |
+| Cosa cambiare | Dove |
 |---|---|
-| Altezza fascia LDV | `.zona-ldv { height: ... }` |
-| Testo di ringraziamento | `<p class="tagline">` |
-| Sito | `<p class="sito">` |
-| Social e codice sconto | `<div class="riga-promo">` |
-| Colori/font | blocco `<style>` in cima |
+| Altezza fascia LDV | argomento `--zona-ldv` (mm), oppure `--zona-ldv` di default in `applica_maschera.py` |
+| Dimensione dei loghi | `.logo-gmvegasi` / `.badge-tiktokshop` in `maschera-10x15.html` (proprietà `height`) |
+| I loghi stessi | sostituisci i file in `loghi/`, mantenendo gli stessi nomi oppure aggiornando i percorsi `src=` nell'HTML |
 
-Per un PDF pronto da distribuire in stampa, apri il file in Chrome e usa
-"Stampa → Salva come PDF" con margini a 0 e formato di carta personalizzato
-105×148 mm.
+## Controllare la grafica da sola
+
+`maschera-10x15.html` si apre anche direttamente nel browser (mostra il
+logo/badge su una pagina 105×148mm, con la fascia alta vuota). Per vedere
+anche la riga guida di allineamento — utile solo per un controllo visivo,
+va sempre tenuta spenta nell'output finale — apri il file con la classe
+`guida` aggiunta al tag `<body>`.
