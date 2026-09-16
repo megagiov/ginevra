@@ -32,7 +32,7 @@ from pathlib import Path
 
 import pymupdf
 
-from applica_maschera import applica_maschera, ZONA_LDV_DEFAULT_MM, PT_PER_MM
+from applica_maschera import applica_maschera, PT_PER_MM
 
 POLL_SECONDS = 2
 LATO_MASSIMO_ETICHETTA_MM = 200
@@ -108,7 +108,7 @@ def osserva(cartella: Path) -> None:
 
             print(f"Nuova LDV: {pdf.name} -> elaboro...")
             try:
-                applica_maschera(pdf, output, ZONA_LDV_DEFAULT_MM, tmp_dir)
+                applica_maschera(pdf, output, tmp_dir)
                 print(f"Fatto: {output.name}")
                 apri(output)
             except Exception as e:

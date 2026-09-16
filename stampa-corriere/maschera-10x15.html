@@ -6,16 +6,18 @@
 <style>
   /*
     Variabili di dimensione: lo script applica_maschera.py le sovrascrive
-    (add_style_tag) con le misure esatte della pagina della LDV da
-    brandizzare, quindi qui restano solo i valori di default per
-    l'anteprima standalone — la LDV GLS 105x148mm da cui è nata questa
-    maschera, con l'etichetta reale alta ~86mm (90mm di margine di
-    sicurezza).
+    (add_style_tag) con le misure esatte della pagina da brandizzare e con
+    il riquadro di spazio bianco che ha trovato leggendo quella pagina.
+    I valori qui sotto sono solo il default per l'anteprima standalone e
+    corrispondono alla LDV GLS 105x148mm da cui è nata questa maschera.
   */
   :root {
     --page-w: 105mm;
     --page-h: 148mm;
-    --zona-ldv-h: 90mm;
+    --box-top: 125mm;
+    --box-h: 22mm;
+    --badge-h: 14.4mm;
+    --gap-badge: 3mm;
   }
 
   @page {
@@ -45,34 +47,27 @@
     overflow: hidden;
   }
 
-  /* Zona alta: qui sopra cade la LDV del corriere quando lo script fonde
-     questo overlay sul PDF scaricato. Va lasciata vuota. */
-  .zona-ldv {
-    height: var(--zona-ldv-h);
-    width: 100%;
-  }
-
-  /* Guida di allineamento, solo per controllare visivamente l'anteprima:
-     di default è spenta (altrimenti finirebbe stampata sopra la LDV vera).
-     Per accenderla durante un test, aggiungi la classe "guida" al tag
-     <body>. */
-  body.guida .zona-ldv {
-    border-bottom: 0.3mm dashed #ccc;
-  }
-
-  /* Zona bassa: i due badge TikTok Shop, appoggiati in fondo al foglio e
-     centrati come coppia (partono dal centro ed espandono ai lati) —
-     piccoli apposta per stare lontano dall'area che il laser del corriere
-     legge sopra. */
+  /* Il riquadro dove vanno i badge: posizione e altezza arrivano dallo
+     script, che le ricava dallo spazio bianco effettivo della pagina. Tutto
+     il resto del foglio resta trasparente, così la LDV si vede intatta. */
   .zona-brand {
-    height: calc(var(--page-h) - var(--zona-ldv-h));
-    width: 100%;
+    position: absolute;
+    top: var(--box-top);
+    left: 0;
+    width: var(--page-w);
+    height: var(--box-h);
     display: flex;
     flex-direction: row;
-    align-items: flex-end;
+    align-items: center;
     justify-content: center;
-    gap: 3mm;
-    padding-bottom: 4mm;
+    gap: var(--gap-badge);
+  }
+
+  /* Guida visiva del riquadro, solo per controllare l'anteprima: di default
+     è spenta, altrimenti finirebbe stampata sulla LDV vera. Per accenderla,
+     aggiungi la classe "guida" al tag <body>. */
+  body.guida .zona-brand {
+    outline: 0.3mm dashed #ccc;
   }
 
   /*
@@ -83,7 +78,7 @@
   */
   .badge-tiktokshop,
   .badge-tiktokshop-wordmark {
-    height: 14.4mm;
+    height: var(--badge-h);
     width: auto;
     display: block;
     border-radius: 1.2mm;
@@ -96,8 +91,6 @@
 </head>
 <body>
   <div class="foglio">
-    <div class="zona-ldv"></div>
-
     <div class="zona-brand">
       <img class="badge-tiktokshop" src="loghi/gm-vegasi-tiktokshop.png" alt="GM Vegasi su TikTok Shop">
       <img class="badge-tiktokshop-wordmark" src="loghi/gm-vegasi-tiktokshop-wordmark.png" alt="TikTok Shop">
