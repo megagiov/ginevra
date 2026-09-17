@@ -39,9 +39,16 @@ vince sul test del colore.
    un paio di minuti: crea l'ambiente, installa le tre librerie e scarica il
    modello.
 3. Sul desktop compare l'icona **Scontorno**. Doppio clic e si apre la finestra:
-   *Scontorna le foto…* le sfonda e le salva accanto alle originali come
-   `nome-scontornata.png`; *Cambia solo formato…* le converte e basta. Il menu
-   **salva in** decide il formato in uscita per tutti e due i bottoni.
+   *Scontorna le foto…* le sfonda e le salva come `nome-scontornata.png`;
+   *Cambia solo formato…* le converte e basta. Il menu **salva in** decide il
+   formato in uscita per tutti e due i bottoni.
+
+La riga **le salvo in** decide dove finiscono i file: di partenza accanto alle
+originali, con *Cambia…* in una cartella tua (se non esiste la crea). La scelta
+resta anche quando chiudi, insieme a formato, ombra e sfondo. Se quella cartella
+un giorno non si lascia scrivere — chiavetta tolta, disco pieno — il file viene
+messo accanto all'originale o sul desktop e te lo scrive nell'elenco, invece di
+perdere il lavoro.
 
 Ci si possono anche **trascinare le foto sopra l'icona**: partono da sole.
 
@@ -171,6 +178,13 @@ di cui ti fidi.
 - Il server tiene una sola inferenza per volta (onnxruntime non è rientrante su
   una sessione condivisa): con dieci foto insieme le vedrai finire in fila.
 - La cartella `models/` è fuori dal versionamento.
+- Le scelte della finestra stanno in `%APPDATA%\Scontorno\scelte.json`
+  (`~/.config/Scontorno/` altrove), non nella cartella del programma: quella
+  può essere di sola lettura.
+- **tkinter non si interroga da un altro thread.** Le scelte dei menu vengono
+  lette sul thread della finestra e passate al lavoro come valori normali: a
+  leggerle da dentro il thread la finestra si pianta sulla prima foto, senza
+  errori. Visto succedere.
 - Nei comandi qui sopra `foto.jpg` e `scarpa.jpg` sono nomi d'esempio: vanno
   sostituiti con quelli veri. Se non li trova, il programma elenca le immagini
   che ci sono nella cartella.

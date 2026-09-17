@@ -6,7 +6,7 @@ qui come argomenti e partono da sole.
 
 La roba seria sta in scontorno.py — qui c'e' solo la finestra.
 """
-import os, subprocess, sys, threading, time
+import json, os, subprocess, sys, threading, time
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
@@ -28,6 +28,42 @@ OMBRE = {'toglila col fondo': 'via', 'tienila morbida': 'morbida',
          'lasciala attaccata': 'tieni'}
 
 
+def _cartella_scelte():
+    """Dove tenere le scelte: la cartella del programma puo' essere di sola
+    lettura (Programmi, una chiavetta), quella dell'utente no."""
+    if sys.platform == 'win32':
+        base = os.environ.get('APPDATA') or os.path.expanduser('~')
+    else:
+        base = os.environ.get('XDG_CONFIG_HOME') or os.path.join(os.path.expanduser('~'), '.config')
+    return os.path.join(base, 'Scontorno')
+
+
+SCELTE = os.path.join(_cartella_scelte(), 'scelte.json')
+
+
+def leggi_scelte():
+    try:
+        with open(SCELTE, encoding='utf-8') as f:
+            return json.load(f)
+    except Exception:
+        return {}                     # prima volta, o file rovinato: si riparte dai default
+
+
+def scrivi_scelte(d):
+    try:
+        os.makedirs(os.path.dirname(SCELTE), exist_ok=True)
+        with open(SCELTE, 'w', encoding='utf-8') as f:
+            json.dump(d, f, indent=1)
+    except Exception:
+        pass                          # non poter ricordare le scelte non e' un errore
+
+
+def _accorcia(percorso, quanto=52):
+    if len(percorso) <= quanto:
+        return percorso
+    return percorso[:quanto // 2 - 2] + ' … ' + percorso[-(quanto // 2 - 1):]
+
+
 class Finestra:
     def __init__(self, root, iniziali=()):
         self.root = root
@@ -35,6 +71,9 @@ class Finestra:
         self.modo = 'scontorna'
         self.al_lavoro = False
         self.ultima_cartella = None
+        self.scelte = leggi_scelte()
+        salvata = self.scelte.get('cartella')
+        self.cartella = salvata if salvata and os.path.isdir(salvata) else None
         root.title('Scontorno')
         root.configure(bg=FONDO)
         root.minsize(780, 520)
@@ -70,13 +109,31 @@ class Finestra:
         voci = list(FORMATI)
         # PNG di partenza: e' l'unico che tiene la trasparenza dello scontorno
         self.formato = self._menu(scelte, 'salva in', voci,
-                                  voci.index('PNG') if 'PNG' in voci else 0)
-        self.ombra = self._menu(scelte, 'ombra', list(OMBRE), 0)
-        self.sfondo = self._menu(scelte, 'sfondo', list(SFONDI), 0)
-        self.ritaglia = tk.BooleanVar(value=False)
+                                  self.scelte.get('formato', 'PNG' if 'PNG' in voci else voci[0]))
+        self.ombra = self._menu(scelte, 'ombra', list(OMBRE), self.scelte.get('ombra'))
+        self.sfondo = self._menu(scelte, 'sfondo', list(SFONDI), self.scelte.get('sfondo'))
+        self.ritaglia = tk.BooleanVar(value=bool(self.scelte.get('ritaglia')))
         tk.Checkbutton(scelte, text='ritaglia al soggetto', variable=self.ritaglia,
                        bg=FONDO, fg=TENUE, font=('Segoe UI', 9), relief='flat',
-                       activebackground=FONDO, selectcolor=FONDO).pack(side='left', padx=(14, 0))
+                       activebackground=FONDO, selectcolor=FONDO,
+                       command=self.ricorda).pack(side='left', padx=(14, 0))
+
+        dove = tk.Frame(root, bg=FONDO); dove.pack(fill='x', padx=22, pady=(0, 4))
+        tk.Label(dove, text='le salvo in', bg=FONDO, fg=TENUE,
+                 font=('Segoe UI', 9)).pack(side='left', padx=(0, 5))
+        self.etichetta_cartella = tk.Label(dove, bg=FONDO, fg=INCHIOSTRO,
+                                           font=('Segoe UI', 9, 'bold'), anchor='w')
+        self.etichetta_cartella.pack(side='left')
+        tk.Button(dove, text='Cambia…', command=self.scegli_cartella, relief='flat',
+                  bg=FONDO, fg=TENUE, font=('Segoe UI', 9), cursor='hand2',
+                  activebackground=FONDO).pack(side='left', padx=(8, 0))
+        self.bottone_accanto = tk.Button(dove, text='accanto alle originali',
+                                         command=lambda: self.imposta_cartella(None),
+                                         relief='flat', bg=FONDO, fg=TENUE,
+                                         font=('Segoe UI', 9), cursor='hand2',
+                                         activebackground=FONDO)
+        self.bottone_accanto.pack(side='left')
+        self._mostra_cartella()
 
         riquadro = tk.Frame(root, bg='white', highlightbackground=BORDO, highlightthickness=1)
         riquadro.pack(fill='both', expand=True, padx=22, pady=(8, 6))
@@ -104,13 +161,38 @@ class Finestra:
         if iniziali:
             self.root.after(200, lambda: self.accoda(iniziali))
 
-    def _menu(self, padre, etichetta, voci, predefinita):
+    def _menu(self, padre, etichetta, voci, scelta=None):
         tk.Label(padre, text=etichetta, bg=FONDO, fg=TENUE,
                  font=('Segoe UI', 9)).pack(side='left', padx=(0, 5))
-        var = tk.StringVar(value=voci[predefinita])
-        m = ttk.OptionMenu(padre, var, voci[predefinita], *voci)
+        partenza = scelta if scelta in voci else voci[0]
+        var = tk.StringVar(value=partenza)
+        m = ttk.OptionMenu(padre, var, partenza, *voci, command=lambda _=None: self.ricorda())
         m.pack(side='left', padx=(0, 16))
         return var
+
+    # ------------------------------------------------------- dove si salva
+
+    def _mostra_cartella(self):
+        self.etichetta_cartella.configure(
+            text=_accorcia(self.cartella) if self.cartella else 'accanto alle originali')
+        self.bottone_accanto.configure(state='normal' if self.cartella else 'disabled')
+
+    def imposta_cartella(self, percorso):
+        self.cartella = percorso or None
+        self._mostra_cartella()
+        self.ricorda()
+
+    def scegli_cartella(self):
+        scelta = filedialog.askdirectory(title='Dove salvo le foto finite',
+                                         initialdir=self.cartella or os.path.expanduser('~'),
+                                         mustexist=False)
+        if scelta:
+            self.imposta_cartella(os.path.normpath(scelta))
+
+    def ricorda(self):
+        scrivi_scelte({'cartella': self.cartella, 'formato': self.formato.get(),
+                       'ombra': self.ombra.get(), 'sfondo': self.sfondo.get(),
+                       'ritaglia': bool(self.ritaglia.get())})
 
     # ------------------------------------------------------------ lavoro
 
@@ -126,6 +208,13 @@ class Finestra:
 
     def accoda(self, files, modo='scontorna'):
         self.modo = modo
+        # le scelte si leggono qui, sul thread della finestra: tkinter non e'
+        # fatto per essere interrogato da un altro thread e prima o poi si pianta
+        self.opzioni = dict(formato=FORMATI[self.formato.get()],
+                            ombra=OMBRE[self.ombra.get()],
+                            sfondo=SFONDI[self.sfondo.get()],
+                            ritaglia=bool(self.ritaglia.get()),
+                            cartella=self.cartella)
         self.coda.extend(files)
         if not self.al_lavoro:
             self.al_lavoro = True
@@ -149,15 +238,16 @@ class Finestra:
                                  else f'{self.fatte + 1} di {totale}'))
             primo = False
             t = time.time()
+            self.ripiegato = False
             try:
-                formato = FORMATI[self.formato.get()]
-                sfondo = SFONDI[self.sfondo.get()]
+                opz = self.opzioni
+                formato, sfondo = opz['formato'], opz['sfondo']
                 if self.modo == 'scontorna':
                     import scontorno as S
                     out, strada = S.scontorna(C.apri(src),
-                                              ombra=OMBRE[self.ombra.get()],
+                                              ombra=opz['ombra'],
                                               sfondo=sfondo,
-                                              ritaglia=self.ritaglia.get(),
+                                              ritaglia=opz['ritaglia'],
                                               log=lambda *x: None)
                     dest = self._salva(C.prepara(out, formato, sfondo or (255, 255, 255)),
                                        src, formato, '-scontornata')
@@ -171,6 +261,8 @@ class Finestra:
                                        src, formato, '')
                     nota = f'   {os.path.getsize(dest) // 1024} KB, {time.time() - t:.1f}s'
                 self.ultima_cartella = os.path.dirname(dest)
+                if self.ripiegato:
+                    nota += f' — non ho potuto scrivere nella cartella scelta, l\u2019ho messa in {self.ultima_cartella}'
                 self._segnala(f'✓ {os.path.basename(dest)}', tag='ok', coda=nota)
             except Exception as e:
                 self._segnala(f'✗ {os.path.basename(src)}: {e}', tag='male')
@@ -178,16 +270,25 @@ class Finestra:
         self._finito()
 
     def _salva(self, img, src, formato, suffisso):
+        """Salva dove ha chiesto l'utente, con due reti sotto.
+
+        Se la cartella scelta non si lascia scrivere (chiavetta tolta, cartella
+        di sistema, disco pieno) si prova accanto all'originale e poi sul
+        desktop: meglio un file in un posto diverso che il lavoro buttato.
+        """
         import converti as C
-        try:
-            return C.salva(img, src, formato, None, 92, suffisso)
-        except OSError:
-            # cartella di sola lettura (una chiavetta, una cartella di sistema):
-            # si ripiega sul desktop invece di perdere il lavoro fatto
-            casa = os.path.expanduser('~')
-            scrivania = os.path.join(casa, 'Desktop')
-            return C.salva(img, src, formato,
-                           scrivania if os.path.isdir(scrivania) else casa, 92, suffisso)
+        casa = os.path.expanduser('~')
+        scrivania = os.path.join(casa, 'Desktop')
+        ultimo = None
+        scelta = self.opzioni['cartella']
+        for cartella in (scelta, None, scrivania if os.path.isdir(scrivania) else casa):
+            try:
+                dest = C.salva(img, src, formato, cartella, 92, suffisso)
+                self.ripiegato = cartella != scelta
+                return dest
+            except OSError as e:
+                ultimo = e
+        raise ultimo
 
     # ------------------------------------------------ ponte verso la finestra
 
