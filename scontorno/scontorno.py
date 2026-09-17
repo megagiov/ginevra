@@ -16,7 +16,7 @@ Gira in locale: nessuna API, nessun credito, nessuna foto che esce da qui.
     python3 scontorno.py *.jpg -o out/ --sfondo bianco
     python3 scontorno.py scarpa.jpg --ombra morbida     # ombra semitrasparente
 """
-import argparse, hashlib, os, shutil, sys, time, urllib.request
+import argparse, glob, hashlib, os, shutil, sys, time, urllib.request
 import numpy as np
 from PIL import Image, ImageFilter
 
@@ -348,6 +348,17 @@ def _colore(s):
     raise argparse.ArgumentTypeError("colore: bianco, nero, grigio, trasparente o esadecimale tipo ff0055")
 
 
+def _espandi(voci):
+    """Apre gli asterischi: su Windows la shell non lo fa e arriva `*.jpg` crudo."""
+    fuori = []
+    for v in voci:
+        if any(c in v for c in '*?[') and not os.path.exists(v):
+            fuori.extend(sorted(glob.glob(v)))
+        else:
+            fuori.append(v)
+    return fuori
+
+
 def main(argv=None):
     p = argparse.ArgumentParser(description='Scontorna una foto in locale.')
     p.add_argument('foto', nargs='+')
@@ -367,7 +378,21 @@ def main(argv=None):
     a = p.parse_args(argv)
     log = (lambda *x: None) if a.zitto else (lambda *x: print(*x, file=sys.stderr))
 
-    for src in a.foto:
+    foto = _espandi(a.foto)
+    mancanti = [f for f in foto if not os.path.isfile(f)]
+    if mancanti or not foto:
+        # e' l'errore piu' comune: nomi d'esempio copiati dalle istruzioni
+        print('non trovo: ' + ' '.join(mancanti or a.foto), file=sys.stderr)
+        vicine = sorted(f for f in os.listdir('.')
+                        if f.lower().endswith(('.jpg', '.jpeg', '.png', '.webp', '.bmp')))
+        if vicine:
+            print('in questa cartella ci sono: ' + ' '.join(vicine[:12])
+                  + (' ...' if len(vicine) > 12 else ''), file=sys.stderr)
+        else:
+            print('in questa cartella non ci sono immagini: copiale qui, oppure '
+                  'scrivi il percorso intero della foto', file=sys.stderr)
+        raise SystemExit(1)
+    for src in foto:
         t = time.time()
         img = Image.open(src)
         out, strada = scontorna(img, modo=a.modo, modello=a.modello, sfondo=a.sfondo,

@@ -18,11 +18,11 @@ import scontorno as S
 LIMITE = 30 * 1024 * 1024        # oltre, la foto viene rifiutata
 _lock = threading.Lock()         # onnxruntime: una inferenza per volta
 
-PAGINA = """<!doctype html>
+PAGINA = r"""<!doctype html>
 <html lang="it"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Scontorno</title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='14' font-size='14'>\u2702</text></svg>">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='14' font-size='14'>✂</text></svg>">
 <style>
  :root{--bg:#131316;--fg:#f2f2ef;--dim:#8c8c93;--acid:#e4ff3c;--line:#2a2a30}
  *{box-sizing:border-box}
@@ -193,6 +193,23 @@ def scontorna_sicuro(img, **kw):
     return S.scontorna(img, log=lambda *x: None, **kw)
 
 
+def _apri(host, porta):
+    """Server sulla prima porta che si riesce a prendere.
+
+    Su Windows la 8000 e' spesso dentro un intervallo riservato da Hyper-V o
+    WSL e il bind torna WinError 10013 (permesso negato) anche se la porta
+    sembra libera. Invece di fermarsi si prova piu' in alto, e per ultimo si
+    lascia scegliere al sistema.
+    """
+    for p in (porta, porta + 1, 8321, 8757, 9345, 0):
+        try:
+            return ThreadingHTTPServer((host, p), Handler)
+        except OSError as e:
+            print(f"porta {p} non disponibile ({e.__class__.__name__}), ne provo un'altra",
+                  file=sys.stderr)
+    raise SystemExit('nessuna porta disponibile')
+
+
 def main(argv=None):
     p = argparse.ArgumentParser(description='Interfaccia web per lo scontorno.')
     p.add_argument('--porta', type=int, default=8000)
@@ -201,8 +218,8 @@ def main(argv=None):
     a = p.parse_args(argv)
     Handler.modello = a.modello
     S.sessione(a.modello, log=lambda *x: print(*x, file=sys.stderr))   # scalda prima di aprire
-    srv = ThreadingHTTPServer((a.host, a.porta), Handler)
-    print(f"pronto su http://{a.host}:{a.porta}  (Ctrl+C per fermare)", file=sys.stderr)
+    srv = _apri(a.host, a.porta)
+    print(f"pronto su http://{a.host}:{srv.server_address[1]}  (Ctrl+C per fermare)", file=sys.stderr)
     try:
         srv.serve_forever()
     except KeyboardInterrupt:

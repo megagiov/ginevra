@@ -72,6 +72,25 @@ Da riga di comando, stessa resa, anche in blocco:
 | `--sfuma 1.5` | ammorbidisce il bordo di N px |
 | `--rientra 1` | erode il bordo di N px: toglie l'ultimo filo di sfondo |
 
+### Su Windows
+
+```powershell
+py -m venv venv
+venv\Scripts\pip install -r requirements.txt
+venv\Scripts\python server.py
+venv\Scripts\python scontorno.py "*.jpg" -o out --ritaglia
+```
+
+Due differenze rispetto a Mac e Linux:
+
+- **gli asterischi vanno tra virgolette**: PowerShell non li espande e passa
+  `*.jpg` così com'è. Ci pensa il programma, ma solo se la shell non se lo
+  mangia prima;
+- **la porta 8000 spesso è vietata** (`WinError 10013`): sta dentro un
+  intervallo riservato da Hyper-V o WSL. Il server non si ferma, prova le porte
+  successive e stampa quella su cui si è aperto — è quella da aprire nel
+  browser.
+
 Il server sta su `127.0.0.1`: non è raggiungibile da fuori. `--host 0.0.0.0` lo
 espone alla rete locale — non c'è autenticazione, quindi fallo solo su una rete
 di cui ti fidi.
@@ -107,6 +126,9 @@ di cui ti fidi.
 - Il server tiene una sola inferenza per volta (onnxruntime non è rientrante su
   una sessione condivisa): con dieci foto insieme le vedrai finire in fila.
 - La cartella `models/` è fuori dal versionamento.
+- Nei comandi qui sopra `foto.jpg` e `scarpa.jpg` sono nomi d'esempio: vanno
+  sostituiti con quelli veri. Se non li trova, il programma elenca le immagini
+  che ci sono nella cartella.
 
 ## Perché sta in questo repository
 
