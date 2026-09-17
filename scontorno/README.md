@@ -3,16 +3,33 @@
 Come remove.bg, ma senza account, senza crediti e senza che la foto esca dalla
 macchina. Trascini l'immagine nella pagina e ti torna un PNG con trasparenza.
 
-Due strade, scelte da sole in base alla foto:
+Tre strade, scelte da sole in base alla foto:
 
 | strada | quando | tempo |
 |---|---|---|
-| `tinta` | scatti da catalogo su fondo unito (bianco, grigio, in tinta): flood fill dai quattro angoli | istantaneo, nessun modello |
-| `rete` | foto vere — persone, scene, fondi sporchi: U²-Net / IS-Net su onnxruntime, CPU | ~0,5–1 s a foto |
+| `misto` | scatti da catalogo su fondo unito, **ombra compresa**: la rete dice dove sta il prodotto, il colore taglia il bordo | ~0,8 s a foto |
+| `rete` | foto vere — persone, scene, fondi sporchi: U²-Net / IS-Net su onnxruntime, CPU | ~0,3 s a foto |
+| `tinta` | solo flood fill sul colore, senza modello: istantaneo, ma tiene l'ombra e si mangia le parti del prodotto che hanno il colore del fondo | ~0,25 s a foto |
 
 Il modo `auto` misura quanto il bordo dell'immagine è di un colore solo: sopra
-il 97% va di flood fill, altrimenti di rete. Se il flood fill non toglie nulla,
+il 97% va di `misto`, altrimenti di `rete`. Se il flood fill non toglie nulla,
 ricade sulla rete da solo.
+
+### L'ombra
+
+Un'ombra non cambia il colore di ciò su cui cade: lo scurisce e basta, allo
+stesso modo sui tre canali. È così che viene riconosciuta, e per questo se ne
+va insieme al fondo anche quando è molto più scura della tolleranza di colore.
+
+```bash
+--ombra via        # sparisce col fondo (predefinito)
+--ombra morbida    # torna come nero semitrasparente: regge su qualsiasi fondo
+--ombra tieni      # resta attaccata al prodotto, com'era prima
+```
+
+Il grigio chiaro resta ambiguo — una suola bianca sporca somiglia a un'ombra —
+ed è lì che serve la rete: in `misto` la sua maschera protegge il prodotto e
+vince sul test del colore.
 
 ## Installazione
 
@@ -39,13 +56,15 @@ Da riga di comando, stessa resa, anche in blocco:
 ```bash
 ./venv/bin/python scontorno.py foto.jpg                    # -> foto-scontornata.png
 ./venv/bin/python scontorno.py *.jpg -o out/ --ritaglia
+./venv/bin/python scontorno.py scarpa.jpg --ombra morbida  # ombra semitrasparente
 ./venv/bin/python scontorno.py foto.jpg --sfondo bianco    # o nero, grigio, ff0055
 ./venv/bin/python scontorno.py foto.jpg --modo rete --modello isnet
 ```
 
 | opzione | cosa fa |
 |---|---|
-| `--modo auto\|rete\|tinta` | forza la strada invece di lasciarla decidere |
+| `--modo auto\|misto\|rete\|tinta` | forza la strada invece di lasciarla decidere |
+| `--ombra via\|morbida\|tieni` | che fine fa l'ombra (vedi sopra) |
 | `--modello u2net\|u2netp\|isnet` | u2net è il default; `u2netp` pesa 4,7 MB ed è più rapido ma più grossolano; `isnet` tiene meglio capelli e dettagli sottili |
 | `--sfondo` | riempie il fondo invece di lasciarlo trasparente |
 | `--ritaglia` | taglia al riquadro del soggetto |
@@ -64,8 +83,21 @@ di cui ti fidi.
   invece dell'albero completo di rembg.
 - **`ImageDraw.floodfill` non scrive su un'immagine creata con `Image.fromarray`**:
   il buffer numpy è di sola lettura, la chiamata fallisce in silenzio riempiendo
-  zero pixel e lo scontorno esce tutto opaco. Serve `.copy()` — stessa trappola
-  già pagata in `video-prodotto/`.
+  zero pixel e lo scontorno esce tutto opaco. Stessa trappola già pagata in
+  `video-prodotto/`. Qui il flood fill è comunque riscritto a tratti di riga:
+  quello di PIL è Python puro e costava 1,0 s su 1024×1024 contro i 0,02 s di
+  adesso, a parità di risultato su tutti i casi di prova.
+- **Il flood fill sul solo colore mangia il prodotto bianco su fondo bianco.**
+  Su 24 foto del catalogo succedeva a 2 (una adidas e una ciaodea: mezza suola
+  e mezza tomaia sparite). La protezione della rete in `misto` lo risolve, ed è
+  il motivo per cui `tinta` non è più la strada predefinita.
+- **Sulle ombre dure la rete sbaglia**: le legge come parte del prodotto, con
+  punteggi fino a 0,98. Il prodotto però sta a 1,00 pieno, quindi a un pixel
+  che ha anche il colore di un'ombra si chiede la certezza prima di proteggerlo.
+- Misurato su ombre sintetiche con alpha vero noto (tre prodotti × ombra
+  morbida, dura, di contatto): **IoU da 0,984 a 0,994, ombra residua da 0% a
+  8,5%** (il caso peggiore è un'ombra dura e molto scura). Lo stesso set con
+  `--modo tinta` lascia l'88-93% dell'ombra attaccata.
 - Il flood fill parte dagli angoli: lo sfondo chiuso dentro il soggetto (le
   asole di una scarpa, il triangolo tra braccio e fianco) resta opaco. Su quelle
   foto conviene `--modo rete`.

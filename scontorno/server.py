@@ -63,7 +63,11 @@ PAGINA = """<!doctype html>
  <input id="file" type="file" accept="image/*" multiple hidden>
  <div class="opz">
   <label>modo <select id="modo">
-    <option value="auto">auto</option><option value="rete">rete</option><option value="tinta">fondo unito</option></select></label>
+    <option value="auto">auto</option><option value="misto">catalogo (rete+colore)</option>
+    <option value="rete">rete</option><option value="tinta">solo colore</option></select></label>
+  <label>ombra <select id="ombra">
+    <option value="via">via col fondo</option><option value="morbida">tienila morbida</option>
+    <option value="tieni">lasciala attaccata</option></select></label>
   <label>modello <select id="modello">__MODELLI__</select></label>
   <label>sfondo <select id="sfondo">
     <option value="">trasparente</option><option value="bianco">bianco</option>
@@ -95,6 +99,7 @@ async function uno(f){
  griglia.prepend(card);
  const q=new URLSearchParams({modo:document.getElementById('modo').value,
    modello:document.getElementById('modello').value,
+   ombra:document.getElementById('ombra').value,
    ritaglia:document.getElementById('ritaglia').checked?'1':'',
    sfondo:sfondo.value==='custom'?colore.value.slice(1):sfondo.value});
  const t=performance.now();
@@ -164,6 +169,7 @@ class Handler(BaseHTTPRequestHandler):
                     modo=uno('modo', 'auto'),
                     modello=uno('modello', self.modello),
                     sfondo=sfondo,
+                    ombra=uno('ombra', 'via'),
                     ritaglia=bool(uno('ritaglia')))
             buf = io.BytesIO()
             out.save(buf, 'PNG')
@@ -178,10 +184,12 @@ class Handler(BaseHTTPRequestHandler):
 
 
 def scontorna_sicuro(img, **kw):
-    if kw.get('modo') not in ('auto', 'rete', 'tinta'):
+    if kw.get('modo') not in ('auto', 'misto', 'rete', 'tinta'):
         raise ValueError('modo non valido')
     if kw.get('modello') not in S.MODELLI:
         raise ValueError('modello non valido')
+    if kw.get('ombra') not in ('via', 'tieni', 'morbida'):
+        raise ValueError('ombra non valida')
     return S.scontorna(img, log=lambda *x: None, **kw)
 
 

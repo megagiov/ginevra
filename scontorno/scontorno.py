@@ -1,9 +1,12 @@
 """Scontorno locale: toglie lo sfondo da una foto e restituisce un PNG con alpha.
 
-Due strade, scelte da sole in base alla foto:
+Tre strade, scelte da sole in base alla foto:
 
-  tinta  flood fill dai quattro angoli, per gli scatti da catalogo su fondo
-         unito. Istantaneo, nessun modello da scaricare, bordo pixel-preciso.
+  misto  la strada buona per gli scatti da catalogo, anche con l'ombra: la
+         rete dice dove sta il prodotto, il flood fill dagli angoli toglie
+         fondo e ombra col bordo pixel-preciso del colore.
+  tinta  solo flood fill, senza modello: istantaneo, ma si mangia le parti
+         chiare del prodotto quando sono del colore del fondo.
   rete   U^2-Net / IS-Net via onnxruntime, per le foto vere (persone, scene,
          fondi sporchi). Il modello si scarica una volta sola in models/.
 
@@ -11,11 +14,11 @@ Gira in locale: nessuna API, nessun credito, nessuna foto che esce da qui.
 
     python3 scontorno.py foto.jpg                 -> foto-scontornata.png
     python3 scontorno.py *.jpg -o out/ --sfondo bianco
-    python3 scontorno.py foto.jpg --modo rete --modello isnet
+    python3 scontorno.py scarpa.jpg --ombra morbida     # ombra semitrasparente
 """
 import argparse, hashlib, os, shutil, sys, time, urllib.request
 import numpy as np
-from PIL import Image, ImageDraw, ImageFilter
+from PIL import Image, ImageFilter
 
 QUI = os.path.dirname(os.path.abspath(__file__))
 CARTELLA_MODELLI = os.environ.get('SCONTORNO_MODELS', os.path.join(QUI, 'models'))
@@ -38,6 +41,8 @@ MODELLI = {
                    nota='bordi migliori su capelli e dettagli sottili, 179 MB, ~4 s'),
 }
 PREDEFINITO = os.environ.get('SCONTORNO_MODEL', 'u2net')
+ALLARGO = 2       # di quanto si allarga la protezione della rete, in pixel
+CRESCITA = 3      # di quanto il fondo puo' rientrare in quell'anello, in pixel
 
 COLORI = {'bianco': (255, 255, 255), 'nero': (0, 0, 0), 'grigio': (240, 240, 240),
           'trasparente': None}
@@ -116,8 +121,8 @@ def maschera_rete(img, nome=PREDEFINITO, log=print):
 def fondo_unito(img, tolleranza=14):
     """Quanto il bordo dell'immagine e' di un colore solo, tra 0 e 1.
 
-    Serve a decidere se basta il flood fill: sopra ~0.97 lo scatto e' da
-    catalogo (fondo bianco o in tinta) e la rete non aggiunge niente.
+    Serve a decidere se c'e' un fondo da flood-fillare: sopra ~0.97 lo scatto e'
+    da catalogo (fondo bianco o in tinta, con o senza ombra).
     """
     a = np.asarray(img.convert('RGB').resize((256, 256), Image.BILINEAR)).astype(np.int16)
     bordo = np.concatenate([a[0], a[-1], a[:, 0], a[:, -1]])
@@ -125,23 +130,140 @@ def fondo_unito(img, tolleranza=14):
     return float((np.abs(bordo - rif).max(axis=1) <= tolleranza).mean())
 
 
-def maschera_tinta(img, tolleranza=14):
-    """Flood fill dai quattro angoli sul colore di fondo."""
-    a = np.asarray(img.convert('RGB')).astype(np.int16)
-    bordo = np.concatenate([a[0], a[-1], a[:, 0], a[:, -1]])
-    rif = np.median(bordo, axis=0)
-    simile = (np.abs(a - rif).max(axis=2) <= tolleranza).astype(np.uint8) * 255
-    # .copy() indispensabile: floodfill non scrive su un'immagine che condivide
-    # il buffer di sola lettura di numpy, fallisce in silenzio riempiendo 0 pixel
-    # e lo scontorno esce tutto opaco (trappola gia' pagata in video-prodotto).
-    m = Image.fromarray(simile, 'L').copy()
-    w, h = m.size
-    for xy in ((0, 0), (w - 1, 0), (0, h - 1), (w - 1, h - 1)):
-        if m.getpixel(xy) == 255:
-            ImageDraw.floodfill(m, xy, 128, thresh=0)
-    alpha = np.where(np.asarray(m) == 128, 0, 255).astype(np.uint8)
+def _riferimento(a):
+    """Colore del fondo: la mediana del bordo dell'immagine."""
+    return np.median(np.concatenate([a[0], a[-1], a[:, 0], a[:, -1]]), axis=0)
+
+
+def _mappa_ombra(a, rif, neutro=0.10, minimo=0.15):
+    """Pixel che sono il fondo moltiplicato per un fattore < 1: cioe' un'ombra.
+
+    Un'ombra non cambia il colore di cio' su cui cade, lo scurisce e basta: il
+    rapporto col fondo e' lo stesso sui tre canali. Un pezzo di prodotto o e'
+    colorato (rapporti diversi) o e' molto piu' scuro di un'ombra. Resta
+    ambiguo il grigio chiaro — una suola bianca sporca somiglia a un'ombra — e
+    per quello serve la protezione della rete, che in `misto` vince su questa
+    mappa.
+    """
+    r = a / np.maximum(rif, 1)
+    m = r.mean(axis=2)
+    return (r.max(axis=2) - r.min(axis=2) <= neutro) & (m < 0.995) & (m > minimo)
+
+
+def _dilata(maschera, px):
+    """Allarga di px pixel una maschera booleana."""
+    img = Image.fromarray((maschera * 255).astype(np.uint8), 'L')
+    for _ in range(int(px)):
+        img = img.filter(ImageFilter.MaxFilter(3))
+    return np.asarray(img) > 127
+
+
+def _tratti(riga):
+    """Inizi e fini dei tratti contigui di True in una riga."""
+    d = np.diff(np.concatenate(([np.int8(0)], riga.astype(np.int8), [np.int8(0)])))
+    return np.flatnonzero(d == 1), np.flatnonzero(d == -1)
+
+
+def _allaga(simile):
+    """Regione di fondo: quel che si raggiunge dai quattro angoli, a 4 vicini.
+
+    Flood fill per tratti di riga invece che per pixel: `ImageDraw.floodfill`
+    e' Python puro e su 1024x1024 costa oltre un secondo, qui siamo sui 30 ms
+    perche' il lavoro va col numero di tratti, non col numero di pixel.
+    """
+    h, w = simile.shape
+    inizi, fini, visti = [], [], []
+    for y in range(h):
+        i, f = _tratti(simile[y])
+        inizi.append(i); fini.append(f); visti.append(np.zeros(len(i), bool))
+
+    def tratto(y, x):
+        k = int(np.searchsorted(inizi[y], x, 'right')) - 1
+        return k if k >= 0 and fini[y][k] > x else None
+
+    pila = []
+    for x, y in ((0, 0), (w - 1, 0), (0, h - 1), (w - 1, h - 1)):
+        k = tratto(y, x)
+        if k is not None:
+            pila.append((y, k))
+    while pila:
+        y, k = pila.pop()
+        if visti[y][k]:
+            continue
+        visti[y][k] = True
+        a, b = inizi[y][k], fini[y][k]
+        for ny in (y - 1, y + 1):
+            if 0 <= ny < h:
+                # i tratti della riga vicina che si sovrappongono a [a, b)
+                lo = int(np.searchsorted(fini[ny], a, 'right'))
+                hi = int(np.searchsorted(inizi[ny], b, 'left'))
+                for k2 in range(lo, hi):
+                    if not visti[ny][k2]:
+                        pila.append((ny, k2))
+    fondo = np.zeros((h, w), bool)
+    for y in range(h):
+        for k in np.flatnonzero(visti[y]):
+            fondo[y, inizi[y][k]:fini[y][k]] = True
+    return fondo
+
+
+def _matte_tinta(img, tolleranza=14, protezione=None, nucleo=None, togli_ombra=False):
+    """(alpha 0-1, forza dell'ombra 0-1) dal flood fill del fondo.
+
+    `protezione` e' una maschera booleana in cui il flood non entra: e' cosi'
+    che il prodotto bianco su fondo bianco non viene mangiato. `nucleo` e' la
+    stessa maschera non allargata: l'anello tra le due va poi ripulito, se no
+    il bordo resta punteggiato di fondo.
+    """
+    a = np.asarray(img.convert('RGB')).astype(np.float32)
+    rif = _riferimento(a)
+    stretta = np.abs(a - rif).max(axis=2) <= tolleranza
+    ombrosi = _mappa_ombra(a, rif)
+    simile = stretta | ombrosi if togli_ombra else stretta
+    if protezione is None:
+        fondo = _allaga(simile)
+    else:
+        fondo = _allaga(simile & ~protezione)
+        if nucleo is not None:
+            # L'anello si ripulisce facendo crescere il fondo di un pixel per
+            # volta, e solo sul colore esatto del fondo: un secondo flood
+            # libero risalirebbe dentro i riflessi chiari del prodotto, e la
+            # mappa dell'ombra si mangerebbe il bordo sfumato.
+            cresce = stretta & ~nucleo
+            for _ in range(CRESCITA):
+                fondo = fondo | (_dilata(fondo, 1) & cresce)
+    alpha = np.where(fondo, 0, 255).astype(np.uint8)
     a8 = Image.fromarray(alpha, 'L').filter(ImageFilter.MinFilter(3)).filter(ImageFilter.GaussianBlur(0.7))
-    return Image.fromarray((np.clip((np.asarray(a8).astype(np.float32) / 255 - 0.12) / 0.80, 0, 1) * 255).astype(np.uint8), 'L')
+    alpha = np.clip((np.asarray(a8).astype(np.float32) / 255 - 0.12) / 0.80, 0, 1)
+    # quanto scuriva il fondo dove abbiamo tolto l'ombra: serve a poterla tenere
+    forza = np.where(fondo & ombrosi, np.clip(1 - a.mean(axis=2) / max(rif.mean(), 1), 0, 1), 0)
+    return alpha, forza.astype(np.float32)
+
+
+def maschera_tinta(img, tolleranza=14):
+    """Solo flood fill sul colore del fondo, senza modello."""
+    alpha, _ = _matte_tinta(img, tolleranza)
+    return Image.fromarray((alpha * 255).astype(np.uint8), 'L')
+
+
+def matte_misto(img, modello=PREDEFINITO, ombra='via', log=print):
+    """Rete come protezione, colore come bordo: la strada per il catalogo.
+
+    La rete dice grosso modo dove sta il prodotto e il flood fill non entra
+    li' dentro; fuori, oltre al fondo, se ne va anche l'ombra. Il bordo resta
+    quello del colore, che e' pixel-preciso, non quello della rete, che a
+    320x320 e' approssimativo.
+    """
+    rete = np.asarray(maschera_rete(img, modello, log=log)).astype(np.float32) / 255
+    a = np.asarray(img.convert('RGB')).astype(np.float32)
+    ombrosi = _mappa_ombra(a, _riferimento(a))
+    # Sulle ombre dure la rete sbaglia: le vede come parte del soggetto e con
+    # punteggi alti (fino a 0.98 misurato). Il prodotto pero' sta a 1.00 pieno,
+    # quindi a un pixel che ha anche il colore dell'ombra si chiede la certezza.
+    nucleo = (rete > 0.5) & ~(ombrosi & (rete < 0.99))
+    alpha, forza = _matte_tinta(img, protezione=_dilata(nucleo, ALLARGO), nucleo=nucleo,
+                                togli_ombra=(ombra != 'tieni'))
+    return alpha, (forza if ombra == 'morbida' else None)
 
 
 # ---------------------------------------------------------------- rifinitura
@@ -162,18 +284,22 @@ def rifinisci(alpha, taglio=0.0, sfuma=0.0, rientra=0.0):
     return img
 
 
-def componi(img, alpha, sfondo=None, ritaglia=False, defringe=True):
-    rgb = img.convert('RGB')
+def componi(img, alpha, sfondo=None, ritaglia=False, defringe=True, ombra=None):
+    """alpha: immagine L. ombra: mappa 0-1 da appoggiare sotto il soggetto."""
+    rgb = np.asarray(img.convert('RGB')).astype(np.float32)
+    a = np.asarray(alpha).astype(np.float32) / 255
     if defringe:
         # sui pixel semitrasparenti resta un alone del fondo: scurirli di poco
         # toglie il bordo chiaro tipico degli scatti su bianco.
-        a = np.asarray(alpha).astype(np.float32) / 255
-        px = np.asarray(rgb).astype(np.float32)
-        bordo = (a > 0.05) & (a < 0.95)
-        px[bordo] *= 0.93
-        rgb = Image.fromarray(px.astype(np.uint8), 'RGB')
-    out = rgb.copy()
-    out.putalpha(alpha)
+        rgb[(a > 0.05) & (a < 0.95)] *= 0.93
+    if ombra is not None:
+        # l'ombra torna come nero semitrasparente: cosi' regge anche su un
+        # fondo che non sia quello dello scatto.
+        solo_ombra = (ombra > 0.004) & (a < 0.02)
+        rgb[solo_ombra] = 0
+        a = np.clip(a + np.where(solo_ombra, ombra, 0), 0, 1)
+    out = Image.fromarray(rgb.astype(np.uint8), 'RGB')
+    out.putalpha(Image.fromarray((a * 255).astype(np.uint8), 'L'))
     if ritaglia:
         bb = out.getbbox()
         if bb:
@@ -186,22 +312,29 @@ def componi(img, alpha, sfondo=None, ritaglia=False, defringe=True):
 
 
 def scontorna(img, modo='auto', modello=PREDEFINITO, sfondo=None, ritaglia=False,
-              taglio=0.0, sfuma=0.0, rientra=0.0, log=print):
+              taglio=0.0, sfuma=0.0, rientra=0.0, ombra='via', log=print):
     """Ritorna (immagine RGBA, strada usata)."""
     img = img.convert('RGB')
     strada = modo
     if modo == 'auto':
         u = fondo_unito(img)
-        strada = 'tinta' if u >= 0.97 else 'rete'
+        strada = 'misto' if u >= 0.97 else 'rete'
         log(f"fondo unito al {u*100:.0f}% -> {strada}")
-    alpha = maschera_tinta(img) if strada == 'tinta' else maschera_rete(img, modello, log=log)
-    if strada == 'tinta' and np.asarray(alpha).mean() > 250:
+    velo = None
+    if strada == 'misto':
+        a, velo = matte_misto(img, modello, ombra=ombra, log=log)
+        alpha = Image.fromarray((a * 255).astype(np.uint8), 'L')
+    elif strada == 'tinta':
+        alpha = maschera_tinta(img)
+    else:
+        alpha = maschera_rete(img, modello, log=log)
+    if strada in ('misto', 'tinta') and np.asarray(alpha).mean() > 250:
         # il flood non ha tolto niente: il fondo non era davvero unito
         log('flood fill a vuoto, passo alla rete')
-        strada = 'rete'
+        strada, velo = 'rete', None
         alpha = maschera_rete(img, modello, log=log)
     alpha = rifinisci(alpha, taglio=taglio, sfuma=sfuma, rientra=rientra)
-    return componi(img, alpha, sfondo=sfondo, ritaglia=ritaglia), strada
+    return componi(img, alpha, sfondo=sfondo, ritaglia=ritaglia, ombra=velo), strada
 
 
 # ---------------------------------------------------------------- CLI
@@ -219,7 +352,10 @@ def main(argv=None):
     p = argparse.ArgumentParser(description='Scontorna una foto in locale.')
     p.add_argument('foto', nargs='+')
     p.add_argument('-o', '--out', default=None, help='cartella di destinazione')
-    p.add_argument('--modo', choices=('auto', 'rete', 'tinta'), default='auto')
+    p.add_argument('--modo', choices=('auto', 'misto', 'rete', 'tinta'), default='auto')
+    p.add_argument('--ombra', choices=('via', 'tieni', 'morbida'), default='via',
+                   help="via: l'ombra sparisce col fondo. tieni: resta attaccata al "
+                        "prodotto. morbida: torna come nero semitrasparente")
     p.add_argument('--modello', choices=tuple(MODELLI), default=PREDEFINITO)
     p.add_argument('--sfondo', type=_colore, default=None,
                    help='riempie il fondo invece di lasciarlo trasparente')
@@ -236,7 +372,7 @@ def main(argv=None):
         img = Image.open(src)
         out, strada = scontorna(img, modo=a.modo, modello=a.modello, sfondo=a.sfondo,
                                 ritaglia=a.ritaglia, taglio=a.taglio, sfuma=a.sfuma,
-                                rientra=a.rientra, log=log)
+                                rientra=a.rientra, ombra=a.ombra, log=log)
         base = os.path.splitext(os.path.basename(src))[0] + '-scontornata.png'
         dest = os.path.join(a.out, base) if a.out else os.path.join(os.path.dirname(src) or '.', base)
         os.makedirs(os.path.dirname(os.path.abspath(dest)), exist_ok=True)
