@@ -31,7 +31,24 @@ Il grigio chiaro resta ambiguo — una suola bianca sporca somiglia a un'ombra �
 ed è lì che serve la rete: in `misto` la sua maschera protegge il prodotto e
 vince sul test del colore.
 
-## Installazione
+## Da usare senza terminale (Windows)
+
+1. [Scarica lo ZIP](https://github.com/megagiov/ginevra/archive/refs/heads/claude/jolly-brown-tw1mcr.zip)
+   ed estrailo.
+2. Dentro la cartella `scontorno`, doppio clic su **`installa.bat`**. Ci mette
+   un paio di minuti: crea l'ambiente, installa le tre librerie e scarica il
+   modello.
+3. Sul desktop compare l'icona **Scontorno**. Doppio clic e si apre la finestra:
+   *Scegli le foto…*, le scontorna e te le salva accanto alle originali come
+   `nome-scontornata.png`.
+
+Ci si possono anche **trascinare le foto sopra l'icona**: partono da sole.
+
+`installa.bat` si può rilanciare quando vuoi, non rifà quello che c'è già.
+Se il Python installato è senza `tkinter` (capita con certe versioni dallo
+Store), l'icona apre la stessa cosa nel browser invece che in una finestra.
+
+## Installazione a mano
 
 ```bash
 python3 -m venv venv && ./venv/bin/pip install -r requirements.txt

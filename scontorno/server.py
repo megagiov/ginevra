@@ -215,11 +215,16 @@ def main(argv=None):
     p.add_argument('--porta', type=int, default=8000)
     p.add_argument('--host', default='127.0.0.1', help='0.0.0.0 per esporlo in rete locale')
     p.add_argument('--modello', choices=tuple(S.MODELLI), default=S.PREDEFINITO)
+    p.add_argument('--apri', action='store_true', help='apre la pagina nel browser')
     a = p.parse_args(argv)
     Handler.modello = a.modello
     S.sessione(a.modello, log=lambda *x: print(*x, file=sys.stderr))   # scalda prima di aprire
     srv = _apri(a.host, a.porta)
-    print(f"pronto su http://{a.host}:{srv.server_address[1]}  (Ctrl+C per fermare)", file=sys.stderr)
+    indirizzo = f"http://{a.host}:{srv.server_address[1]}"
+    print(f"pronto su {indirizzo}  (Ctrl+C per fermare)", file=sys.stderr)
+    if a.apri:
+        import webbrowser
+        threading.Timer(0.5, webbrowser.open, (indirizzo,)).start()
     try:
         srv.serve_forever()
     except KeyboardInterrupt:
