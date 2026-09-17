@@ -15,10 +15,15 @@ sys.path.insert(0, QUI)
 
 FONDO = '#f4f4f2'; INCHIOSTRO = '#16161a'; TENUE = '#6c6c74'
 ACIDO = '#d7f000'; BORDO = '#d8d8d4'
-IMMAGINI = ('.jpg', '.jpeg', '.png', '.webp', '.bmp', '.tif', '.tiff')
+try:
+    from converti import FORMATI as _FORMATI, LEGGIBILI as IMMAGINI
+except Exception:                       # senza converti.py si va avanti lo stesso
+    _FORMATI = {'PNG': None, 'JPG': None, 'WEBP': None}
+    IMMAGINI = ('.jpg', '.jpeg', '.png', '.webp', '.bmp', '.tif', '.tiff')
 
 SFONDI = {'trasparente': None, 'bianco': (255, 255, 255), 'nero': (0, 0, 0),
           'grigio chiaro': (240, 240, 240)}
+FORMATI = {n: n for n in _FORMATI}
 OMBRE = {'toglila col fondo': 'via', 'tienila morbida': 'morbida',
          'lasciala attaccata': 'tieni'}
 
@@ -27,11 +32,13 @@ class Finestra:
     def __init__(self, root, iniziali=()):
         self.root = root
         self.coda = []
+        self.modo = 'scontorna'
         self.al_lavoro = False
         self.ultima_cartella = None
         root.title('Scontorno')
         root.configure(bg=FONDO)
-        root.minsize(620, 480)
+        root.minsize(780, 520)
+        root.geometry('840x640')
         try:
             root.iconbitmap(os.path.join(QUI, 'scontorno.ico'))
         except Exception:
@@ -43,15 +50,27 @@ class Finestra:
         tk.Label(testa, text='  le foto non escono da questo computer', bg=FONDO,
                  fg=TENUE, font=('Segoe UI', 10)).pack(side='left', pady=(7, 0))
 
-        self.bottone = tk.Button(root, text='Scegli le foto…', command=self.scegli,
+        bottoni = tk.Frame(root, bg=FONDO); bottoni.pack(fill='x', padx=22, pady=(14, 6))
+        self.bottone = tk.Button(bottoni, text='Scontorna le foto…',
+                                 command=lambda: self.scegli('scontorna'),
                                  bg=ACIDO, fg=INCHIOSTRO, activebackground=ACIDO,
                                  font=('Segoe UI', 13, 'bold'), relief='flat',
                                  cursor='hand2', pady=14)
-        self.bottone.pack(fill='x', padx=22, pady=(14, 6))
+        self.bottone.pack(side='left', fill='x', expand=True)
+        self.bottone2 = tk.Button(bottoni, text='Cambia solo formato…',
+                                  command=lambda: self.scegli('converti'),
+                                  bg='#e8e8e4', fg=INCHIOSTRO, activebackground='#e8e8e4',
+                                  font=('Segoe UI', 11), relief='flat',
+                                  cursor='hand2', pady=14, padx=14)
+        self.bottone2.pack(side='left', padx=(8, 0))
         tk.Label(root, text='o trascina le foto sopra l’icona sul desktop', bg=FONDO,
                  fg=TENUE, font=('Segoe UI', 9)).pack()
 
         scelte = tk.Frame(root, bg=FONDO); scelte.pack(fill='x', padx=22, pady=(14, 6))
+        voci = list(FORMATI)
+        # PNG di partenza: e' l'unico che tiene la trasparenza dello scontorno
+        self.formato = self._menu(scelte, 'salva in', voci,
+                                  voci.index('PNG') if 'PNG' in voci else 0)
         self.ombra = self._menu(scelte, 'ombra', list(OMBRE), 0)
         self.sfondo = self._menu(scelte, 'sfondo', list(SFONDI), 0)
         self.ritaglia = tk.BooleanVar(value=False)
@@ -95,27 +114,30 @@ class Finestra:
 
     # ------------------------------------------------------------ lavoro
 
-    def scegli(self):
+    def scegli(self, modo):
+        import converti as C
         files = filedialog.askopenfilenames(
-            title='Scegli le foto da scontornare',
-            filetypes=[('Immagini', '*.jpg *.jpeg *.png *.webp *.bmp *.tif *.tiff'),
+            title='Scegli le foto da scontornare' if modo == 'scontorna'
+                  else 'Scegli le foto da convertire',
+            filetypes=[('Immagini', ' '.join('*' + e for e in C.LEGGIBILI)),
                        ('Tutti i file', '*.*')])
         if files:
-            self.accoda(list(files))
+            self.accoda(list(files), modo)
 
-    def accoda(self, files):
+    def accoda(self, files, modo='scontorna'):
+        self.modo = modo
         self.coda.extend(files)
         if not self.al_lavoro:
             self.al_lavoro = True
             self.bottone.configure(state='disabled', text='sto lavorando…')
+            self.bottone2.configure(state='disabled')
             self.avanzamento.pack(fill='x', padx=22, pady=(2, 8), before=self.stato.master)
             self.fatte = 0
             self.inizio = time.time()
             threading.Thread(target=self._lavora, daemon=True).start()
 
     def _lavora(self):
-        from PIL import Image
-        import scontorno as S
+        import converti as C
         primo = True
         while self.coda:
             src = self.coda.pop(0)
@@ -123,38 +145,49 @@ class Finestra:
             self._segnala(f'{os.path.basename(src)} …',
                           avanzamento=(self.fatte, totale),
                           stato=('preparo il modello, solo la prima volta'
-                                 if primo else f'{self.fatte + 1} di {totale}'))
+                                 if primo and self.modo == 'scontorna'
+                                 else f'{self.fatte + 1} di {totale}'))
             primo = False
             t = time.time()
             try:
-                out, strada = S.scontorna(
-                    Image.open(src),
-                    ombra=OMBRE[self.ombra.get()],
-                    sfondo=SFONDI[self.sfondo.get()],
-                    ritaglia=self.ritaglia.get(),
-                    log=lambda *x: None)
-                dest = self._salva(out, src)
+                formato = FORMATI[self.formato.get()]
+                sfondo = SFONDI[self.sfondo.get()]
+                if self.modo == 'scontorna':
+                    import scontorno as S
+                    out, strada = S.scontorna(C.apri(src),
+                                              ombra=OMBRE[self.ombra.get()],
+                                              sfondo=sfondo,
+                                              ritaglia=self.ritaglia.get(),
+                                              log=lambda *x: None)
+                    dest = self._salva(C.prepara(out, formato, sfondo or (255, 255, 255)),
+                                       src, formato, '-scontornata')
+                    nota = f'   {strada}, {time.time() - t:.1f}s'
+                    if formato == 'JPG' and sfondo is None:
+                        # il JPG non ha trasparenza: si dice, invece di lasciare
+                        # che se ne accorga dopo guardando il file
+                        nota += ' — il JPG non tiene la trasparenza, fondo bianco'
+                else:
+                    dest = self._salva(C.prepara(C.apri(src), formato, sfondo or (255, 255, 255)),
+                                       src, formato, '')
+                    nota = f'   {os.path.getsize(dest) // 1024} KB, {time.time() - t:.1f}s'
                 self.ultima_cartella = os.path.dirname(dest)
-                self._segnala(f'✓ {os.path.basename(dest)}',
-                              tag='ok', coda=f'   {strada}, {time.time()-t:.1f}s')
+                self._segnala(f'✓ {os.path.basename(dest)}', tag='ok', coda=nota)
             except Exception as e:
                 self._segnala(f'✗ {os.path.basename(src)}: {e}', tag='male')
             self.fatte += 1
         self._finito()
 
-    def _salva(self, out, src):
-        nome = os.path.splitext(os.path.basename(src))[0] + '-scontornata.png'
-        dest = os.path.join(os.path.dirname(src), nome)
+    def _salva(self, img, src, formato, suffisso):
+        import converti as C
         try:
-            out.save(dest)
+            return C.salva(img, src, formato, None, 92, suffisso)
         except OSError:
             # cartella di sola lettura (una chiavetta, una cartella di sistema):
             # si ripiega sul desktop invece di perdere il lavoro fatto
-            scrivania = os.path.join(os.path.expanduser('~'), 'Desktop')
-            dest = os.path.join(scrivania if os.path.isdir(scrivania)
-                                else os.path.expanduser('~'), nome)
-            out.save(dest)
-        return dest
+            casa = os.path.expanduser('~')
+            scrivania = os.path.join(casa, 'Desktop')
+            return C.salva(img, src, formato,
+                           scrivania if os.path.isdir(scrivania) else casa, 92, suffisso)
 
     # ------------------------------------------------ ponte verso la finestra
 
@@ -176,12 +209,13 @@ class Finestra:
     def _finito(self):
         def dentro():
             self.al_lavoro = False
-            self.bottone.configure(state='normal', text='Scegli le foto…')
+            self.bottone.configure(state='normal', text='Scontorna le foto…')
+            self.bottone2.configure(state='normal')
             self.avanzamento.pack_forget()
             quante = self.fatte
-            self.stato.configure(
-                text=f"{quante} foto in {time.time() - self.inizio:.1f}s"
-                     if quante != 1 else f"una foto in {time.time() - self.inizio:.1f}s")
+            durata = time.time() - self.inizio
+            quanto = f'{durata:.1f}s' if durata >= 0.95 else 'meno di un secondo'
+            self.stato.configure(text=f"{'una foto' if quante == 1 else str(quante) + ' foto'} in {quanto}")
             if self.ultima_cartella:
                 self.apri.configure(state='normal')
         self.root.after(0, dentro)

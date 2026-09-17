@@ -19,6 +19,7 @@ echo   [2/3] installo Pillow, numpy e onnxruntime...
 venv\Scripts\python -m pip install --quiet --upgrade pip
 venv\Scripts\python -m pip install --quiet -r requirements.txt || goto storto
 
+venv\Scripts\python -m pip install --quiet pillow-heif 2>nul || echo   Nota: niente HEIC su questo Python, il resto dei formati funziona.
 echo   [3/3] scarico il modello ^(176 MB, solo la prima volta^)...
 venv\Scripts\python -c "import scontorno; scontorno.percorso_modello('u2net')" || goto storto
 

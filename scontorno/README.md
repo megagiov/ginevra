@@ -39,14 +39,42 @@ vince sul test del colore.
    un paio di minuti: crea l'ambiente, installa le tre librerie e scarica il
    modello.
 3. Sul desktop compare l'icona **Scontorno**. Doppio clic e si apre la finestra:
-   *Scegli le foto…*, le scontorna e te le salva accanto alle originali come
-   `nome-scontornata.png`.
+   *Scontorna le foto…* le sfonda e le salva accanto alle originali come
+   `nome-scontornata.png`; *Cambia solo formato…* le converte e basta. Il menu
+   **salva in** decide il formato in uscita per tutti e due i bottoni.
 
 Ci si possono anche **trascinare le foto sopra l'icona**: partono da sole.
 
 `installa.bat` si può rilanciare quando vuoi, non rifà quello che c'è già.
 Se il Python installato è senza `tkinter` (capita con certe versioni dallo
 Store), l'icona apre la stessa cosa nel browser invece che in una finestra.
+
+## Cambio formato
+
+Lo stesso programma converte e basta, senza toccare lo sfondo: il bottone
+*Cambia solo formato…* nella finestra, oppure da riga di comando.
+
+```bash
+./venv/bin/python converti.py foto.avif --in jpg
+./venv/bin/python converti.py *.webp --in jpg -o convertite/
+./venv/bin/python converti.py logo.png --in jpg --sfondo bianco --qualita 90
+```
+
+**Legge** tutto quello che apre Pillow — JPG, PNG, WEBP, AVIF, TIFF, BMP, GIF,
+ICO — e in più **HEIC/HEIF dell'iPhone** se è installato `pillow-heif`
+(`installa.bat` ci prova da solo; se quel Python non ce l'ha, il resto funziona
+lo stesso). **Scrive** in JPG, PNG, WEBP e AVIF.
+
+Tre cose che fa da sé:
+
+- **raddrizza secondo l'EXIF**: le foto da telefono arrivano coricate, e chi
+  converte senza guardare l'orientamento le salva coricate per sempre;
+- **non sovrascrive mai l'originale**: se il nome di destinazione è già
+  occupato aggiunge `-convertita`;
+- **appoggia la trasparenza su un colore quando si va in JPG** (bianco se non
+  dici altro), invece di lasciare che diventi nera.
+
+Il profilo colore e i dati di scatto vengono portati dietro quando ci sono.
 
 ## Installazione a mano
 
