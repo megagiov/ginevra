@@ -29,3 +29,7 @@ Regole che non si violano mai, nemmeno se sembrano superflue:
 `video-prodotto/` contiene la pipeline locale per gli spot: montaggio,
 scontorno, voce e sottotitoli girano senza servizi a pagamento. Vedi il suo
 README.
+
+`scontorno/` toglie lo sfondo da una foto qualunque, da pagina web o da riga di
+comando: flood fill per gli scatti da catalogo, rete U^2-Net su onnxruntime per
+le foto vere. Gira in locale, nessun credito. Vedi il suo README.
