@@ -36,7 +36,12 @@ I font (licenza SIL OFL) stanno in `fonts/`. La foto sorgente in `assets/`.
   incollata in cima, con un filetto oro e un innesto rosso a separarla.
 - **Il faro è il perno.** Il taglio della foto si ancora al faro, non a una
   riga fissa: da lì partono la raggiera e l'aureola dorata, e il faro della
-  moto fa da nimbo.
+  moto fa da nimbo. Il campo `zoom` stringe l'inquadratura attorno allo stesso
+  punto, così la moto riempie il quadro invece di lasciare mezzo cielo vuoto.
+- **Il testo si regge su un alone sfocato, non sul buio.** Sotto le lettere
+  c'è la loro stessa maschera sfocata in nero. È questo che permette alla
+  velatura di scendere molto: senza, per rendere leggibile il titolo bisogna
+  affogare la moto.
 - **Palette dal marchio.** Il rosso `#DA0411` è campionato dalle fiamme del
   logo, non scelto a occhio. L'oro richiama il busto del santo.
 - **Niente testo critico nella fascia bassa.** È la zona che Instagram e TikTok
@@ -58,6 +63,9 @@ I font (licenza SIL OFL) stanno in `fonts/`. La foto sorgente in `assets/`.
   della sfumatura: se finisce sotto, si spalma dietro al testo e sembra nebbia.
 - **La riga unita dei formati compatti si gonfiava** fino a sovrastare il resto:
   l'adattamento alla larghezza vuole un tetto alla dimensione nominale.
+- **Alleggerendo la velatura, l'aureola non è più contenuta** e slava il quadro:
+  nel formato quadrato usciva una macchia lattiginosa sul cielo. Velatura e
+  aureola vanno ritarate insieme, mai una sola delle due.
 
 ## Note editoriali
 

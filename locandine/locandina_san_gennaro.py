@@ -154,7 +154,7 @@ def raggiera(size, centro, header_h, n=24, alpha=52, inner=150, outer=1500):
     return _proteggi_logo(Image.fromarray(rgba, "RGBA"), header_h)
 
 
-def alone(size, centro, header_h, raggio=480, alpha=104):
+def alone(size, centro, header_h, raggio=430, alpha=74):
     """Alone caldo attorno al faro: il faro della moto diventa l'aureola."""
     W, H = size
     yy, xx = np.mgrid[0:H, 0:W]
@@ -163,6 +163,18 @@ def alone(size, centro, header_h, raggio=480, alpha=104):
     rgba[..., 0], rgba[..., 1], rgba[..., 2] = 255, 228, 168
     rgba[..., 3] = a.astype(np.uint8)
     return _proteggi_logo(Image.fromarray(rgba, "RGBA"), header_h)
+
+
+def alone_testo(maschera, raggio, alpha):
+    """Alone scuro sfocato ricavato dalle lettere.
+
+    Serve a tenere leggibile il testo senza affogare la foto: con questo la
+    velatura puo' scendere molto, e la moto resta visibile sotto il titolo.
+    """
+    sfoc = maschera.filter(ImageFilter.GaussianBlur(raggio))
+    out = Image.new("RGBA", maschera.size, (0, 0, 0, 0))
+    out.putalpha(sfoc.point(lambda v: min(int(v * alpha / 255) * 2, alpha)))
+    return out
 
 
 def velatura(size, inizio, pieno, picco=228):
@@ -184,11 +196,21 @@ def velatura(size, inizio, pieno, picco=228):
 
 
 # --- composizione ----------------------------------------------------------
-def costruisci(nome, size, header_h, faro_y, s, compatto, riapertura, debug=False):
+def costruisci(nome, size, header_h, faro_y, s, compatto, zoom, picco,
+               riapertura, debug=False):
     W, H = size
     foto = Image.open(SRC).convert("RGB")
     alto = H - header_h
-    taglio = max(0, min(FARO[1] - (faro_y - header_h), foto.height - alto))
+
+    # Il corpo della foto si ingrandisce e si ritaglia attorno al faro: cosi'
+    # la moto riempie il quadro invece di lasciare mezzo cielo vuoto.
+    corpo = foto.crop((0, SRC_HEADER, 1080, foto.height))
+    if zoom != 1.0:
+        corpo = corpo.resize((round(corpo.width * zoom), round(corpo.height * zoom)),
+                             Image.LANCZOS)
+    fx, fy = FARO[0] * zoom, (FARO[1] - SRC_HEADER) * zoom
+    tx = max(0, min(int(round(fx - FARO[0])), corpo.width - W))
+    ty = max(0, min(int(round(fy - (faro_y - header_h))), corpo.height - alto))
 
     # --- si misura il blocco di testo PRIMA di disegnare, cosi' si ancora da
     #     solo alla fascia rossa invece di finire fuori quadro ---
@@ -224,22 +246,28 @@ def costruisci(nome, size, header_h, faro_y, s, compatto, riapertura, debug=Fals
     if (W, header_h) != testata.size:
         testata = testata.resize((W, header_h), Image.LANCZOS)
     tela.paste(testata, (0, 0))
-    tela.paste(foto.crop((0, taglio, 1080, taglio + alto)), (0, header_h))
+    tela.paste(corpo.crop((tx, ty, tx + W, ty + alto)), (0, header_h))
     tela = tela.convert("RGBA")
 
-    faro = (FARO[0], FARO[1] - taglio + header_h)
-    inizio_vel = max(base_y - int(190 * s), header_h + 20)
-    pieno_vel = base_y + int(150 * s)
+    faro = (int(fx - tx), int(fy - ty + header_h))
+    inizio_vel = max(base_y - int(260 * s), header_h + 20)
+    pieno_vel = base_y + int(210 * s)
 
     tela.alpha_composite(raggiera((W, H), faro, header_h, outer=int(1500 * s ** .4)))
-    tela.alpha_composite(velatura((W, H), inizio_vel, pieno_vel))
+    tela.alpha_composite(velatura((W, H), inizio_vel, pieno_vel, picco))
     # l'aureola va DOPO la velatura, altrimenti la velatura la spegne proprio
     # dove serve: il faro sta sul bordo alto della sfumatura
-    tela.alpha_composite(alone((W, H), faro, header_h, raggio=int(480 * s ** .3)))
+    tela.alpha_composite(alone((W, H), faro, header_h, raggio=int(430 * s ** .3)))
 
     lay = Image.new("RGBA", (W, H), (0, 0, 0, 0))
     d = ImageDraw.Draw(lay)
+    masc = Image.new("L", (W, H), 0)          # solo le lettere, per l'alone
+    dm = ImageDraw.Draw(masc)
     cx = W / 2
+
+    def riga(y, testo, fnt, colore, tracking, ombre=None):
+        scrivi(dm, cx, y, testo, fnt, 255, tracking)
+        scrivi(d, cx, y, testo, fnt, colore, tracking, ombre)
 
     # filetto oro sotto il logo, con innesto rosso del marchio
     fil = max(int(7 * s), 3)
@@ -252,7 +280,7 @@ def costruisci(nome, size, header_h, faro_y, s, compatto, riapertura, debug=Fals
     # --- occhiello: ◆——  SABATO 19 SETTEMBRE  ——◆
     tr = 9 * s
     wk, _ = misura(KICKER, f_k, tr)
-    scrivi(d, cx, y, KICKER, f_k, ORO + (255,), tr, ombra)
+    riga(y, KICKER, f_k, ORO + (255,), tr, ombra)
     ym = y + int(30 * s)
     for sgn in (-1, 1):
         x0 = cx + sgn * (wk / 2 + int(26 * s))
@@ -265,7 +293,7 @@ def costruisci(nome, size, header_h, faro_y, s, compatto, riapertura, debug=Fals
     y += int(86 * s)
 
     # --- CHIUSI PER
-    scrivi(d, cx, y, RIGA1, f1, BIANCO + (255,), 6 * s, ombra)
+    riga(y, RIGA1, f1, BIANCO + (255,), 6 * s, ombra)
     y += int(h1 + 22 * s)
 
     # --- SAN GENNARO, in oro
@@ -276,6 +304,7 @@ def costruisci(nome, size, header_h, faro_y, s, compatto, riapertura, debug=Fals
         sh = Image.new("RGBA", blocco.size, col[:3] + (0,))
         sh.putalpha(m.point(lambda v: int(v * col[3] / 255)))
         lay.alpha_composite(sh, (int(dx), int(y + dy)))
+    scrivi(dm, cx, y, RIGA2, f2, 255, 2 * s)
     lay.alpha_composite(blocco, (0, int(y)))
     y += int(h2 + 40 * s)
 
@@ -283,12 +312,12 @@ def costruisci(nome, size, header_h, faro_y, s, compatto, riapertura, debug=Fals
     d.line([(cx - int(210 * s), y), (cx + int(210 * s), y)], fill=ORO + (200,),
            width=max(int(2 * s), 1))
     y += int(34 * s)
-    scrivi(d, cx, y, RIGA3, f3, (255, 255, 255, 235), 7 * s, ombra)
+    riga(y, RIGA3, f3, (255, 255, 255, 235), 7 * s, ombra)
     y += int(78 * s)
 
     # --- augurio (+ riapertura)
     for i, (t, f, col) in enumerate(coda):
-        scrivi(d, cx, y, t, f, col, 2 * s, ombra)
+        riga(y, t, f, col, 2 * s, ombra)
         y += int(62 * s) if i == 0 else 0
 
     # --- fascia rossa di chiusura. Non porta informazioni indispensabili: e'
@@ -300,21 +329,22 @@ def costruisci(nome, size, header_h, faro_y, s, compatto, riapertura, debug=Fals
     scrivi(d, cx, H - fb + (fb - (bf[3] - bf[1])) / 2 - bf[1], FOOTER, f_f,
            (255, 255, 255, 240), 5 * s)
 
+    tela.alpha_composite(alone_testo(masc, max(int(17 * s), 6), 170))
     tela.alpha_composite(lay)
     fuori = os.path.join(OUT, nome)
     tela.convert("RGB").save(fuori, quality=94, subsampling=0)
     if debug:
-        print(f"      testata={header_h} taglio={taglio} faro_y={faro[1]} "
+        print(f"      testata={header_h} zoom={zoom} faro=({faro[0]},{faro[1]}) "
               f"velatura={inizio_vel}..{pieno_vel} testo={base_y}..{base_y + blocco_h}")
     print(f"  {nome}  {W}x{H}  {os.path.getsize(fuori) / 1024:.0f} KB")
     return fuori
 
 
 FORMATI = {
-    # nome        dimensioni   testata faro_y scala compatto   dove si usa
-    "story":  ((1080, 1920), 320, 1047, 1.00, False),   # storie e reel 9:16
-    "feed":   ((1080, 1350), 280,  560, 0.76, False),   # post in bacheca 4:5
-    "quadro": ((1080, 1080), 240,  470, 0.64, True),    # quadrato 1:1
+    # nome        dimensioni  testata faro_y scala compatto zoom  velatura
+    "story":  ((1080, 1920), 320, 880, 1.00, False, 1.24, 178),  # storie/reel 9:16
+    "feed":   ((1080, 1350), 280, 560, 0.76, False, 1.12, 200),  # bacheca 4:5
+    "quadro": ((1080, 1080), 240, 470, 0.64, True,  1.18, 205),  # quadrato 1:1
 }
 
 if __name__ == "__main__":
@@ -327,8 +357,6 @@ if __name__ == "__main__":
             scelti.append(a)
     print("Locandina San Gennaro — On The Road Napoli")
     for nome in (scelti or list(FORMATI)):
-        size, hh, fy, s, comp = FORMATI[nome]
-        costruisci(f"san-gennaro-{nome}.jpg", size, hh, fy, s, comp, riap, debug=True)
+        costruisci(f"san-gennaro-{nome}.jpg", *FORMATI[nome], riap, debug=True)
     if not scelti:
-        size, hh, fy, s, comp = FORMATI["story"]
-        costruisci("san-gennaro-story-senza-riapertura.jpg", size, hh, fy, s, comp, "")
+        costruisci("san-gennaro-story-senza-riapertura.jpg", *FORMATI["story"], "")
