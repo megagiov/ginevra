@@ -26,6 +26,9 @@ SFONDI = {'trasparente': None, 'bianco': (255, 255, 255), 'nero': (0, 0, 0),
 FORMATI = {n: n for n in _FORMATI}
 OMBRE = {'toglila col fondo': 'via', 'tienila morbida': 'morbida',
          'lasciala attaccata': 'tieni'}
+# 'lato massimo' rimpicciolisce e basta (1024x768 con 800 -> 800x600);
+# 'tela esatta' da' proprio quella misura, soggetto centrato — il caso catalogo.
+MISURE = {'lato massimo': False, 'tela esatta': True}
 
 
 def _cartella_scelte():
@@ -118,6 +121,21 @@ class Finestra:
                        activebackground=FONDO, selectcolor=FONDO,
                        command=self.ricorda).pack(side='left', padx=(14, 0))
 
+        mis = tk.Frame(root, bg=FONDO); mis.pack(fill='x', padx=22, pady=(0, 4))
+        tk.Label(mis, text='misura', bg=FONDO, fg=TENUE,
+                 font=('Segoe UI', 9)).pack(side='left', padx=(0, 5))
+        self.misura = tk.StringVar(value=self.scelte.get('misura', ''))
+        campo = tk.Entry(mis, textvariable=self.misura, width=10, relief='flat',
+                         bg='white', fg=INCHIOSTRO, font=('Segoe UI', 10),
+                         highlightthickness=1, highlightbackground=BORDO,
+                         highlightcolor=TENUE)
+        campo.pack(side='left', ipady=3)
+        campo.bind('<FocusOut>', lambda _: self.ricorda())
+        campo.bind('<Return>', lambda _: self.ricorda())
+        self.come = self._menu(mis, '  come', list(MISURE), self.scelte.get('come'))
+        tk.Label(mis, text='vuoto = le lascia come sono; non ingrandisce mai',
+                 bg=FONDO, fg=TENUE, font=('Segoe UI', 9)).pack(side='left')
+
         dove = tk.Frame(root, bg=FONDO); dove.pack(fill='x', padx=22, pady=(0, 4))
         tk.Label(dove, text='le salvo in', bg=FONDO, fg=TENUE,
                  font=('Segoe UI', 9)).pack(side='left', padx=(0, 5))
@@ -192,7 +210,8 @@ class Finestra:
     def ricorda(self):
         scrivi_scelte({'cartella': self.cartella, 'formato': self.formato.get(),
                        'ombra': self.ombra.get(), 'sfondo': self.sfondo.get(),
-                       'ritaglia': bool(self.ritaglia.get())})
+                       'ritaglia': bool(self.ritaglia.get()),
+                       'misura': self.misura.get().strip(), 'come': self.come.get()})
 
     # ------------------------------------------------------------ lavoro
 
@@ -207,6 +226,12 @@ class Finestra:
             self.accoda(list(files), modo)
 
     def accoda(self, files, modo='scontorna'):
+        import converti as C
+        try:
+            misura = C.leggi_misura(self.misura.get())
+        except ValueError as e:
+            messagebox.showerror('Scontorno', str(e))
+            return
         self.modo = modo
         # le scelte si leggono qui, sul thread della finestra: tkinter non e'
         # fatto per essere interrogato da un altro thread e prima o poi si pianta
@@ -214,6 +239,7 @@ class Finestra:
                             ombra=OMBRE[self.ombra.get()],
                             sfondo=SFONDI[self.sfondo.get()],
                             ritaglia=bool(self.ritaglia.get()),
+                            misura=misura, tela=MISURE[self.come.get()],
                             cartella=self.cartella)
         self.coda.extend(files)
         if not self.al_lavoro:
@@ -249,17 +275,20 @@ class Finestra:
                                               sfondo=sfondo,
                                               ritaglia=opz['ritaglia'],
                                               log=lambda *x: None)
+                    out = C.ridimensiona(out, opz['misura'], opz['tela'], sfondo)
                     dest = self._salva(C.prepara(out, formato, sfondo or (255, 255, 255)),
                                        src, formato, '-scontornata')
-                    nota = f'   {strada}, {time.time() - t:.1f}s'
+                    nota = f'   {strada}, {out.width}×{out.height}, {time.time() - t:.1f}s'
                     if formato == 'JPG' and sfondo is None:
                         # il JPG non ha trasparenza: si dice, invece di lasciare
                         # che se ne accorga dopo guardando il file
                         nota += ' — il JPG non tiene la trasparenza, fondo bianco'
                 else:
-                    dest = self._salva(C.prepara(C.apri(src), formato, sfondo or (255, 255, 255)),
+                    img = C.ridimensiona(C.apri(src), opz['misura'], opz['tela'], sfondo)
+                    dest = self._salva(C.prepara(img, formato, sfondo or (255, 255, 255)),
                                        src, formato, '')
-                    nota = f'   {os.path.getsize(dest) // 1024} KB, {time.time() - t:.1f}s'
+                    nota = (f'   {img.width}×{img.height}, '
+                            f'{os.path.getsize(dest) // 1024} KB, {time.time() - t:.1f}s')
                 self.ultima_cartella = os.path.dirname(dest)
                 if self.ripiegato:
                     nota += f' — non ho potuto scrivere nella cartella scelta, l\u2019ho messa in {self.ultima_cartella}'

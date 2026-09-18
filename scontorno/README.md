@@ -43,6 +43,19 @@ vince sul test del colore.
    *Cambia solo formato…* le converte e basta. Il menu **salva in** decide il
    formato in uscita per tutti e due i bottoni.
 
+La riga **misura** rimpicciolisce: scrivi `800` oppure `800x800`, lascia vuoto
+per non toccare niente. Il menu **come** dice cosa vuol dire quella misura:
+
+- **lato massimo** — ci sta dentro mantenendo le proporzioni: una 1024×768 con
+  `800` esce 800×600;
+- **tela esatta** — esce proprio di quella misura, con il soggetto centrato e
+  il resto riempito (trasparente, o il colore scelto in *sfondo*). È il caso
+  del catalogo, dove tutte le foto devono uscire dello stesso formato.
+
+**Non ingrandisce mai**: una foto più piccola della misura chiesta resta com'è
+(in *tela esatta* viene centrata sulla tela). Allargare non aggiunge dettaglio,
+aggiunge peso e sfocatura.
+
 La riga **le salvo in** decide dove finiscono i file: di partenza accanto alle
 originali, con *Cambia…* in una cartella tua (se non esiste la crea). La scelta
 resta anche quando chiudi, insieme a formato, ombra e sfondo. Se quella cartella
@@ -65,7 +78,10 @@ Lo stesso programma converte e basta, senza toccare lo sfondo: il bottone
 ./venv/bin/python converti.py foto.avif --in jpg
 ./venv/bin/python converti.py *.webp --in jpg -o convertite/
 ./venv/bin/python converti.py logo.png --in jpg --sfondo bianco --qualita 90
+./venv/bin/python converti.py *.jpg --in jpg --misura 800x800 --tela   # tutto a 800×800
 ```
+
+`--misura` e `--tela` valgono anche per `scontorno.py`.
 
 **Legge** tutto quello che apre Pillow — JPG, PNG, WEBP, AVIF, TIFF, BMP, GIF,
 ICO — e in più **HEIC/HEIF dell'iPhone** se è installato `pillow-heif`
@@ -123,6 +139,8 @@ Da riga di comando, stessa resa, anche in blocco:
 | `--taglio 0.15` | spinge i mezzi toni dell'alpha a 0/1: bordo più netto, meno alone |
 | `--sfuma 1.5` | ammorbidisce il bordo di N px |
 | `--rientra 1` | erode il bordo di N px: toglie l'ultimo filo di sfondo |
+| `--misura 800x800` | rimpicciolisce dentro quella misura; `800` vale `800x800` |
+| `--tela` | esce esattamente di quella misura, soggetto centrato |
 
 ### Su Windows
 

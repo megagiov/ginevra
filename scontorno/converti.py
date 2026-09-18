@@ -64,6 +64,49 @@ def prepara(img, formato, sfondo=(255, 255, 255)):
     return img
 
 
+def leggi_misura(testo):
+    """'800' -> (800, 800), '1200x900' -> (1200, 900), vuoto -> None."""
+    t = (testo or '').strip().lower().replace('×', 'x').replace(' ', '').replace(',', 'x')
+    if not t:
+        return None
+    larga, _, alta = t.partition('x')
+    alta = alta or larga
+    try:
+        w, h = int(larga), int(alta)
+    except ValueError:
+        raise ValueError(f'misura non valida: "{testo}" — scrivi 800 oppure 800x800')
+    if not (1 <= w <= 20000 and 1 <= h <= 20000):
+        raise ValueError('la misura sta tra 1 e 20000 pixel')
+    return w, h
+
+
+def ridimensiona(img, misura, tela=False, sfondo=None):
+    """Rimpicciolisce dentro `misura`, senza mai stirare le proporzioni.
+
+    `tela=False` da' un'immagine che ci sta dentro (1024x768 con 800 esce
+    800x600). `tela=True` da' esattamente quella misura, con il soggetto
+    centrato e il resto riempito di `sfondo` (trasparente se e' None): e' il
+    caso del catalogo, dove tutte le foto devono uscire dello stesso formato.
+
+    Non ingrandisce mai: allargare una foto piccola non aggiunge dettaglio,
+    aggiunge solo peso e sfocatura.
+    """
+    if not misura:
+        return img
+    W, H = misura
+    scala = min(W / img.width, H / img.height, 1.0)
+    if scala < 1.0:
+        img = img.resize((max(1, round(img.width * scala)), max(1, round(img.height * scala))),
+                         Image.LANCZOS)
+    if not tela or img.size == (W, H):
+        return img
+    fondo = Image.new('RGBA' if sfondo is None else 'RGB', (W, H),
+                      (0, 0, 0, 0) if sfondo is None else tuple(sfondo))
+    angolo = ((W - img.width) // 2, (H - img.height) // 2)
+    fondo.paste(img, angolo, img if img.mode in ('RGBA', 'LA') else None)
+    return fondo
+
+
 def _libero(percorso, sorgente):
     """Non sovrascrive la foto di partenza ne' un file gia' li'."""
     if percorso != sorgente and not os.path.exists(percorso):
@@ -113,13 +156,18 @@ def main(argv=None):
     p.add_argument('--sfondo', type=S._colore, default=(255, 255, 255),
                    help='colore sotto la trasparenza quando si va in JPG')
     p.add_argument('--qualita', type=int, default=92)
+    p.add_argument('--misura', default=None, help='800 oppure 800x800; vuoto lascia com\'e\'')
+    p.add_argument('--tela', action='store_true',
+                   help='misura esatta col soggetto centrato, invece del solo lato massimo')
     a = p.parse_args(argv)
     for src in S._espandi(a.foto):
         if not os.path.isfile(src):
             print(f'non trovo {src}', file=sys.stderr)
             continue
         try:
-            dest = converti(src, a.formato.upper(), a.out, a.sfondo or (255, 255, 255), a.qualita)
+            img = ridimensiona(apri(src), leggi_misura(a.misura), a.tela, a.sfondo)
+            dest = salva(prepara(img, a.formato.upper(), a.sfondo or (255, 255, 255)),
+                         src, a.formato.upper(), a.out, a.qualita)
             print(f'{dest}  ({os.path.getsize(dest)//1024} KB)')
         except Exception as e:
             print(f'{src}: {type(e).__name__}: {e}', file=sys.stderr)

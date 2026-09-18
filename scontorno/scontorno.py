@@ -374,6 +374,9 @@ def main(argv=None):
     p.add_argument('--taglio', type=float, default=0.0, help='0-0.4: spinge i mezzi toni a 0/1')
     p.add_argument('--sfuma', type=float, default=0.0, help='raggio di sfocatura del bordo, px')
     p.add_argument('--rientra', type=float, default=0.0, help='erode il bordo di N px')
+    p.add_argument('--misura', default=None, help='800 oppure 800x800; vuoto lascia com\'e\'')
+    p.add_argument('--tela', action='store_true',
+                   help='misura esatta col soggetto centrato, invece del solo lato massimo')
     p.add_argument('--zitto', action='store_true')
     a = p.parse_args(argv)
     log = (lambda *x: None) if a.zitto else (lambda *x: print(*x, file=sys.stderr))
@@ -398,6 +401,9 @@ def main(argv=None):
         out, strada = scontorna(img, modo=a.modo, modello=a.modello, sfondo=a.sfondo,
                                 ritaglia=a.ritaglia, taglio=a.taglio, sfuma=a.sfuma,
                                 rientra=a.rientra, ombra=a.ombra, log=log)
+        if a.misura:
+            import converti as C
+            out = C.ridimensiona(out, C.leggi_misura(a.misura), a.tela, a.sfondo)
         base = os.path.splitext(os.path.basename(src))[0] + '-scontornata.png'
         dest = os.path.join(a.out, base) if a.out else os.path.join(os.path.dirname(src) or '.', base)
         os.makedirs(os.path.dirname(os.path.abspath(dest)), exist_ok=True)
