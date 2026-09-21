@@ -6,21 +6,37 @@ non c'e' nessun account e nessun server.
 
 ![schermata](docs/schermata.png)
 
+## Come si usa
+
+Il pannello principale e' la lista dei tuoi esercizi, a caratteri grandi, con
+sotto **i carichi dell'ultima volta**. Tocchi quello che stai per fare, si apre
+il pannello di registrazione, premi + o − e registri. Tre tocchi.
+
+- **L'allenamento parte da solo** con la prima serie: nessun pulsante "Inizia"
+  da ricordarsi. Si chiude da solo dopo 15 minuti che non registri niente (il
+  tempo e' regolabile in **Altro**).
+- Se si chiude mentre ti stai ancora allenando — capita, un recupero lungo
+  basta — in cima al pannello compare **Riprendi**, che lo riapre dov'era
+  invece di spezzarlo in due nello storico.
+- Gli esercizi sono ordinati per **ultimo usato**: quelli che fai davvero stanno
+  in cima, gli altri 800 restano dietro a "Cerca".
+- I chip in alto filtrano per gruppo muscolare.
+
 ## Cosa fa
 
-- **Schede + log libero**: crei le tue schede (Push / Pull / Gambe sono gia'
-  pronte) e in palestra riempi solo peso e ripetizioni, oppure aggiungi al volo
-  qualsiasi esercizio.
+- **Pulsanti + e − grandi** per peso e ripetizioni, a passi di 2,5 kg
+  (regolabili). Se tocchi il numero si apre la tastiera per il valore esatto.
+- **Schede** (Push / Pull / Gambe gia' pronte): quando ne apri una, i suoi
+  esercizi vanno in cima al pannello sotto "Ancora da fare".
 - **876 esercizi con foto**, ricercabili in italiano ("panca", "stacco",
   "trazioni"), con le istruzioni di esecuzione.
-- **Timer di recupero** che parte da solo quando salvi una serie, con suono e
-  vibrazione a fine pausa.
-- **Suggerimento carico**: sopra ogni esercizio vedi cosa avevi fatto l'ultima
-  volta, e la serie che batte il tuo record si marca da sola.
-- **Progressi**: grafici di peso massimo, massimale stimato (Epley) e volume,
-  piu' i record personali per esercizio.
-- **Riscaldamento, RPE e note** per ogni serie: le serie di riscaldamento non
-  sporcano i totali.
+- **Timer di recupero** che parte da solo quando registri una serie, con suono e
+  vibrazione. Il conto alla rovescia si vede anche dentro il pannello.
+- **Suggerimento carico e record**: sotto ogni esercizio l'ultima volta, e la
+  serie che batte il tuo massimale stimato si marca da sola.
+- **Progressi**: grafici di peso massimo, massimale stimato (Epley) e volume.
+- **Riscaldamento, RPE e note** per ogni serie: il riscaldamento non sporca i
+  totali.
 - **Battito cardiaco** da Apple Watch (via Salute), da fascia Bluetooth in
   diretta, o scritto a mano.
 - **Backup** in un file JSON che esporti e reimporti quando vuoi.
@@ -165,7 +181,7 @@ Niente framework, niente build, niente `node_modules`: si apre e va.
 | `index.html` | Guscio: barre, icone SVG, contenitore della vista |
 | `app.css` | Tema scuro con token semantici, target di tocco da 44px, safe area |
 | `js/db.js` | IndexedDB: esercizi, schede, sessioni, serie, impostazioni |
-| `js/app.js` | Viste e interazioni (delega degli eventi su `data-act`) |
+| `js/app.js` | Pannello a lista, registrazione, viste, eventi su `data-act` |
 | `js/catalog.js` | Ricerca nel catalogo, caricato solo quando serve |
 | `js/hr.js` | Battito: Bluetooth, import da Salute, statistiche e zone |
 | `js/chart.js` | Grafici a linea in SVG, scritti a mano |
