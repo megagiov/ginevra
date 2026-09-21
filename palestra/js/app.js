@@ -13,6 +13,10 @@ const App = (function () {
     sets: [],
     lastPerf: {},
     bestPrior: {},
+    lastUsed: {},          // exerciseId -> quando l'hai toccato l'ultima volta
+    muscleFilter: '',
+    logExId: null,         // esercizio aperto nel pannello di registrazione
+    resumable: null,       // sessione chiusa da poco che si puo' riprendere
     progressEx: null,
     lastTrainedEx: null,
     progressMetric: 'top',
@@ -33,9 +37,11 @@ const App = (function () {
     return '<svg class="ico' + (cls ? ' ' + cls : '') + '" aria-hidden="true"><use href="#i-' + name + '"/></svg>';
   }
 
+  // Solo per mostrare: in italiano i decimali vanno con la virgola.
+  // Non usarla mai per riempire un campo numerico, che vuole il punto.
   function num(n) {
     const v = Number(n) || 0;
-    return Math.abs(v % 1) > 0.001 ? v.toFixed(1) : String(Math.round(v));
+    return Math.abs(v % 1) > 0.001 ? v.toFixed(1).replace('.', ',') : String(Math.round(v));
   }
 
   const fmtDate = (ts) => new Date(ts).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric' });
@@ -133,6 +139,13 @@ const App = (function () {
       const left = (endAt - Date.now()) / 1000;
       $('#rest-time').textContent = mmss(left);
       $('#rest-fill').style.width = (total > 0 ? Math.max(0, Math.min(1, left / total)) * 100 : 0).toFixed(1) + '%';
+      // La barra fissa finisce sotto al pannello: qui il conto alla rovescia
+      // si vede anche mentre registri la serie dopo.
+      const sheet = $('#sheet-rest');
+      if (sheet) {
+        sheet.hidden = false;
+        sheet.textContent = 'Recupero ' + mmss(left);
+      }
       if (left <= 0) finish();
     }
 
@@ -158,6 +171,8 @@ const App = (function () {
 
     function stop() {
       clearInterval(iv); iv = null;
+      const sheet = $('#sheet-rest');
+      if (sheet) sheet.hidden = true;
       $('#rest-bar').hidden = true;
       $('#rest-bar').classList.remove('done');
       document.body.classList.remove('rest-on');
@@ -217,15 +232,47 @@ const App = (function () {
       });
   }
 
+  // L'ultimo momento in cui l'allenamento ha dato segni di vita: l'ultima
+  // serie, l'avvio, oppure il momento in cui l'hai ripreso a mano.
+  function lastActivity(session, sets) {
+    let t = session.startedAt;
+    if (sets && sets.length) t = Math.max(t, sets[sets.length - 1].ts);
+    if (session.resumedAt) t = Math.max(t, session.resumedAt);
+    return t;
+  }
+
   function loadSession() {
     return DB.activeSession().then((s) => {
-      state.session = s;
-      keepAwake(!!s);
-      if (!s) { state.sets = []; state.lastPerf = {}; state.bestPrior = {}; return null; }
+      if (!s) return finishLoad(null, []);
       return DB.setsOfSession(s.id).then((sets) => {
-        state.sets = sets;
-        return loadHistoryFor(sessionExerciseIds(), s.id);
+        const limit = (state.settings.autoCloseMinutes || 15) * 60000;
+        const idle = Date.now() - lastActivity(s, sets);
+        if (idle > limit) {
+          // La chiudo all'ora dell'ultima serie, non adesso: cosi' la durata
+          // nello storico resta quella vera.
+          s.endedAt = lastActivity(s, sets);
+          s.autoClosed = true;
+          return DB.put('sessions', s).then(() => finishLoad(null, []));
+        }
+        return finishLoad(s, sets);
       });
+    });
+  }
+
+  function finishLoad(session, sets) {
+    state.session = session;
+    state.sets = sets;
+    keepAwake(!!session);
+    return loadHistory().then(() => (session ? null : loadResumable()));
+  }
+
+  // Un allenamento chiuso da meno di due ore si puo' riprendere con un tocco:
+  // serve quando la chiusura automatica scatta durante un recupero lungo.
+  function loadResumable() {
+    state.resumable = null;
+    return DB.listSessions().then((rows) => {
+      const last = rows.filter((r) => r.endedAt)[0];
+      if (last && Date.now() - last.endedAt < 2 * 3600000) state.resumable = last;
     });
   }
 
@@ -238,174 +285,185 @@ const App = (function () {
     return ids;
   }
 
-  // Ultima volta + record precedente, per esercizio.
-  function loadHistoryFor(ids, excludeSessionId) {
-    state.lastPerf = {};
-    state.bestPrior = {};
-    return Promise.all(ids.map((id) => DB.setsOfExercise(id).then((rows) => {
-      const past = rows.filter((r) => r.sessionId !== excludeSessionId && !r.warmup);
-      if (!past.length) return;
-      const lastSessionId = past[past.length - 1].sessionId;
-      const lastSets = past.filter((r) => r.sessionId === lastSessionId);
-      state.lastPerf[id] = { ts: lastSets[lastSets.length - 1].ts, sets: lastSets };
-      state.bestPrior[id] = past.reduce((b, s) => Math.max(b, e1rm(s.weight, s.reps)), 0);
-    })));
+  // Ultima volta, record precedente e ultimo utilizzo, per ogni esercizio.
+  // Una sola lettura di tutte le serie: in locale e' piu' veloce di una query
+  // per esercizio, e serve comunque l'elenco completo per ordinare la lista.
+  function loadHistory() {
+    return DB.getAll('sets').then((all) => {
+      all.sort((a, b) => a.ts - b.ts);
+      const byEx = {};
+      all.forEach((x) => { (byEx[x.exerciseId] = byEx[x.exerciseId] || []).push(x); });
+
+      state.lastPerf = {};
+      state.bestPrior = {};
+      state.lastUsed = {};
+      const curId = state.session ? state.session.id : null;
+
+      Object.keys(byEx).forEach((exId) => {
+        const rows = byEx[exId];
+        state.lastUsed[exId] = rows[rows.length - 1].ts;
+        const past = rows.filter((r) => r.sessionId !== curId && !r.warmup);
+        if (!past.length) return;
+        const lastSid = past[past.length - 1].sessionId;
+        const lastSets = past.filter((r) => r.sessionId === lastSid);
+        state.lastPerf[exId] = { ts: lastSets[lastSets.length - 1].ts, sets: lastSets };
+        state.bestPrior[exId] = past.reduce((b, x) => Math.max(b, e1rm(x.weight, x.reps)), 0);
+      });
+    });
   }
 
-  /* ================= vista: Oggi ================= */
+  /* ================= vista: Oggi (pannello principale) ================= */
 
   function viewOggi() {
-    if (!state.session) return viewOggiIdle();
+    let h = '';
+    if (state.session) h += sessionBar();
+    else if (state.resumable) h += resumeBar();
+    else h += '<p class="lead">Tocca l\u2019esercizio che stai per fare. L\u2019allenamento parte da solo.</p>';
 
+    h += muscleChips();
+
+    const groups = buildGroups();
+    const totale = groups.reduce((t, g) => t + g.items.length, 0);
+    if (!totale) {
+      h += '<p class="empty">Nessun esercizio con questo filtro.</p>';
+    } else {
+      groups.forEach((g) => {
+        if (!g.items.length) return;
+        h += '<h2 class="group-title">' + esc(g.title) +
+          ' <span class="group-count">' + g.items.length + '</span></h2>';
+        h += '<ul class="ex-list">' + g.items.map((ex) => exRow(ex, g.kind)).join('') + '</ul>';
+      });
+    }
+
+    h += '<button class="btn wide big-search" data-act="pick-exercise" type="button">' +
+      icon('search') + ' Cerca un altro esercizio</button>';
+    return h;
+  }
+
+  function sessionBar() {
     const s = state.session;
-    const ids = sessionExerciseIds();
-    const planMap = {};
-    (s.plan || []).forEach((p) => { planMap[p.exerciseId] = p; });
+    return '<section class="session-bar"><div class="sb-main" data-act="session-details" role="button" tabindex="0">' +
+      '<b>' + esc(s.name) + '</b>' +
+      '<span class="muted small" id="session-stats">' + sessionStatsLine() + '</span></div>' +
+      hrChip() +
+      '<button class="btn danger" data-act="end-session" type="button">Termina</button></section>';
+  }
 
-    let html = '<section class="card session-head"><div class="row between">' +
-      '<div><h2>' + esc(s.name) + '</h2><p class="muted" id="session-stats">' + sessionStatsLine() + '</p></div>' +
-      '<button class="btn danger" data-act="end-session" type="button">Termina</button></div></section>';
-
-    html += hrCard();
-
-    if (!ids.length) html += '<p class="empty">Allenamento vuoto: aggiungi il primo esercizio.</p>';
-
-    ids.forEach((id) => {
-      const ex = state.exMap[id];
-      if (ex) html += exerciseCard(ex, state.sets.filter((x) => x.exerciseId === id), planMap[id]);
-    });
-
-    html += '<button class="btn wide" data-act="pick-exercise" type="button">' + icon('plus') + ' Aggiungi esercizio</button>';
-    html += '<details class="card"><summary>Nota della sessione</summary>' +
-      '<textarea id="session-note" rows="3" placeholder="Come e andata, cosa cambiare la prossima volta">' +
-      esc(s.note || '') + '</textarea>' +
-      '<button class="btn" data-act="save-session-note" type="button">Salva nota</button></details>';
-    return html;
+  function resumeBar() {
+    const r = state.resumable;
+    const quando = fmtTime(r.endedAt);
+    return '<section class="session-bar resume"><div class="sb-main">' +
+      '<b>Allenamento chiuso alle ' + quando + '</b>' +
+      '<span class="muted small">' + (r.autoClosed ? 'chiuso da solo per inattivit\u00e0' : 'chiuso da te') +
+      ' · lo riprendi da dove eri</span></div>' +
+      '<button class="btn primary" data-act="resume-session" data-id="' + r.id + '" type="button">Riprendi</button>' +
+      '</section>';
   }
 
   function sessionStatsLine() {
     const s = state.session;
     if (!s) return '';
-    return 'Dalle ' + fmtTime(s.startedAt) + ' · ' + fmtDur(Date.now() - s.startedAt) +
-      ' · ' + state.sets.filter((x) => !x.warmup).length + ' serie · ' + num(volume(state.sets)) + ' kg';
+    return fmtDur(Date.now() - s.startedAt) + ' · ' +
+      state.sets.filter((x) => !x.warmup).length + ' serie · ' + num(volume(state.sets)) + ' kg';
   }
 
-  function viewOggiIdle() {
-    let html = '<section class="card"><h2>Nessun allenamento in corso</h2>' +
-      '<p class="muted">Parti da una scheda oppure registra al volo quello che fai.</p>';
-    if (state.routines.length) {
-      html += '<div class="stack">';
-      state.routines.forEach((r) => {
-        html += '<button class="btn primary wide" data-act="start-routine" data-id="' + r.id + '" type="button">' +
-          esc(r.name) + ' <span class="muted-inline">· ' + (r.items || []).length + ' esercizi</span></button>';
-      });
-      html += '</div>';
+  function hrChip() {
+    if (HR.connected()) {
+      return '<button class="hr-chip live" data-act="hr-options" type="button" id="hr-live">' +
+        '<span class="beating">' + icon('heart', 'sm') + '</span><b class="bpm">' + (HR.bpm() || '--') + '</b></button>';
     }
-    html += '<button class="btn wide" data-act="start-free" type="button">Allenamento libero</button></section>';
-    html += '<div id="idle-recent"></div>';
-    return html;
-  }
-
-  function hrCard() {
     const s = state.session;
-    const connected = HR.connected();
-    const saved = s && s.hr;
-    let h = '<section class="card hr-card"><div class="row between"><h3>' + icon('pulse') + ' Battito cardiaco</h3>' +
-      '<button class="icon-btn" data-act="hr-help" type="button" aria-label="Come funziona">' + icon('info') + '</button></div>';
-
-    if (connected) {
-      const bpm = HR.bpm();
-      const z = HR.zone(bpm, state.settings.age);
-      h += '<div class="hr-now" id="hr-live"><span class="beating">' + icon('heart') + '</span>' +
-        '<span class="bpm">' + (bpm || '--') + '</span><span class="unit">bpm' +
-        (z ? '<br><span class="zone-badge">Z' + z.n + ' ' + z.label + '</span>' : '') + '</span></div>';
-      h += '<button class="btn wide" data-act="hr-disconnect" type="button">Scollega sensore</button>';
-    } else if (saved) {
-      h += '<div class="stats"><div><b>' + saved.avg + '</b><span>media</span></div>' +
-        '<div><b>' + saved.max + '</b><span>massimo</span></div>' +
-        '<div><b>' + (saved.min || '—') + '</b><span>minimo</span></div></div>';
-      h += '<button class="btn wide" data-act="hr-manual" type="button">Correggi a mano</button>';
-    } else {
-      h += '<p class="muted">Apple Watch: registra l allenamento su Salute e importalo dopo (Altro → Battito). ' +
-        'Fascia cardio Bluetooth: puoi vederlo qui in diretta.</p>';
-      h += '<div class="row gap wrap">';
-      if (HR.supported()) {
-        h += '<button class="btn" data-act="hr-connect" type="button">' + icon('bluetooth', 'sm') + ' Collega sensore</button>';
-      }
-      h += '<button class="btn" data-act="hr-manual" type="button">Inserisci a mano</button></div>';
+    if (s && s.hr) {
+      return '<button class="hr-chip" data-act="hr-options" type="button">' +
+        icon('heart', 'sm') + '<b>' + s.hr.avg + '</b></button>';
     }
-    return h + '</section>';
+    return '<button class="hr-chip empty" data-act="hr-options" type="button" aria-label="Battito cardiaco">' +
+      icon('heart', 'sm') + '</button>';
   }
 
-  function exerciseCard(ex, done, plan) {
-    const u = unitLabels(ex);
-    const last = state.lastPerf[ex.id];
-    const best = state.bestPrior[ex.id] || 0;
-    const prev = done.length ? done[done.length - 1] : (last && last.sets.length ? last.sets[last.sets.length - 1] : null);
-    const thumb = thumbFor(ex);
-
-    let h = '<section class="card ex-card" data-ex="' + ex.id + '"><div class="ex-head">';
-    if (thumb) {
-      h += '<img class="ex-thumb" src="' + esc(thumb) + '" alt="" loading="lazy" decoding="async" ' +
-        'data-act="ex-detail" data-id="' + ex.id + '">';
-    }
-    h += '<div style="flex:1;min-width:0"><h3>' + esc(ex.name) + '</h3><p class="muted small">' +
-      esc([ex.muscle, ex.equipment].filter(Boolean).join(' · ')) +
-      (plan && plan.sets ? ' · obiettivo ' + esc(plan.sets) + '×' + esc(plan.reps) : '') + '</p></div>';
-    h += '<button class="icon-btn" data-act="remove-ex" data-id="' + ex.id + '" aria-label="Togli esercizio" type="button">' +
-      icon('close') + '</button></div>';
-
-    h += last
-      ? '<p class="hint">Ultima volta (' + fmtDateShort(last.ts) + '): ' + esc(describeSets(last.sets)) + '</p>'
-      : '<p class="hint">Prima volta che lo registri.</p>';
-
-    if (done.length) {
-      h += '<ol class="sets">';
-      let n = 0;
-      done.forEach((d) => {
-        if (!d.warmup) n++;
-        const isPr = !d.warmup && best > 0 && e1rm(d.weight, d.reps) > best;
-        h += '<li data-act="edit-set" data-id="' + d.id + '" class="' + (d.warmup ? 'warm' : '') + '">' +
-          '<span class="n">' + (d.warmup ? 'r' : n) + '</span>' +
-          '<span class="load"><b>' + num(d.weight) + '</b> ' + u.w + ' × <b>' + d.reps + '</b> ' + u.repWord + '</span>' +
-          (isPr ? '<span class="tag pr">record</span>' : '') +
-          (d.rpe ? '<span class="tag">RPE ' + num(d.rpe) + '</span>' : '') +
-          (d.note ? '<span class="tag" title="' + esc(d.note) + '">nota</span>' : '') +
-          '</li>';
-      });
-      h += '</ol><p class="muted small">' + done.filter((d) => !d.warmup).length + ' serie di lavoro · ' +
-        num(volume(done)) + ' kg di volume</p>';
-    }
-
-    h += '<form class="set-form" data-act="add-set" data-ex="' + ex.id + '">' +
-      '<label>' + u.w + '<input name="weight" type="number" inputmode="decimal" step="0.5" min="0" value="' +
-        (prev ? num(prev.weight) : '') + '"></label>' +
-      '<label>' + u.r + '<input name="reps" type="number" inputmode="numeric" step="1" min="0" value="' +
-        (prev ? prev.reps : '') + '"></label>' +
-      '<label>RPE<input name="rpe" type="number" inputmode="decimal" step="0.5" min="5" max="10" placeholder="—"></label>' +
-      '<button class="btn primary" type="submit">Salva serie</button>' +
-      '<label class="chk"><input type="checkbox" name="warmup"> riscaldamento</label>' +
-      '<input class="note-input" name="note" type="text" placeholder="nota (opzionale)" maxlength="140">' +
-      '</form></section>';
-    return h;
-  }
-
-  function renderRecentInto() {
-    const box = $('#idle-recent');
-    if (!box) return;
-    DB.listSessions().then((rows) => {
-      const done = rows.filter((r) => r.endedAt).slice(0, 3);
-      if (!done.length) { box.innerHTML = ''; return; }
-      Promise.all(done.map((s) => DB.setsOfSession(s.id).then((sets) => ({ s, sets })))).then((items) => {
-        let h = '<section class="card"><h3>Ultimi allenamenti</h3><ul class="list">';
-        items.forEach(({ s, sets }) => {
-          h += '<li><div><b>' + esc(s.name) + '</b><div class="muted small">' + fmtDate(s.startedAt) + '</div></div>' +
-            '<div class="muted small">' + sets.filter((x) => !x.warmup).length + ' serie · ' + num(volume(sets)) +
-            ' kg · ' + fmtDur(s.endedAt - s.startedAt) + (s.hr ? ' · ' + s.hr.avg + ' bpm' : '') + '</div></li>';
-        });
-        box.innerHTML = h + '</ul></section>';
-      });
+  // Chip per gruppo muscolare: solo quelli in cui hai davvero degli esercizi.
+  function muscleChips() {
+    const counts = {};
+    state.exercises.forEach((e) => { counts[e.muscle] = (counts[e.muscle] || 0) + 1; });
+    const keys = Object.keys(counts).sort((a, b) => a.localeCompare(b, 'it'));
+    if (keys.length < 2) return '';
+    let h = '<div class="chips">';
+    h += '<button class="chip' + (state.muscleFilter ? '' : ' on') + '" data-act="filter-muscle" data-muscle="" type="button">Tutti</button>';
+    keys.forEach((k) => {
+      h += '<button class="chip' + (state.muscleFilter === k ? ' on' : '') +
+        '" data-act="filter-muscle" data-muscle="' + esc(k) + '" type="button">' + esc(k) + '</button>';
     });
+    return h + '</div>';
+  }
+
+  // Tre gruppi: quelli di oggi, quelli della scheda aperta, il resto per ultimo uso.
+  function buildGroups() {
+    const f = state.muscleFilter;
+    const pass = (ex) => !f || ex.muscle === f;
+
+    const oggiIds = [];
+    state.sets.forEach((x) => { if (oggiIds.indexOf(x.exerciseId) === -1) oggiIds.push(x.exerciseId); });
+
+    const planIds = [];
+    if (state.session && state.session.plan) {
+      state.session.plan.forEach((pl) => {
+        if (oggiIds.indexOf(pl.exerciseId) === -1 && planIds.indexOf(pl.exerciseId) === -1) planIds.push(pl.exerciseId);
+      });
+    }
+
+    const usati = state.exercises
+      .filter((e) => oggiIds.indexOf(e.id) === -1 && planIds.indexOf(e.id) === -1 && state.lastUsed[e.id])
+      .sort((a, b) => state.lastUsed[b.id] - state.lastUsed[a.id]);
+
+    const mai = state.exercises
+      .filter((e) => oggiIds.indexOf(e.id) === -1 && planIds.indexOf(e.id) === -1 && !state.lastUsed[e.id])
+      .sort((a, b) => a.name.localeCompare(b.name, 'it'));
+
+    const byId = (id) => state.exMap[id];
+    return [
+      { kind: 'oggi', title: 'Fatti oggi', items: oggiIds.map(byId).filter((e) => e && pass(e)) },
+      {
+        kind: 'plan',
+        title: state.session && state.session.routineId ? 'Ancora da fare' : 'In programma',
+        items: planIds.map(byId).filter((e) => e && pass(e))
+      },
+      { kind: 'recenti', title: 'Usati di recente', items: usati.filter(pass) },
+      {
+        kind: 'mai',
+        title: Object.keys(state.lastUsed).length ? 'Mai usati' : 'I tuoi esercizi',
+        items: mai.filter(pass)
+      }
+    ];
+  }
+
+  function exRow(ex, kind) {
+    const thumb = thumbFor(ex);
+    const last = state.lastPerf[ex.id];
+    const oggi = state.sets.filter((x) => x.exerciseId === ex.id);
+    const best = state.bestPrior[ex.id] || 0;
+
+    let riga;
+    if (kind === 'oggi' && oggi.length) riga = describeSets(oggi);
+    else if (last) riga = describeSets(last.sets);
+    else riga = 'mai registrato';
+
+    let meta = '';
+    if (kind === 'oggi' && oggi.length) meta = 'adesso';
+    else if (last) meta = fmtDateShort(last.ts);
+    if (best > 0) meta += (meta ? ' · ' : '') + 'record ' + num(best) + ' kg';
+
+    return '<li class="ex-row" data-act="open-log" data-id="' + ex.id + '">' +
+      (thumb
+        ? '<img class="ex-thumb" src="' + esc(thumb) + '" alt="" loading="lazy" decoding="async">'
+        : '<span class="ex-thumb ph">' + icon('dumbbell') + '</span>') +
+      '<span class="ex-row-main">' +
+        '<span class="ex-name">' + esc(ex.name) + '</span>' +
+        '<span class="ex-last">' + esc(riga) + '</span>' +
+        (meta ? '<span class="ex-meta">' + esc(meta) + '</span>' : '') +
+      '</span>' +
+      (oggi.length ? '<span class="ex-badge">' + oggi.filter((x) => !x.warmup).length + '</span>' : '') +
+      '<span class="ex-go">' + icon('go') + '</span>' +
+      '</li>';
   }
 
   /* ================= vista: Schede ================= */
@@ -576,6 +634,19 @@ const App = (function () {
       '<label class="chk big"><input type="checkbox" data-act="set-sound"' + (s.sound ? ' checked' : '') + '> Suono a fine recupero</label>' +
       '<label class="chk big"><input type="checkbox" data-act="set-vibrate"' + (s.vibrate ? ' checked' : '') + '> Vibrazione a fine recupero</label></section>';
 
+    h += '<section class="card"><h3>' + icon('dumbbell') + ' Registrazione</h3>' +
+      '<label class="field">Di quanto salgono i pulsanti + e \u2212' +
+      '<select data-act="set-step">' +
+      [1, 1.25, 2.5, 5].map((v) => '<option value="' + v + '"' + (Number(s.weightStep) === v ? ' selected' : '') +
+        '>' + num(v) + ' kg</option>').join('') + '</select></label>' +
+      '<label class="field">Chiudi l\u2019allenamento dopo tanti minuti senza registrare niente' +
+      '<select data-act="set-autoclose">' +
+      [15, 30, 60, 120, 240].map((v) => '<option value="' + v + '"' + (Number(s.autoCloseMinutes) === v ? ' selected' : '') +
+        '>' + v + ' minuti' + (v === 15 ? ' (corto: un recupero lungo pu\u00f2 bastare a chiuderlo)' : '') + '</option>').join('') +
+      '</select></label>' +
+      '<p class="muted small">Se si chiude mentre ti stai ancora allenando, il tasto Riprendi in cima al pannello lo riapre dov\u2019era.</p>' +
+      '</section>';
+
     h += '<section class="card"><h3>' + icon('pulse') + ' Battito cardiaco</h3>' +
       '<p class="muted">Importa qui il file che genera il Comando rapido di iPhone: i battiti si agganciano da soli agli allenamenti giusti confrontando gli orari.</p>' +
       '<label class="field">La tua eta (serve per le zone)<input type="number" min="12" max="99" value="' +
@@ -585,7 +656,7 @@ const App = (function () {
       '<input type="file" id="hr-file" accept=".json,.csv,.txt,application/json,text/csv,text/plain" hidden></section>';
 
     h += '<section class="card"><h3>' + icon('download') + ' Backup</h3>' +
-      '<p class="muted">I dati stanno solo su questo telefono. Esporta ogni tanto: quel file e la tua unica copia.</p>' +
+      '<p class="muted">I dati stanno solo su questo telefono. Esporta ogni tanto: quel file \u00e8 la tua unica copia.</p>' +
       '<div class="row gap wrap"><button class="btn primary" data-act="export" type="button">Esporta backup</button>' +
       '<button class="btn" data-act="import" type="button">Importa backup</button></div>' +
       '<input type="file" id="import-file" accept="application/json,.json" hidden></section>';
@@ -617,7 +688,7 @@ const App = (function () {
     $('#view-title').textContent = TITLES[state.view] || '';
     $$('#tabbar button').forEach((b) => b.classList.toggle('active', b.dataset.view === state.view));
     const view = $('#view');
-    if (state.view === 'oggi') { view.innerHTML = viewOggi(); if (!state.session) renderRecentInto(); }
+    if (state.view === 'oggi') view.innerHTML = viewOggi();
     else if (state.view === 'schede') view.innerHTML = viewSchede();
     else if (state.view === 'storico') { view.innerHTML = viewStorico(); renderStoricoInto(); }
     else if (state.view === 'progressi') { view.innerHTML = viewProgressi(); renderProgressInto(); }
@@ -637,7 +708,208 @@ const App = (function () {
   }
 
   const refresh = () => loadCore().then(loadSession).then(loadLastTrained).then(render);
+
+  // Apre una sessione al volo quando registri la prima serie senza averne una.
+  function ensureSession() {
+    if (state.session) return Promise.resolve(state.session);
+    return DB.startSession({ name: 'Allenamento' }).then((s) => {
+      state.session = s;
+      state.sets = [];
+      keepAwake(true);
+      return s;
+    });
+  }
   const go = (view) => { state.view = view; render(); };
+
+  /* ================= pannello di registrazione ================= */
+
+  function stepFor(ex, field) {
+    if (field === 'reps') return (ex && ex.unit === 'time') ? 5 : 1;
+    if (ex && ex.unit === 'bw') return 1;
+    return Number(state.settings.weightStep) || 2.5;
+  }
+
+  function openLog(exerciseId) {
+    const ex = state.exMap[exerciseId];
+    if (!ex) return;
+    state.logExId = exerciseId;
+    const today = state.sets.filter((x) => x.exerciseId === exerciseId);
+    const last = state.lastPerf[exerciseId];
+    const prev = today.length
+      ? today[today.length - 1]
+      : (last && last.sets.length ? last.sets[last.sets.length - 1] : null);
+    state.logDraft = {
+      weight: prev ? prev.weight : 0,
+      reps: prev ? prev.reps : (ex.unit === 'time' ? 30 : 8),
+      rpe: null,
+      warmup: false
+    };
+    openModal(ex.name, logBody());
+  }
+
+  function renderLog() {
+    const box = $('#modal-body');
+    if (box && state.logExId) box.innerHTML = logBody();
+  }
+
+  function logBody() {
+    const ex = state.exMap[state.logExId];
+    const u = unitLabels(ex);
+    const d = state.logDraft;
+    const last = state.lastPerf[ex.id];
+    const today = state.sets.filter((x) => x.exerciseId === ex.id);
+    const best = state.bestPrior[ex.id] || 0;
+
+    let h = '<div id="sheet-rest" hidden></div>';
+
+    h += '<p class="log-last">' + (last
+      ? 'Ultima volta (' + fmtDateShort(last.ts) + '): <b>' + esc(describeSets(last.sets)) + '</b>'
+      : 'Prima volta che lo registri.') +
+      (best > 0 ? '<br>Record: <b>' + num(best) + ' kg</b> di massimale stimato' : '') + '</p>';
+
+    h += stepper('weight', u.w.toUpperCase(), d.weight, ex);
+    h += stepper('reps', u.r.toUpperCase(), d.reps, ex);
+
+    h += '<div class="rpe-row"><span class="stepper-label">SFORZO (RPE)</span><div class="chips">' +
+      ['', '6', '7', '8', '9', '10'].map((v) =>
+        '<button class="chip' + ((d.rpe == null ? '' : String(d.rpe)) === v ? ' on' : '') +
+        '" data-act="set-rpe" data-v="' + v + '" type="button">' + (v === '' ? 'niente' : v) + '</button>'
+      ).join('') + '</div></div>';
+
+    h += '<label class="chk big"><input type="checkbox" data-act="log-warmup"' + (d.warmup ? ' checked' : '') +
+      '> Serie di riscaldamento</label>';
+
+    h += '<button class="btn primary huge" data-act="log-save" type="button">' +
+      (d.warmup ? 'Registra riscaldamento' : 'Registra serie') + '</button>';
+
+    if (today.length) {
+      h += '<h3 class="log-h3">Oggi</h3><ol class="sets">';
+      let n = 0;
+      today.forEach((x) => {
+        if (!x.warmup) n++;
+        const isPr = !x.warmup && best > 0 && e1rm(x.weight, x.reps) > best;
+        h += '<li data-act="edit-set" data-id="' + x.id + '" class="' + (x.warmup ? 'warm' : '') + '">' +
+          '<span class="n">' + (x.warmup ? 'r' : n) + '</span>' +
+          '<span class="load"><b>' + num(x.weight) + '</b> ' + u.w + ' × <b>' + x.reps + '</b> ' + u.repWord + '</span>' +
+          (isPr ? '<span class="tag pr">record</span>' : '') +
+          (x.rpe ? '<span class="tag">RPE ' + num(x.rpe) + '</span>' : '') + '</li>';
+      });
+      h += '</ol><p class="muted small">' + today.filter((x) => !x.warmup).length + ' serie di lavoro · ' +
+        num(volume(today)) + ' kg di volume</p>';
+    }
+
+    h += '<button class="btn wide" data-act="close-log" type="button">Fatto</button>';
+    return h;
+  }
+
+  function stepper(field, label, value, ex) {
+    const step = stepFor(ex, field);
+    const unita = field === 'reps'
+      ? (ex.unit === 'time' ? 'sec' : 'reps')
+      : (ex.unit === 'bw' ? 'kg' : 'kg');
+    return '<div class="stepper-block"><span class="stepper-label">' + esc(label) + '</span>' +
+      '<div class="stepper">' +
+      '<button class="step-btn" data-act="step" data-f="' + field + '" data-d="-1" type="button" aria-label="Meno ' + step + '">−</button>' +
+      '<div class="step-val" data-act="edit-num" data-f="' + field + '" role="button" tabindex="0">' +
+        '<span class="num" id="val-' + field + '">' + num(value) + '</span>' +
+        '<span class="su">' + unita + '</span>' +
+        '<input class="num-input" id="in-' + field + '" type="number" inputmode="decimal" step="' + step + '" min="0" hidden>' +
+      '</div>' +
+      '<button class="step-btn" data-act="step" data-f="' + field + '" data-d="1" type="button" aria-label="Piu ' + step + '">+</button>' +
+      '</div></div>';
+  }
+
+  function stepValue(field, dir) {
+    const ex = state.exMap[state.logExId];
+    const step = stepFor(ex, field);
+    const d = state.logDraft;
+    d[field] = Math.max(0, Math.round((Number(d[field]) + dir * step) * 100) / 100);
+    const el = $('#val-' + field);
+    if (el) el.textContent = num(d[field]);
+    if (state.settings.vibrate && navigator.vibrate) navigator.vibrate(12);
+  }
+
+  // Tocchi il numero e scrivi il valore esatto con la tastiera.
+  function editNum(field) {
+    const input = $('#in-' + field);
+    if (!input) return;
+    const box = input.parentElement;
+    input.value = state.logDraft[field];
+    input.hidden = false;
+    box.classList.add('editing');
+    input.focus();
+    input.select();
+    const commit = () => {
+      const v = parseFloat(String(input.value).replace(',', '.'));
+      if (!isNaN(v) && v >= 0) state.logDraft[field] = v;
+      input.hidden = true;
+      box.classList.remove('editing');
+      const el = $('#val-' + field);
+      if (el) el.textContent = num(state.logDraft[field]);
+    };
+    input.addEventListener('blur', commit, { once: true });
+    input.addEventListener('keydown', (ev) => { if (ev.key === 'Enter') { ev.preventDefault(); input.blur(); } });
+  }
+
+  function saveLogSet() {
+    const d = state.logDraft;
+    const exId = state.logExId;
+    if (!d || !exId) return;
+    if (!d.reps || d.reps <= 0) { toast('Metti almeno le ripetizioni', true); return; }
+    ensureSession()
+      .then(() => DB.addSet({
+        sessionId: state.session.id,
+        exerciseId: exId,
+        weight: d.weight,
+        reps: d.reps,
+        rpe: d.rpe,
+        warmup: d.warmup,
+        note: ''
+      }))
+      .then(() => {
+        Rest.unlock();
+        if (state.settings.autoRest && !d.warmup) Rest.start(state.settings.restSeconds);
+        return DB.setsOfSession(state.session.id);
+      })
+      .then((sets) => {
+        state.sets = sets;
+        state.lastUsed[exId] = Date.now();
+        state.resumable = null;
+        d.warmup = false;          // la prossima e' una serie di lavoro
+        renderLog();
+        render();                  // aggiorna la lista dietro al pannello
+      });
+  }
+
+  function sessionDetailsModal() {
+    const s = state.session;
+    if (!s) return;
+    openModal('Allenamento',
+      '<form id="sess-form">' +
+      '<label class="field">Nome<input name="name" maxlength="60" value="' + esc(s.name) + '"></label>' +
+      '<label class="field">Nota<textarea name="note" rows="3" placeholder="Com\u2019\u00e8 andata, cosa cambiare la prossima volta">' +
+      esc(s.note || '') + '</textarea></label>' +
+      '<button class="btn primary wide" type="submit">Salva</button></form>');
+    $('#sess-form').addEventListener('submit', (ev) => {
+      ev.preventDefault();
+      s.name = ev.target.name.value.trim() || 'Allenamento';
+      s.note = ev.target.note.value;
+      DB.put('sessions', s).then(() => { closeModal(); toast('Salvato'); return refresh(); });
+    });
+  }
+
+  function hrOptionsModal() {
+    let h = '<p class="muted">Tre modi, scegli quello che ti viene comodo.</p><div class="stack">';
+    if (HR.connected()) {
+      h += '<button class="btn wide" data-act="hr-disconnect" type="button">Scollega il sensore</button>';
+    } else if (HR.supported()) {
+      h += '<button class="btn primary wide" data-act="hr-connect" type="button">' +
+        icon('bluetooth', 'sm') + ' Collega una fascia Bluetooth</button>';
+    }
+    h += '<button class="btn wide" data-act="hr-manual" type="button">Scrivi media e massimo a mano</button>';
+    h += '<button class="btn wide" data-act="hr-help" type="button">Come si porta dentro da Salute</button>';
+    return openModal('Battito cardiaco', h + '</div>');
+  }
 
   /* ================= catalogo ed esercizi ================= */
 
@@ -769,7 +1041,7 @@ const App = (function () {
     if (!ex) return;
     if (ex.catalogId && Catalog.loaded()) { catalogDetailModal(ex.catalogId, false); return; }
     openModal(ex.name, '<p class="muted">' + esc([ex.muscle, ex.equipment].filter(Boolean).join(' · ')) +
-      '</p><p class="muted small">Questo esercizio non e collegato al catalogo, quindi non ha foto.</p>');
+      '</p><p class="muted small">Questo esercizio non \u00e8 collegato al catalogo, quindi non ha foto.</p>');
   }
 
   function newExerciseModal(afterCreate) {
@@ -850,7 +1122,7 @@ const App = (function () {
   function hrManualModal() {
     const cur = (state.session && state.session.hr) || {};
     openModal('Battito a mano',
-      '<form id="hr-manual-form"><p class="muted">Leggi i valori sull orologio a fine allenamento e scrivili qui.</p>' +
+      '<form id="hr-manual-form"><p class="muted">Leggi i valori sull\u2019orologio a fine allenamento e scrivili qui.</p>' +
       '<div class="row gap">' +
       '<label class="field">Medio<input name="avg" type="number" min="30" max="230" value="' + (cur.avg || '') + '"></label>' +
       '<label class="field">Massimo<input name="max" type="number" min="30" max="230" value="' + (cur.max || '') + '"></label>' +
@@ -929,12 +1201,14 @@ const App = (function () {
     }).then(() => { state.view = 'oggi'; HR.resetLive(); toast('Buon allenamento'); return refresh(); });
   }
 
+  // Mette l'esercizio in programma. Se non c'e' una sessione aperta non la
+  // apre: nasce da sola quando registri la prima serie.
   function addExerciseToSession(exerciseId) {
     const s = state.session;
-    if (!s) return Promise.resolve();
+    if (!s) { state.lastUsed[exerciseId] = state.lastUsed[exerciseId] || 0; return loadCore().then(render); }
     s.plan = s.plan || [];
     if (!s.plan.some((p) => p.exerciseId === exerciseId)) s.plan.push({ exerciseId, sets: '', reps: '' });
-    return DB.put('sessions', s).then(refresh);
+    return DB.put('sessions', s).then(() => loadCore()).then(render);
   }
 
   function addExerciseToRoutine(routineId, exerciseId) {
@@ -978,24 +1252,9 @@ const App = (function () {
   /* ================= eventi ================= */
 
   function onSubmit(ev) {
-    const form = ev.target.closest('form[data-act="add-set"]');
-    if (!form) return;
-    ev.preventDefault();
-    const reps = form.reps.value;
-    if (reps === '' || Number(reps) <= 0) { toast('Metti almeno le ripetizioni', true); form.reps.focus(); return; }
-    DB.addSet({
-      sessionId: state.session.id,
-      exerciseId: form.dataset.ex,
-      weight: form.weight.value,
-      reps: reps,
-      rpe: form.rpe.value,
-      warmup: form.warmup.checked,
-      note: form.note.value
-    }).then(() => {
-      Rest.unlock();
-      if (state.settings.autoRest && !form.warmup.checked) Rest.start(state.settings.restSeconds);
-      return DB.setsOfSession(state.session.id).then((sets) => { state.sets = sets; render(); });
-    });
+    // I form rimasti (modifica serie, nuovo esercizio, battito) si gestiscono
+    // da soli: qui non serve piu' intercettare la registrazione delle serie.
+    void ev;
   }
 
   function onClick(ev) {
@@ -1023,6 +1282,40 @@ const App = (function () {
     const id = t.dataset.id;
 
     switch (act) {
+      case 'open-log':
+        Rest.unlock();
+        openLog(id);
+        break;
+      case 'close-log':
+        state.logExId = null;
+        closeModal();
+        break;
+      case 'step':
+        stepValue(t.dataset.f, Number(t.dataset.d));
+        break;
+      case 'edit-num':
+        if (!ev.target.closest('.num-input')) editNum(t.dataset.f);
+        break;
+      case 'set-rpe':
+        state.logDraft.rpe = t.dataset.v === '' ? null : Number(t.dataset.v);
+        $$('[data-act="set-rpe"]').forEach((b) => b.classList.toggle('on', b === t));
+        break;
+      case 'log-save':
+        saveLogSet();
+        break;
+      case 'filter-muscle':
+        state.muscleFilter = t.dataset.muscle || '';
+        render();
+        break;
+      case 'resume-session':
+        DB.reopenSession(id).then(() => { toast('Allenamento ripreso'); return refresh(); });
+        break;
+      case 'hr-options':
+        hrOptionsModal();
+        break;
+      case 'session-details':
+        sessionDetailsModal();
+        break;
       case 'start-free':
         DB.startSession({ name: 'Allenamento libero' }).then(() => { state.view = 'oggi'; HR.resetLive(); return refresh(); });
         break;
@@ -1030,7 +1323,7 @@ const App = (function () {
         startRoutine(id);
         break;
       case 'end-session': {
-        if (!confirm('Chiudere l allenamento?')) break;
+        if (!confirm('Chiudere l\u2019allenamento?')) break;
         const sess = state.session;
         saveLiveHrToSession(sess)
           .then(() => DB.endSession(sess.id))
@@ -1042,7 +1335,10 @@ const App = (function () {
         DB.put('sessions', state.session).then(() => toast('Nota salvata'));
         break;
       case 'pick-exercise':
-        pickExerciseModal((exId) => addExerciseToSession(exId));
+        pickExerciseModal((exId) => {
+          state.muscleFilter = '';
+          return addExerciseToSession(exId).then(() => openLog(exId));
+        });
         break;
       case 'browse-catalog':
         state.pickTab = 'catalog';
@@ -1065,7 +1361,7 @@ const App = (function () {
         exerciseDetailModal(id);
         break;
       case 'remove-ex':
-        if (state.sets.some((s) => s.exerciseId === id)) { toast('Ha gia delle serie: cancellale prima', true); break; }
+        if (state.sets.some((s) => s.exerciseId === id)) { toast('Ha gi\u00e0 delle serie: cancellale prima', true); break; }
         state.session.plan = (state.session.plan || []).filter((p) => p.exerciseId !== id);
         DB.put('sessions', state.session).then(refresh);
         break;
@@ -1149,7 +1445,7 @@ const App = (function () {
       case 'import': $('#import-file').click(); break;
       case 'wipe':
         if (!confirm('Cancellare TUTTO (esercizi, schede, allenamenti)? Non si torna indietro.')) break;
-        if (!confirm('Sicuro? Esporta un backup prima, se non l hai fatto.')) break;
+        if (!confirm('Sicuro? Esporta un backup prima, se non l\u2019hai fatto.')) break;
         DB.clearAll().then(() => SEED.ensure()).then(() => { toast('Dati cancellati'); return refresh(); });
         break;
       default: break;
@@ -1170,6 +1466,13 @@ const App = (function () {
     else if (act === 'set-vibrate') patch.vibrate = t.checked;
     else if (act === 'set-autorest') patch.autoRest = t.checked;
     else if (act === 'set-age') patch.age = Number(t.value) || null;
+    else if (act === 'set-step') patch.weightStep = Number(t.value) || 2.5;
+    else if (act === 'set-autoclose') patch.autoCloseMinutes = Number(t.value) || 15;
+    else if (act === 'log-warmup') {
+      state.logDraft.warmup = t.checked;
+      renderLog();
+      return;
+    }
     else return;
     DB.saveSettings(patch).then((s) => { state.settings = s; toast('Salvato'); });
   }
@@ -1190,6 +1493,19 @@ const App = (function () {
   }
 
   function init() {
+    // Foto non raggiungibile (offline, CDN bloccato): metto l'icona al posto
+    // dell'immagine rotta. L'evento error non risale, serve la fase di cattura.
+    document.addEventListener('error', (ev) => {
+      const t = ev.target;
+      if (!t || t.tagName !== 'IMG') return;
+      if (!t.classList.contains('ex-thumb') && !t.closest('#ex-pick')) return;
+      const span = document.createElement('span');
+      // Nel catalogo la miniatura ha una misura sua, nella lista un'altra.
+      span.className = t.closest('#ex-pick') ? 'ph' : 'ex-thumb ph';
+      span.innerHTML = '<svg class="ico" aria-hidden="true"><use href="#i-dumbbell"/></svg>';
+      t.replaceWith(span);
+    }, true);
+
     document.addEventListener('click', onClick);
     document.addEventListener('submit', onSubmit);
     document.addEventListener('change', onChange);
@@ -1208,8 +1524,14 @@ const App = (function () {
 
     // Durata e totali si aggiornano da soli mentre ti alleni.
     setInterval(() => {
+      if (document.hidden) return;
       const line = $('#session-stats');
-      if (line && state.session && !document.hidden) line.textContent = sessionStatsLine();
+      if (line && state.session) line.textContent = sessionStatsLine();
+      // Se resti fermo troppo a lungo l'allenamento si chiude da solo.
+      if (state.session) {
+        const limit = (state.settings.autoCloseMinutes || 15) * 60000;
+        if (Date.now() - lastActivity(state.session, state.sets) > limit) refresh();
+      }
     }, 30000);
 
     return DB.open()
@@ -1223,7 +1545,7 @@ const App = (function () {
           .catch(() => { /* offline la prima volta: pazienza, riprova dopo */ });
       })
       .catch((e) => {
-        $('#view').innerHTML = '<p class="empty">Il database locale non e disponibile: ' + esc(e.message) +
+        $('#view').innerHTML = '<p class="empty">Il database locale non \u00e8 disponibile: ' + esc(e.message) +
           '<br><br>Succede in navigazione privata o se il browser blocca i dati dei siti.</p>';
       });
   }

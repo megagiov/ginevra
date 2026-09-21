@@ -114,7 +114,11 @@ const DB = (function () {
     sound: true,
     vibrate: true,
     autoRest: true,
-    unit: 'kg'
+    unit: 'kg',
+    // L'allenamento si chiude da solo dopo questi minuti senza registrare nulla.
+    autoCloseMinutes: 15,
+    // Di quanto salgono e scendono i pulsanti +/- nel pannello di registrazione.
+    weightStep: 2.5
   };
 
   function getSettings() {
@@ -196,6 +200,18 @@ const DB = (function () {
     });
   }
 
+  function reopenSession(id) {
+    return get('sessions', id).then((s) => {
+      if (!s) return null;
+      s.endedAt = null;
+      s.autoClosed = false;
+      // Senza questo il conto dell'inattivita' ripartirebbe dall'ultima serie
+      // e la sessione si richiuderebbe da sola un istante dopo.
+      s.resumedAt = Date.now();
+      return put('sessions', s);
+    });
+  }
+
   function deleteSession(id) {
     return getAll('sets', 'by_session', IDBKeyRange.only(id)).then((rows) =>
       tx(['sessions', 'sets'], 'readwrite', (t) => {
@@ -272,7 +288,7 @@ const DB = (function () {
     getSettings, saveSettings,
     listExercises, createExercise,
     listRoutines, createRoutine,
-    listSessions, activeSession, startSession, endSession, deleteSession,
+    listSessions, activeSession, startSession, endSession, reopenSession, deleteSession,
     setsOfSession, setsOfExercise, addSet, updateSet, deleteSet,
     exportAll, importAll
   };
