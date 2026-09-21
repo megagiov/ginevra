@@ -28,13 +28,29 @@ non c'e' nessun account e nessun server.
 ## Installarla sul telefono
 
 Serve un indirizzo **https** (una pagina web normale): le app installabili non
-funzionano da file locale. La via piu' semplice e' GitHub Pages.
+funzionano da file locale, e senza https non partono ne' il service worker ne'
+il Bluetooth.
 
-1. Nelle impostazioni del repository su GitHub: **Settings → Pages**, sorgente
-   **Deploy from a branch**, ramo `main`, cartella `/ (root)`.
-2. Apri `https://<tuo-utente>.github.io/<repo>/palestra/` dal telefono.
-3. **iPhone (Safari)**: tasto Condividi → *Aggiungi a Home*.
-   **Android (Chrome)**: menu → *Installa app*.
+Questo repository pubblica gia' su GitHub Pages dal ramo **`gh-pages`**
+(`https://megagiov.github.io/ginevra/`). Per mettere online l'app basta copiare
+la cartella `palestra/` su quel ramo: finisce in
+`https://megagiov.github.io/ginevra/palestra/` **senza toccare il sito che sta
+gia' nella radice**.
+
+```bash
+git checkout gh-pages
+git checkout <ramo-con-l-app> -- palestra/
+git commit -m "Pubblica l'app Palestra"
+git push origin gh-pages
+```
+
+Poi dal telefono apri `https://megagiov.github.io/ginevra/palestra/`:
+
+- **iPhone (Safari)**: tasto Condividi -> *Aggiungi a Home*.
+- **Android (Chrome)**: menu -> *Installa app*.
+
+Va bene qualunque altro hosting statico in https: la cartella `palestra/` e'
+autosufficiente, si copia dov'e' e funziona.
 
 Da li' in poi si apre a schermo intero come un'app e funziona anche in modalita'
 aereo. La prima apertura con rete scarica il catalogo esercizi (circa 1 MB) e lo
