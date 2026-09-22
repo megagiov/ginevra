@@ -6,21 +6,33 @@ dizionario `AZIENDA`, salvo dove indicato diversamente.
 
 ## 1. Obbligatori per legge
 
-| Campo | Valore attuale | Dove |
+| Campo | Stato | Dove |
 | --- | --- | --- |
-| Partita IVA | `[P.IVA DA INSERIRE]` | `AZIENDA["piva"]` |
-| Ragione sociale | `[RAGIONE SOCIALE DA INSERIRE]` | `AZIENDA["ragione_sociale"]` |
+| Partita IVA | vuota | `AZIENDA["piva"]` |
+| Ragione sociale | vuota, si usa il nome commerciale | `AZIENDA["ragione_sociale"]` |
 
-La P.IVA compare nel footer di ogni pagina e nella pagina privacy: senza, il
-sito non e' a norma. La ragione sociale serve anche come titolare del
-trattamento nell'informativa privacy.
+Finche' questi campi restano vuoti il sito **non mostra alcun segnaposto**: la
+riga si accorcia e basta, quindi il sito e' gia' presentabile in anteprima.
+Ma la P.IVA deve comparire prima della pubblicazione: per un'attivita' con
+partita IVA, indicarla sul sito e' un obbligo di legge (art. 35 DPR 633/1972 e
+art. 7 D.Lgs. 70/2003), e va scritta nel footer di ogni pagina e
+nell'informativa privacy. Il posto da cui recuperarla, se non l'avete sotto
+mano: una qualunque fattura emessa, la visura camerale, oppure il servizio di
+ricerca sul sito dell'Agenzia delle Entrate partendo dal nome dell'impresa.
+
+La ragione sociale serve anche come titolare del trattamento
+nell'informativa privacy: finche' manca, l'informativa indica "Sorgente
+Traslochi".
+
+`python3 build.py` elenca a ogni generazione i campi ancora vuoti, cosi' non
+si pubblica per distrazione senza averli riempiti.
 
 ## 2. Necessari perche' il sito funzioni
 
 | Cosa | Stato | Come si risolve |
 | --- | --- | --- |
 | Modulo preventivo | Endpoint fittizio | Crea un form gratuito su formspree.io e metti l'ID in `FORMSPREE_ID` (`content.py`) |
-| Orari di apertura | `[ORARI DA INSERIRE]` | `AZIENDA["orari"]`; compaiono nel footer e nella pagina preventivo |
+| Orari di apertura | vuoti, la riga non compare | `AZIENDA["orari"]`; compaiono nel footer e nella pagina preventivo |
 | Coordinate geografiche | Approssimate sul CAP 80144 | `AZIENDA["lat"]` / `["lon"]`: prendi i valori esatti da Google Maps (clic destro sul punto, prima voce) |
 
 Il piano gratuito di Formspree non accetta allegati: per questo il modulo non

@@ -12,8 +12,11 @@ numero non fornito dall'azienda compare in queste pagine.
 
 AZIENDA = {
     "nome": "Sorgente Traslochi",
-    "ragione_sociale": "[RAGIONE SOCIALE DA INSERIRE]",
-    "piva": "[P.IVA DA INSERIRE]",
+    # I tre campi qui sotto possono restare vuoti: in quel caso il sito li
+    # omette invece di mostrare un segnaposto, e build.py avvisa a ogni
+    # generazione che mancano. Vanno riempiti prima di pubblicare.
+    "ragione_sociale": "",   # se vuota, il sito usa il nome commerciale
+    "piva": "",              # obbligatoria per legge una volta pubblicato
     "via": "Via Cupa Vicinale dell'Arco 72",
     "cap": "80144",
     "citta": "Napoli",
@@ -26,7 +29,7 @@ AZIENDA = {
     "maps": "https://maps.google.com/?cid=16215080151173160187",
     "facebook": "https://it-it.facebook.com/pages/category/Home-Mover/Sorgente-Group-Trasporti-Traslochi-1445547735715866/",
     "instagram": "https://www.instagram.com/sorgentetraslochi/",
-    "orari": "[ORARI DA INSERIRE]",
+    "orari": "",             # se vuoti, la riga orari non compare
     "lat": "40.8797",
     "lon": "14.2350",
 }

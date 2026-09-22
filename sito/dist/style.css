@@ -62,7 +62,8 @@ p { margin: 0 0 1em; }
 .topbar a:hover { text-decoration: underline; }
 
 .head { border-bottom: 1px solid var(--bordo); background: #fff; position: sticky; top: 0; z-index: 40; }
-.head .wrap { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 64px; }
+.head .wrap { display: flex; flex-wrap: wrap; align-items: center;
+              justify-content: space-between; gap: 12px; min-height: 64px; }
 
 .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--blu); }
 .logo b { display: block; font-size: 1.12rem; line-height: 1.1; letter-spacing: -.01em; }
@@ -76,7 +77,7 @@ p { margin: 0 0 1em; }
   font: inherit; font-size: .9rem; font-weight: 600; padding: 11px 15px; min-height: 46px; cursor: pointer;
 }
 
-.nav { display: none; }
+.nav { display: none; flex: 0 0 100%; }
 .nav.aperto { display: block; }
 .nav ul { list-style: none; margin: 0; padding: 8px 0 14px; }
 .nav li { border-top: 1px solid var(--bordo); }
@@ -99,6 +100,8 @@ p { margin: 0 0 1em; }
 .btn-vuoto:hover { background: var(--blu); color: #fff; }
 .btn-chiaro { background: #fff; color: var(--blu); }
 .btn-chiaro:hover { background: var(--blu-tenue); color: var(--blu); }
+
+.head .cta-head { display: none; }
 
 .btn-riga { display: flex; flex-wrap: wrap; gap: 10px; margin: 1.4em 0; }
 .btn-riga .btn { flex: 1 1 auto; }
@@ -262,12 +265,17 @@ legend { font-weight: 700; color: var(--blu); padding: 0 6px; }
   .barra { display: none; }
   section { padding: 44px 0; }
   .nav-toggle { display: none; }
-  .nav { display: block; }
-  .nav ul { display: flex; flex-wrap: wrap; gap: 18px; padding: 0; align-items: center; justify-content: flex-end; }
+  .nav { display: block; flex: 0 1 auto; }
+  .nav ul { display: flex; flex-wrap: wrap; gap: 11px; padding: 0; align-items: center; justify-content: flex-end; }
   .nav li { border-top: 0; }
-  .nav a { padding: 6px 0; font-size: .95rem; }
-  .nav .btn { white-space: nowrap; padding: 10px 16px; min-height: 42px; font-size: .92rem; }
-  .head .wrap { min-height: 76px; }
+  .nav a { padding: 6px 0; font-size: .9rem; }
+  .nav .solo-mobile { display: none; }
+  .head .cta-head { display: inline-flex; white-space: nowrap; padding: 11px 16px;
+                    min-height: 44px; font-size: .92rem; }
+  /* la testata puo' essere piu' larga del contenuto: cosi' le voci di
+     menu e il pulsante stanno su una riga sola */
+  .head .wrap, .topbar .wrap { max-width: 1260px; }
+  .head .wrap { min-height: 76px; gap: 22px; }
   .griglia-3 { grid-template-columns: repeat(3, 1fr); }
   .fiducia { grid-template-columns: repeat(4, 1fr); }
   .hero { padding: 56px 0 60px; }

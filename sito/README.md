@@ -31,7 +31,10 @@ cd sito/dist && python3 -m http.server 8765
 | Grafica, colori, layout | `src/style.css` |
 | Menu mobile (unico JS del sito) | `SCRIPT` dentro `build.py` |
 
-Dopo ogni modifica: `python3 build.py`.
+Dopo ogni modifica: `python3 build.py`. Il comando elenca in fondo i dati
+ancora mancanti (P.IVA, ragione sociale, orari, ID Formspree): finche' sono
+vuoti il sito li omette invece di mostrare segnaposto, ma vanno riempiti prima
+di pubblicare.
 
 Il dominio di pubblicazione sta in una sola riga (`BASE_URL` in `content.py`).
 Il giorno in cui si collega un dominio `.it` si cambia quella riga e si

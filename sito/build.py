@@ -44,6 +44,27 @@ def url(path):
     return BASE + path
 
 
+def ragione():
+    """Ragione sociale se disponibile, altrimenti il nome commerciale."""
+    return A["ragione_sociale"] or A["nome"]
+
+
+def piva_frammento(prefisso="", suffisso=""):
+    """Restituisce la P.IVA formattata, o stringa vuota se non c'e' ancora.
+
+    Finche' il campo e' vuoto il sito non mostra alcun segnaposto: la riga si
+    accorcia e basta. build.py lo segnala a ogni generazione.
+    """
+    if not A["piva"]:
+        return ""
+    return "%sP.IVA %s%s" % (prefisso, e(A["piva"]), suffisso)
+
+
+def orari_riga(modello):
+    """Applica il modello solo se gli orari sono stati inseriti."""
+    return modello % e(A["orari"]) if A["orari"] else ""
+
+
 # --------------------------------------------------------------------------
 # Frammenti comuni
 # --------------------------------------------------------------------------
@@ -64,7 +85,11 @@ def header(percorso):
     for href, label in C.NAV:
         corrente = ' aria-current="page"' if href == percorso else ""
         voci.append('<li><a href="%s"%s>%s</a></li>' % (href, corrente, e(label)))
-    voci.append('<li><a href="/preventivo/" class="btn btn-arancio">Preventivo gratuito</a></li>')
+    # Su mobile il preventivo e' una voce di menu come le altre; da 1000 px in
+    # su diventa il pulsante arancio accanto alla navigazione (.cta-head).
+    corrente = ' aria-current="page"' if percorso == "/preventivo/" else ""
+    voci.append('<li class="solo-mobile"><a href="/preventivo/"%s>Preventivo '
+                "gratuito</a></li>" % corrente)
     return """<a class="skip" href="#contenuto">Vai al contenuto</a>
 <div class="topbar"><div class="wrap">
   <span>Traslochi e montaggio mobili a Napoli e provincia, dal 1965</span>
@@ -74,6 +99,7 @@ def header(percorso):
   <a class="logo" href="/">%s<span class="lt"><b>Sorgente Traslochi</b><span class="sub">Napoli e provincia</span></span></a>
   <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="menu">Menu</button>
   <nav class="nav" id="menu" aria-label="Navigazione principale"><ul>%s</ul></nav>
+  <a class="btn btn-arancio cta-head" href="/preventivo/">Preventivo gratuito</a>
 </div></header>""" % (TEL_HREF, e(A["telefono_display"]), LOGO_SVG, "".join(voci))
 
 
@@ -127,11 +153,9 @@ def footer():
     <div class="col">
       <h2>Sorgente Traslochi</h2>
       <p>
-        %(ragione)s<br>
-        %(via)s<br>%(cap)s %(citta)s (%(prov)s)<br>
+        %(ragione_riga)s%(via)s<br>%(cap)s %(citta)s (%(prov)s)<br>
         Tel. e WhatsApp: <a href="%(tel)s">%(telefono)s</a><br>
-        <a href="%(mail)s">%(email)s</a><br>
-        Orari: %(orari)s
+        <a href="%(mail)s">%(email)s</a>%(orari)s
       </p>
       <p><a href="%(maps)s" rel="noopener" target="_blank">Vedi su Google Maps</a></p>
     </div>
@@ -155,7 +179,7 @@ def footer():
     </div>
   </div>
   <p class="legale">
-    %(ragione)s &mdash; P.IVA %(piva)s &mdash; %(via)s, %(cap)s %(citta)s (%(prov)s).
+    %(ragione)s%(piva)s &mdash; %(via)s, %(cap)s %(citta)s (%(prov)s).
     Tutti i diritti riservati. <a href="/privacy/">Privacy e cookie</a>.
   </p>
 </div></footer>
@@ -164,12 +188,17 @@ def footer():
   <a class="wa" href="%(wa)s" rel="noopener" target="_blank">WhatsApp</a>
 </div>
 <script src="/script.js" defer></script>""" % {
-        "ragione": e(A["ragione_sociale"]), "via": e(A["via"]), "cap": A["cap"],
+        "ragione": e(ragione()),
+        # la ragione sociale si ripete solo se diversa dal nome in testata
+        "ragione_riga": ("%s<br>\n        " % e(A["ragione_sociale"])
+                         if A["ragione_sociale"] else ""),
+        "via": e(A["via"]), "cap": A["cap"],
         "citta": e(A["citta"]), "prov": A["provincia"], "tel": TEL_HREF,
         "telefono": e(A["telefono_display"]), "mail": MAIL_HREF,
-        "email": e(A["email"]), "orari": e(A["orari"]), "maps": A["maps"],
+        "email": e(A["email"]), "orari": orari_riga("<br>\n        Orari: %s"),
+        "maps": A["maps"],
         "servizi": servizi, "fb": A["facebook"], "ig": A["instagram"],
-        "piva": e(A["piva"]), "wa": WA_HREF,
+        "piva": piva_frammento(prefisso=" &mdash; "), "wa": WA_HREF,
     }
 
 
@@ -658,7 +687,7 @@ def costruisci_preventivo():
     <li>Email: <a href="%(mail)s">%(email)s</a></li>
     <li>Sede: %(indirizzo)s &mdash;
         <a href="%(maps)s" rel="noopener" target="_blank">apri in Google Maps</a></li>
-    <li>Orari: %(orari)s</li>
+    %(orari)s
   </ul>
 </div></section>""" % {
         "h1": e(p["h1"]),
@@ -668,7 +697,8 @@ def costruisci_preventivo():
         "piano_arr": campo_piano("arr", "Arrivo"),
         "wa": WA_HREF, "mail": MAIL_HREF, "email": e(A["email"]),
         "tel": TEL_HREF, "telefono": e(A["telefono_display"]),
-        "indirizzo": e(INDIRIZZO), "maps": A["maps"], "orari": e(A["orari"]),
+        "indirizzo": e(INDIRIZZO), "maps": A["maps"],
+        "orari": orari_riga("<li>Orari: %s</li>"),
     }
     scrivi(p["slug"], p["title"], p["description"], corpo,
            briciole=[("/preventivo/", "Preventivo")], priorita="0.9")
@@ -687,7 +717,7 @@ def costruisci_privacy():
      Regolamento UE 2016/679 (GDPR).</p>
 
   <h2>Titolare del trattamento</h2>
-  <p>%(ragione)s &mdash; %(indirizzo)s &mdash; P.IVA %(piva)s.<br>
+  <p>%(ragione)s &mdash; %(indirizzo)s%(piva)s.<br>
      Telefono: <a href="%(tel)s">%(telefono)s</a> &mdash;
      Email: <a href="%(mail)s">%(email)s</a>.</p>
 
@@ -767,8 +797,9 @@ def costruisci_privacy():
   <p>Ultimo aggiornamento: %(data)s. Eventuali modifiche saranno pubblicate su
      questa pagina.</p>
 </div></section>""" % {
-        "h1": e(p["h1"]), "ragione": e(A["ragione_sociale"]),
-        "indirizzo": e(INDIRIZZO), "piva": e(A["piva"]), "tel": TEL_HREF,
+        "h1": e(p["h1"]), "ragione": e(ragione()),
+        "indirizzo": e(INDIRIZZO), "piva": piva_frammento(prefisso=" &mdash; "),
+        "tel": TEL_HREF,
         "telefono": e(A["telefono_display"]), "mail": MAIL_HREF,
         "email": e(A["email"]), "data": date.today().strftime("%d/%m/%Y"),
     }
@@ -885,6 +916,31 @@ def main():
     print("Generate %d pagine in %s" % (len(SITEMAP), DIST))
     for p, _ in SITEMAP:
         print("  " + p)
+    avvisi()
+
+
+def avvisi():
+    """Ricorda a ogni generazione cosa manca ancora per poter pubblicare.
+
+    I campi vuoti non rompono il sito (le righe corrispondenti spariscono),
+    ma senza P.IVA il sito non e' a norma e senza ID Formspree il modulo non
+    invia nulla: vanno visti, non dimenticati.
+    """
+    mancanti = []
+    if not A["piva"]:
+        mancanti.append("P.IVA          (AZIENDA['piva'])   obbligatoria per legge")
+    if not A["ragione_sociale"]:
+        mancanti.append("Ragione sociale (AZIENDA['ragione_sociale']) ora si usa "
+                        "il nome commerciale")
+    if not A["orari"]:
+        mancanti.append("Orari          (AZIENDA['orari'])  la riga non compare")
+    if C.FORMSPREE_ID == "XXXXXXXX":
+        mancanti.append("ID Formspree   (FORMSPREE_ID)      il modulo non invia")
+    if not mancanti:
+        return
+    print("\nDA COMPLETARE PRIMA DI PUBBLICARE (vedi DA-COMPLETARE.md):")
+    for m in mancanti:
+        print("  - " + m)
 
 
 if __name__ == "__main__":
