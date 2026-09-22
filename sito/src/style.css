@@ -35,6 +35,7 @@ body {
 }
 
 img { max-width: 100%; height: auto; display: block; }
+main section img { border-radius: var(--raggio); }
 
 a { color: var(--blu-chiaro); }
 a:hover { color: var(--arancio-scuro); }
@@ -178,6 +179,12 @@ section.tenue { background: var(--blu-tenue); }
 .faq details[open] summary::after { content: "\2013"; }
 .faq details p { margin: .8em 0 0; color: var(--testo-tenue); }
 
+/* galleria di foto con didascalia */
+.galleria { display: grid; gap: 14px; grid-template-columns: 1fr; margin: 18px 0 0; }
+.galleria figure { margin: 0; }
+.galleria img { border-radius: var(--raggio); }
+.galleria figcaption { font-size: .88rem; color: var(--testo-tenue); margin-top: .4em; }
+
 .zona { border-top: 1px solid var(--bordo); padding-top: 18px; margin-top: 22px; }
 .zona:first-of-type { border-top: 0; }
 
@@ -262,6 +269,7 @@ legend { font-weight: 700; color: var(--blu); padding: 0 6px; }
   .griglia { grid-template-columns: repeat(2, 1fr); }
   .fiducia { grid-template-columns: repeat(2, 1fr); }
   .motivi { grid-template-columns: repeat(2, 1fr); }
+  .galleria { grid-template-columns: repeat(2, 1fr); }
   .due { grid-template-columns: 1fr 1fr; }
   .btn-riga .btn { flex: 0 1 auto; }
 }

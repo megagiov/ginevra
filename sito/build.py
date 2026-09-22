@@ -151,6 +151,15 @@ def foto(nome, alt, larghezza, altezza, primaria=False):
                                    caricamento))
 
 
+def galleria(voci):
+    """Due o tre foto affiancate, con didascalia sotto."""
+    celle = "".join(
+        '<figure>%s<figcaption>%s</figcaption></figure>'
+        % (foto(nome, alt, largo, alto), e(didascalia))
+        for nome, alt, largo, alto, didascalia in voci)
+    return '<div class="galleria">%s</div>' % celle
+
+
 def placeholder(titolo, nota):
     """Segnaposto immagine: da sostituire con <img> quando ci sono le foto."""
     return ('<div class="ph"><b>%s</b><span>%s</span>'
@@ -401,6 +410,7 @@ def costruisci_home():
      mobili su misura con tolleranze strette, dove il montaggio fa parte del
      prodotto. &Egrave; la stessa cura che mettiamo quando smontiamo e
      rimontiamo l&#8217;arredamento di casa vostra.</p>
+  %(design)s
   <p><a href="/montaggio-mobili-napoli/">Vedi il servizio di montaggio
      mobili</a></p>
 </div></section>
@@ -442,6 +452,10 @@ def costruisci_home():
                    516, 387, primaria=True),
         "fiducia": fiducia, "chi": chi, "servizi": servizi,
         "mobilifici": e(mobilifici), "marchi": e(marchi), "passi": passi,
+        "design": foto("cucina-bianca-montata-napoli.webp",
+                       "Cucina su misura montata da Sorgente Traslochi, con "
+                       "pensili e forno a incasso allineati",
+                       1000, 750),
         "zone": zone_link, "recnota": e(h["recensioni_nota"]), "maps": A["maps"],
         "cta": cta_finale("Serve un preventivo?",
                           "Sopralluogo e preventivo sono gratuiti e non "
@@ -478,6 +492,7 @@ def costruisci_servizio(p):
   <h2>Cosa facciamo</h2>
   <ul class="elenco">%(cosa)s</ul>
   %(ph)s
+  %(extra)s
 </div></section>
 
 <section><div class="wrap stretto">
@@ -499,9 +514,10 @@ def costruisci_servizio(p):
 
 %(cta)s""" % {
         "h1": e(p["h1"]), "intro": intro, "btn": bottoni(), "cosa": cosa,
-        "ph": placeholder("Foto del servizio",
-                          "Suggerita: una fase reale di questo lavoro"),
+        "ph": p["immagine"] if "immagine" in p else placeholder(
+            "Foto del servizio", "Suggerita: una fase reale di questo lavoro"),
         "perche": perche, "faq": faq, "correlate": correlate,
+        "extra": p.get("extra", ""),
         "cta": cta_finale("Parliamone senza impegno",
                           "Raccontateci cosa dovete spostare: vi diciamo "
                           "subito come lo faremmo e quanto costa."),
@@ -992,6 +1008,23 @@ def main():
     os.makedirs(DIST)
 
     costruisci_home()
+    C.SERVIZIO_MONTAGGIO["immagine"] = foto(
+        "montaggio-letto-arredo-design-napoli.webp",
+        "Montaggio di un letto in una camera con testiera imbottita su misura",
+        1000, 750)
+    C.SERVIZIO_MONTAGGIO["extra"] = galleria([
+        ("cucina-montata-napoli.webp",
+         "Cucina con penisola e cappa a soffitto montata a Napoli",
+         800, 600, "Cucina con penisola e cappa a isola"),
+        ("cucina-isola-montata-napoli.webp",
+         "Cucina con isola e piano di lavoro continuo, dopo il montaggio",
+         800, 600, "Isola con piano di lavoro continuo"),
+    ])
+    C.SERVIZIO_ABITAZIONI["immagine"] = foto(
+        "carico-furgone-centro-storico-napoli.webp",
+        "Carico di un armadio imballato su un furgone Sorgente Traslochi nel "
+        "centro storico di Napoli",
+        540, 405)
     for p in C.PAGINE_SERVIZIO:
         costruisci_servizio(p)
     costruisci_zone()
