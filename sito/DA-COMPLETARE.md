@@ -73,12 +73,14 @@ pubblicazione, perche' compare in evidenza.
 Non bloccano la pubblicazione, ma il sito rende molto di piu' con questi:
 
 - **Foto reali** al posto dei segnaposto rimasti (vedi README, sezione
-  Immagini). Ci sono gia' due foto vostre: i mezzi con l'autoscala davanti a
-  un palazzo (home) e i furgoni in deposito (chi siamo). Mancano le pagine
-  servizio: le piu' utili sarebbero un montaggio in corso, un furgone in
-  carico, un ufficio in fase di trasloco e una casa svuotata dopo uno
-  sgombero.
-- **Originali delle due foto gia' online.** Quelle che abbiamo sono passate
+  Immagini). Online ce ne sono gia' sette: l'autoscala davanti al palazzo e
+  una cucina bianca in home, i furgoni in chi siamo, il montaggio di un letto
+  piu' due cucine sulla pagina montaggio, il carico nel centro storico sulla
+  pagina traslochi abitazioni. Restano senza foto tre pagine: **uffici e
+  negozi**, **sgomberi** e **deposito**. Servirebbero un ufficio o un negozio
+  in fase di trasloco, una cantina o una casa svuotata, e dei mobili
+  imballati in deposito.
+- **Originali delle prime due foto.** Quelle dei mezzi sono passate
   da una chat e sono arrivate a 516x387 pixel: bastano per il riquadro della
   home, ma sono tirate per l'anteprima social, che vuole 1200x630. Se
   recuperate i file originali dal telefono (inviandoli per email, non via

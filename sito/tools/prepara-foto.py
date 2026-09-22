@@ -27,20 +27,39 @@ QUI = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC = os.path.join(QUI, "src", "img")
 ORIG = os.path.join(SRC, "originali")
 
-# nome originale -> (nome finale, larghezza, ritaglio, ingrandisci)
+# nome originale -> (nome finale, larghezza, ritaglio, ingrandisci, riquadro)
+# Il riquadro (x0, y0, x1, y1) e' un ritaglio fisso applicato per primo, in
+# pixel sull'originale: serve quando bisogna togliere qualcosa di preciso
+# dall'inquadratura, non semplicemente centrare.
 # Il ritaglio e' il rapporto larghezza/altezza voluto: l'immagine viene
 # tagliata al centro fino a quel rapporto, senza deformarla.
+QUATTRO_TERZI = 4 / 3
+
 FOTO = [
     ("trasloco-autoscala-palazzo-napoli.jpg",
-     "trasloco-autoscala-palazzo-napoli.webp", 1200, None, False),
+     "trasloco-autoscala-palazzo-napoli.webp", 1200, None, False, None),
     ("mezzi-sorgente-traslochi-napoli.jpg",
-     "mezzi-sorgente-traslochi-napoli.webp", 1200, None, False),
+     "mezzi-sorgente-traslochi-napoli.webp", 1200, None, False, None),
+    ("montaggio-letto-arredo-design-napoli.jpg",
+     "montaggio-letto-arredo-design-napoli.webp", 1000, QUATTRO_TERZI,
+     False, None),
+    ("cucina-bianca-montata-napoli.jpg",
+     "cucina-bianca-montata-napoli.webp", 1000, QUATTRO_TERZI, False, None),
+    ("cucina-montata-napoli.jpg",
+     "cucina-montata-napoli.webp", 800, QUATTRO_TERZI, False, None),
+    ("cucina-isola-montata-napoli.jpg",
+     "cucina-isola-montata-napoli.webp", 800, QUATTRO_TERZI, False, None),
+    # Il riquadro esclude il mezzo di un'altra ditta, che nell'originale
+    # compare sulla destra con l'indirizzo del suo sito ben leggibile.
+    ("carico-furgone-centro-storico-napoli.jpg",
+     "carico-furgone-centro-storico-napoli.webp", 1000, None, False,
+     (20, 250, 560, 655)),
     # Anteprima social. Unico caso in cui si ingrandisce: sotto i 600x315
     # WhatsApp e Facebook mostrano una miniatura quadratina invece della
     # scheda grande, e una foto un po' morbida rende comunque meglio di un
     # rettangolo colorato. Da rifare quando arrivano gli originali.
     ("trasloco-autoscala-palazzo-napoli.jpg",
-     "og-sorgente-traslochi.jpg", 1200, 1200 / 630, True),
+     "og-sorgente-traslochi.jpg", 1200, 1200 / 630, True, None),
 ]
 
 QUALITA = 82
@@ -60,13 +79,16 @@ def ritaglia(im, rapporto):
 def main():
     if not os.path.isdir(ORIG):
         sys.exit("Manca la cartella %s" % ORIG)
-    for sorgente, destinazione, larghezza, rapporto, ingrandisci in FOTO:
+    for (sorgente, destinazione, larghezza, rapporto, ingrandisci,
+         riquadro) in FOTO:
         percorso = os.path.join(ORIG, sorgente)
         if not os.path.exists(percorso):
             print("  salto %s (non c'e')" % sorgente)
             continue
         im = Image.open(percorso).convert("RGB")
         prima = im.size
+        if riquadro:
+            im = im.crop(riquadro)
         if rapporto:
             im = ritaglia(im, rapporto)
         if im.width > larghezza or (ingrandisci and im.width < larghezza):
