@@ -274,7 +274,7 @@ legend { font-weight: 700; color: var(--blu); padding: 0 6px; }
   section { padding: 44px 0; }
   .nav-toggle { display: none; }
   .nav { display: block; flex: 0 1 auto; }
-  .nav ul { display: flex; flex-wrap: wrap; gap: 11px; padding: 0; align-items: center; justify-content: flex-end; }
+  .nav ul { display: flex; flex-wrap: wrap; gap: 10px; padding: 0; align-items: center; justify-content: flex-end; }
   .nav li { border-top: 0; }
   .nav a { padding: 6px 0; font-size: .9rem; }
   .nav .solo-mobile { display: none; }
@@ -283,7 +283,9 @@ legend { font-weight: 700; color: var(--blu); padding: 0 6px; }
   /* la testata puo' essere piu' larga del contenuto: cosi' le voci di
      menu e il pulsante stanno su una riga sola */
   .head .wrap, .topbar .wrap { max-width: 1260px; }
-  .head .wrap { min-height: 76px; gap: 22px; }
+  /* logo, menu e pulsante su una riga sola: a mandare a capo, se
+     serve, e' la lista delle voci, non il pulsante */
+  .head .wrap { min-height: 76px; gap: 14px; flex-wrap: nowrap; }
   .griglia-3 { grid-template-columns: repeat(3, 1fr); }
   .fiducia { grid-template-columns: repeat(4, 1fr); }
   .hero { padding: 56px 0 60px; }

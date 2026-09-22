@@ -72,16 +72,25 @@ pubblicazione, perche' compare in evidenza.
 
 Non bloccano la pubblicazione, ma il sito rende molto di piu' con questi:
 
-- **Foto reali** al posto dei segnaposto (vedi README, sezione Immagini). Le
-  piu' utili: squadra e mezzo, un montaggio in corso, un furgone carico, una
-  casa svuotata dopo uno sgombero.
+- **Foto reali** al posto dei segnaposto rimasti (vedi README, sezione
+  Immagini). Ci sono gia' due foto vostre: i mezzi con l'autoscala davanti a
+  un palazzo (home) e i furgoni in deposito (chi siamo). Mancano le pagine
+  servizio: le piu' utili sarebbero un montaggio in corso, un furgone in
+  carico, un ufficio in fase di trasloco e una casa svuotata dopo uno
+  sgombero.
+- **Originali delle due foto gia' online.** Quelle che abbiamo sono passate
+  da una chat e sono arrivate a 516x387 pixel: bastano per il riquadro della
+  home, ma sono tirate per l'anteprima social, che vuole 1200x630. Se
+  recuperate i file originali dal telefono (inviandoli per email, non via
+  WhatsApp, che li ricomprime) si rifa' la conversione in un minuto e la resa
+  migliora.
 - **Recensioni Google**: nella home ci sono due segnaposto. Vanno sostituiti
   con recensioni reali prese dalla scheda Google, citando nome e data.
   Non inventarle: le recensioni false sono pubblicita' ingannevole.
-- **Immagine di anteprima social**: `dist/og-sorgente-traslochi.png` e' ora un
-  rettangolo nei colori aziendali. Sostituiscila con una foto reale
-  1200 x 630 px (e' l'immagine che compare quando il link viene condiviso su
-  WhatsApp o Facebook).
+- **Immagine di anteprima social**: e' la foto dei mezzi davanti al palazzo,
+  ritagliata a 1200x630 (`dist/og-sorgente-traslochi.jpg`). Essendo ingrandita
+  da un originale piccolo, e' un po' morbida: si rifa' da sola quando arriva
+  l'originale.
 
 ## Cosa non e' stato inventato
 

@@ -15,5 +15,8 @@
 /*.png
   Cache-Control: public, max-age=604800
 
+/*.jpg
+  Cache-Control: public, max-age=604800
+
 /*.webp
   Cache-Control: public, max-age=604800
