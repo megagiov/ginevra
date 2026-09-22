@@ -32,8 +32,15 @@ si pubblica per distrazione senza averli riempiti.
 | Cosa | Stato | Come si risolve |
 | --- | --- | --- |
 | Modulo preventivo | Endpoint fittizio | Crea un form gratuito su formspree.io e metti l'ID in `FORMSPREE_ID` (`content.py`) |
-| Orari di apertura | vuoti, la riga non compare | `AZIENDA["orari"]`; compaiono nel footer e nella pagina preventivo |
 | Coordinate geografiche | Approssimate sul CAP 80144 | `AZIENDA["lat"]` / `["lon"]`: prendi i valori esatti da Google Maps (clic destro sul punto, prima voce) |
+
+Gli orari (lunedi' - sabato, 8:00 - 18:00) sono gia' inseriti: compaiono nel
+footer, nella pagina preventivo e nei dati strutturati
+(`openingHoursSpecification`). Se cambiano, vanno aggiornati in due punti di
+`content.py`: `AZIENDA["orari"]` per il testo e `ORARI_SCHEMA` per Google.
+
+Ricordatevi di mettere gli stessi orari anche sulla scheda Google Business:
+se i due non coincidono, Google se ne accorge.
 
 Il piano gratuito di Formspree non accetta allegati: per questo il modulo non
 ha il campo foto, e al suo posto c'e' un invito a mandare le immagini su

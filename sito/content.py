@@ -29,7 +29,7 @@ AZIENDA = {
     "maps": "https://maps.google.com/?cid=16215080151173160187",
     "facebook": "https://it-it.facebook.com/pages/category/Home-Mover/Sorgente-Group-Trasporti-Traslochi-1445547735715866/",
     "instagram": "https://www.instagram.com/sorgentetraslochi/",
-    "orari": "",             # se vuoti, la riga orari non compare
+    "orari": "lunedì - sabato, 8:00 - 18:00",
     "lat": "40.8797",
     "lon": "14.2350",
 }
@@ -37,6 +37,18 @@ AZIENDA = {
 # Dominio di pubblicazione. Il giorno in cui si collega un dominio .it basta
 # cambiare questa riga e rigenerare: canonical, sitemap e Open Graph seguono.
 BASE_URL = "https://sorgentetraslochi.pages.dev"
+
+# Gli stessi orari in forma leggibile da Google (schema.org). Se cambiano gli
+# orari sopra, vanno aggiornati anche qui: sono la stessa informazione detta
+# due volte, una per le persone e una per i motori di ricerca.
+ORARI_SCHEMA = [
+    {
+        "giorni": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday",
+                   "Saturday"],
+        "apre": "08:00",
+        "chiude": "18:00",
+    },
+]
 
 WHATSAPP_MSG = "Salve,%20vorrei%20un%20preventivo%20per%20un%20trasloco."
 

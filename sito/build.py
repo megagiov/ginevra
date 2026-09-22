@@ -232,6 +232,11 @@ def schema_azienda():
         },
         "geo": {"@type": "GeoCoordinates", "latitude": A["lat"], "longitude": A["lon"]},
         "hasMap": A["maps"],
+        "openingHoursSpecification": [
+            {"@type": "OpeningHoursSpecification", "dayOfWeek": o["giorni"],
+             "opens": o["apre"], "closes": o["chiude"]}
+            for o in C.ORARI_SCHEMA
+        ],
         "areaServed": [{"@type": "City", "name": z["nome"]} for z in C.ZONE],
         "sameAs": [A["maps"], A["facebook"], A["instagram"]],
         "makesOffer": [
