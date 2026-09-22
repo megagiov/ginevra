@@ -7,7 +7,9 @@
   --blu-chiaro: #17406e;
   --blu-tenue: #eef3f9;
   --arancio: #ef7622;
-  --arancio-scuro: #cf5f10;
+  --arancio-scuro: #cf5f10;   /* solo per bordi e dettagli, non per testo */
+  --arancio-hover: #e06a15;
+  --arancio-testo: #a8490a;  /* arancio leggibile su fondo chiaro */
   --testo: #1d2735;
   --testo-tenue: #566276;
   --bordo: #dde4ed;
@@ -38,7 +40,7 @@ img { max-width: 100%; height: auto; display: block; }
 main section img { border-radius: var(--raggio); }
 
 a { color: var(--blu-chiaro); }
-a:hover { color: var(--arancio-scuro); }
+a:hover { color: var(--arancio-testo); }
 
 h1, h2, h3 { line-height: 1.22; color: var(--blu); margin: 0 0 .6em; }
 h1 { font-size: 1.85rem; letter-spacing: -.01em; }
@@ -59,8 +61,9 @@ p { margin: 0 0 1em; }
 
 .topbar { background: var(--blu); color: #cfe0f2; font-size: .85rem; }
 .topbar .wrap { display: flex; gap: 16px; justify-content: space-between; align-items: center; min-height: 36px; flex-wrap: wrap; }
-.topbar a { color: #fff; text-decoration: none; }
-.topbar a:hover { text-decoration: underline; }
+/* sottolineati sempre: dentro un testo dello stesso colore il solo
+   contrasto non basta a farli riconoscere come collegamenti */
+.topbar a { color: #fff; text-decoration: underline; }
 
 .head { border-bottom: 1px solid var(--bordo); background: #fff; position: sticky; top: 0; z-index: 40; }
 .head .wrap { display: flex; flex-wrap: wrap; align-items: center;
@@ -83,7 +86,7 @@ p { margin: 0 0 1em; }
 .nav ul { list-style: none; margin: 0; padding: 8px 0 14px; }
 .nav li { border-top: 1px solid var(--bordo); }
 .nav a { display: block; padding: 12px 2px; text-decoration: none; color: var(--blu); font-weight: 600; }
-.nav a[aria-current="page"] { color: var(--arancio-scuro); }
+.nav a[aria-current="page"] { color: var(--arancio-testo); }
 
 /* ---------------------------------------------------------------- bottoni */
 
@@ -93,8 +96,10 @@ p { margin: 0 0 1em; }
   text-decoration: none; border: 2px solid transparent; font-size: 1rem;
   min-height: 48px; cursor: pointer;
 }
-.btn-arancio { background: var(--arancio); color: #fff; }
-.btn-arancio:hover { background: var(--arancio-scuro); color: #fff; }
+/* testo scuro sull'arancio: con il bianco il contrasto e' 2,88 e non
+   raggiunge il minimo richiesto dalle linee guida di accessibilita' */
+.btn-arancio { background: var(--arancio); color: var(--blu); }
+.btn-arancio:hover { background: var(--arancio-hover); color: var(--blu); }
 .btn-wa { background: #25d366; color: #073b1d; }
 .btn-wa:hover { background: #1fb856; color: #073b1d; }
 .btn-vuoto { background: transparent; color: var(--blu); border-color: var(--blu); }
@@ -130,7 +135,7 @@ p { margin: 0 0 1em; }
 section { padding: 30px 0; }
 section.tenue { background: var(--blu-tenue); }
 
-.occhiello { text-transform: uppercase; letter-spacing: .09em; font-size: .78rem; font-weight: 700; color: var(--arancio-scuro); margin-bottom: .4em; }
+.occhiello { text-transform: uppercase; letter-spacing: .09em; font-size: .78rem; font-weight: 700; color: var(--arancio-testo); margin-bottom: .4em; }
 
 .griglia { display: grid; gap: 14px; grid-template-columns: 1fr; }
 
@@ -245,6 +250,7 @@ legend { font-weight: 700; color: var(--blu); padding: 0 6px; }
 .foot li { margin-bottom: .45em; }
 .foot .col { margin-bottom: 18px; }
 .foot .social { display: flex; gap: 12px; }
+.foot p a { text-decoration: underline; }
 .foot .legale { border-top: 1px solid rgba(255,255,255,.15); padding-top: 14px; font-size: .84rem; color: #bcd3ea; }
 
 /* --------------------------------------------- barra fissa chiamata mobile */
