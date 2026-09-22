@@ -31,8 +31,13 @@ si pubblica per distrazione senza averli riempiti.
 
 | Cosa | Stato | Come si risolve |
 | --- | --- | --- |
-| Modulo preventivo | Endpoint fittizio | Crea un form gratuito su formspree.io e metti l'ID in `FORMSPREE_ID` (`content.py`) |
 | Coordinate geografiche | Approssimate sul CAP 80144 | `AZIENDA["lat"]` / `["lon"]`: prendi i valori esatti da Google Maps (clic destro sul punto, prima voce) |
+
+Il modulo preventivo e' collegato al form Formspree `mvkgajzy`, che recapita a
+sorgentetraslochi@gmail.com. Al primo invio in assoluto Formspree manda una
+mail di conferma con un pulsante da cliccare: finche' non lo si clicca, le
+richieste non arrivano. Fate quindi un invio di prova appena il sito e'
+online.
 
 Gli orari (lunedi' - sabato, 8:00 - 18:00) sono gia' inseriti: compaiono nel
 footer, nella pagina preventivo e nei dati strutturati

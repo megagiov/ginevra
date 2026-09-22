@@ -52,9 +52,9 @@ ORARI_SCHEMA = [
 
 WHATSAPP_MSG = "Salve,%20vorrei%20un%20preventivo%20per%20un%20trasloco."
 
-# Formspree: creare un form gratuito su https://formspree.io e incollare qui
-# l'ID che compare nell'endpoint (formspree.io/f/XXXXXXXX).
-FORMSPREE_ID = "XXXXXXXX"
+# Formspree: ID del form gratuito collegato a sorgentetraslochi@gmail.com.
+# Compare nell'endpoint del modulo (formspree.io/f/<ID>).
+FORMSPREE_ID = "mvkgajzy"
 
 # --------------------------------------------------------------------------
 # Navigazione

@@ -204,6 +204,7 @@ section.tenue { background: var(--blu-tenue); }
 /* ------------------------------------------------------------------ modulo */
 
 form { display: grid; gap: 14px; }
+[hidden] { display: none !important; }
 .campo { display: grid; gap: 5px; }
 .campo label { font-weight: 600; color: var(--blu); font-size: .95rem; }
 .campo .aiuto { font-size: .84rem; color: var(--testo-tenue); }
@@ -219,6 +220,13 @@ legend { font-weight: 700; color: var(--blu); padding: 0 6px; }
 .consenso { display: flex; gap: 10px; align-items: flex-start; font-size: .92rem; color: var(--testo-tenue); }
 .consenso input { width: 20px; min-height: 20px; height: 20px; margin-top: 3px; flex: 0 0 auto; }
 .hp { position: absolute; left: -9999px; }
+
+/* esito dell'invio del modulo (riempito via JavaScript) */
+.esito { border-radius: var(--raggio); padding: 16px 18px; margin-bottom: 18px; }
+.esito:focus { outline: 3px solid rgba(239, 118, 34, .4); }
+.esito strong { font-size: 1.05rem; }
+.esito.ok { background: #e8f6ee; border: 1px solid #a8d9bf; border-left: 4px solid var(--ok); color: #14563a; }
+.esito.ko { background: #fdecec; border: 1px solid #f0bcbc; border-left: 4px solid #b3261e; color: #7d1c17; }
 
 /* ------------------------------------------------------------------- piede */
 
