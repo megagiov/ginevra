@@ -14,8 +14,6 @@ import json
 import os
 import re
 import shutil
-import struct
-import zlib
 from datetime import date
 
 import content as C
@@ -138,6 +136,21 @@ def cta_finale(titolo, testo):
 </div></section>""" % (e(titolo), e(testo), bottoni(chiaro=True))
 
 
+def foto(nome, alt, larghezza, altezza, primaria=False):
+    """Immagine reale dell'azienda.
+
+    La foto della home e' l'elemento piu' grande sopra la piega (l'LCP dei
+    Core Web Vitals): va caricata subito, non in differita. Tutte le altre
+    sono lazy. width e height servono a riservare lo spazio prima che
+    l'immagine arrivi, cosi' la pagina non sobbalza mentre carica.
+    """
+    caricamento = ('loading="eager" fetchpriority="high"' if primaria
+                   else 'loading="lazy"')
+    return ('<img src="/img/%s" alt="%s" width="%d" height="%d" %s '
+            'decoding="async">' % (nome, e(alt), larghezza, altezza,
+                                   caricamento))
+
+
 def placeholder(titolo, nota):
     """Segnaposto immagine: da sostituire con <img> quando ci sono le foto."""
     return ('<div class="ph"><b>%s</b><span>%s</span>'
@@ -215,7 +228,7 @@ def schema_azienda():
         "url": url("/"),
         "telephone": A["telefono_tel"],
         "email": A["email"],
-        "image": url("/og-sorgente-traslochi.png"),
+        "image": url("/og-sorgente-traslochi.jpg"),
         "logo": url("/favicon.svg"),
         "description": ("Impresa familiare napoletana attiva dal 1965: "
                         "traslochi di case e uffici, montaggio e smontaggio "
@@ -314,7 +327,7 @@ def scrivi(slug, titolo, descrizione, corpo, schema_blocchi=(), briciole=None,
     bc_markup, bc_schema = breadcrumb(briciole or [])
     doc = DOC.format(
         title=e(titolo), descr=e(descrizione), canon=url(percorso), robots=robots,
-        og=url("/og-sorgente-traslochi.png"),
+        og=url("/og-sorgente-traslochi.jpg"),
         schema=jsonld(*(list(schema_blocchi) + [bc_schema])),
         header=header(percorso), breadcrumb=bc_markup, corpo=corpo,
         footer=footer(),
@@ -423,8 +436,10 @@ def costruisci_home():
 
 %(cta)s""" % {
         "h1": e(h["h1"]), "sub": e(h["sottotitolo"]), "btn": bottoni(chiaro=True),
-        "ph": placeholder("Foto squadra e furgone",
-                          "Suggerita: il mezzo davanti a un palazzo napoletano"),
+        "ph": foto("trasloco-autoscala-palazzo-napoli.webp",
+                   "Due mezzi Sorgente Traslochi e l'autoscala al lavoro "
+                   "davanti a un palazzo di Napoli",
+                   516, 387, primaria=True),
         "fiducia": fiducia, "chi": chi, "servizi": servizi,
         "mobilifici": e(mobilifici), "marchi": e(marchi), "passi": passi,
         "zone": zone_link, "recnota": e(h["recensioni_nota"]), "maps": A["maps"],
@@ -557,8 +572,10 @@ def costruisci_chi_siamo():
 </div></section>
 %(cta)s""" % {
         "h1": e(p["h1"]),
-        "ph": placeholder("Foto storica o di squadra",
-                          "Suggerita: una foto d'epoca del primo mezzo"),
+        "ph": foto("mezzi-sorgente-traslochi-napoli.webp",
+                   "I furgoni Sorgente Traslochi pronti per la giornata di "
+                   "lavoro",
+                   533, 375),
         "blocchi": "".join(blocchi), "btn": bottoni(),
         "cta": cta_finale("Vi serve una mano?",
                           "Un sopralluogo gratuito &egrave; il modo pi&ugrave; "
@@ -923,37 +940,6 @@ SCRIPT = """/* Due cose soltanto: il menu su mobile e l'invio del modulo senza
 """
 
 
-def png_piatto(percorso, larghezza, altezza, bande):
-    """Scrive un PNG senza dipendenze esterne.
-
-    bande: lista di (altezza_in_pixel, (r, g, b)) dall'alto verso il basso.
-    Serve solo a produrre l'immagine di anteprima social provvisoria.
-    """
-    righe = bytearray()
-    riga_corrente = 0
-    for h_banda, colore in bande:
-        linea = bytes(colore) * larghezza
-        for _ in range(h_banda):
-            if riga_corrente >= altezza:
-                break
-            righe += b"\x00" + linea
-            riga_corrente += 1
-    while riga_corrente < altezza:
-        righe += b"\x00" + bytes(bande[-1][1]) * larghezza
-        riga_corrente += 1
-
-    def chunk(tipo, dati):
-        return (struct.pack(">I", len(dati)) + tipo + dati
-                + struct.pack(">I", zlib.crc32(tipo + dati) & 0xFFFFFFFF))
-
-    png = (b"\x89PNG\r\n\x1a\n"
-           + chunk(b"IHDR", struct.pack(">IIBBBBB", larghezza, altezza, 8, 2, 0, 0, 0))
-           + chunk(b"IDAT", zlib.compress(bytes(righe), 9))
-           + chunk(b"IEND", b""))
-    with open(percorso, "wb") as f:
-        f.write(png)
-
-
 def scrivi_statici():
     shutil.copyfile(os.path.join(SRC, "style.css"), os.path.join(DIST, "style.css"))
     with open(os.path.join(DIST, "script.js"), "w", encoding="utf-8") as f:
@@ -961,9 +947,18 @@ def scrivi_statici():
     with open(os.path.join(DIST, "favicon.svg"), "w", encoding="utf-8") as f:
         f.write(FAVICON)
 
-    # Anteprima social provvisoria: va sostituita con una foto reale 1200x630.
-    png_piatto(os.path.join(DIST, "og-sorgente-traslochi.png"), 1200, 630,
-               [(540, (13, 36, 64)), (90, (239, 118, 34))])
+    # Foto dell'azienda: i WebP vanno in /img, l'anteprima social nella
+    # radice. Li prepara tools/prepara-foto.py, qui si copiano soltanto.
+    img_src = os.path.join(SRC, "img")
+    img_dist = os.path.join(DIST, "img")
+    os.makedirs(img_dist, exist_ok=True)
+    for nome in sorted(os.listdir(img_src)):
+        if nome.endswith(".webp"):
+            shutil.copyfile(os.path.join(img_src, nome),
+                            os.path.join(img_dist, nome))
+        elif nome == "og-sorgente-traslochi.jpg":
+            shutil.copyfile(os.path.join(img_src, nome),
+                            os.path.join(DIST, nome))
 
     with open(os.path.join(DIST, "robots.txt"), "w", encoding="utf-8") as f:
         f.write("User-agent: *\nAllow: /\n\nSitemap: %s\n" % url("/sitemap.xml"))
@@ -987,6 +982,7 @@ def scrivi_statici():
                 "\n/script.js\n  Cache-Control: public, max-age=86400\n"
                 "\n/favicon.svg\n  Cache-Control: public, max-age=604800\n"
                 "\n/*.png\n  Cache-Control: public, max-age=604800\n"
+                "\n/*.jpg\n  Cache-Control: public, max-age=604800\n"
                 "\n/*.webp\n  Cache-Control: public, max-age=604800\n")
 
 

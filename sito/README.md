@@ -58,17 +58,24 @@ Caratteristiche tecniche:
 
 ## Immagini
 
-Le foto attuali dell'azienda sono stock, quindi il sito non ne usa nessuna: al
-loro posto ci sono segnaposto (`<div class="ph">`) che indicano che foto
-servirebbe. Quando arrivano le foto reali:
+Le foto reali stanno in `src/img/`: i WebP che il sito usa e gli originali in
+`src/img/originali/`. Per aggiungerne di nuove:
 
-1. converti in WebP e ridimensiona (max 1600 px di lato lungo)
-2. salva in `src/img/` con nomi descrittivi, per esempio
-   `trasloco-appartamento-vomero-napoli.webp`
-3. sostituisci il segnaposto con
-   `<img src="/img/nome-file.webp" width="..." height="..." loading="lazy" alt="descrizione">`
-   (niente `loading="lazy"` sulla prima immagine della home: penalizza l'LCP)
-4. fai copiare la cartella da `build.py` insieme agli altri statici
+1. metti l'originale (JPG o PNG) in `src/img/originali/` con un nome
+   descrittivo, per esempio `trasloco-appartamento-vomero-napoli.jpg`
+2. aggiungilo all'elenco `FOTO` in `tools/prepara-foto.py`
+3. `pip install Pillow && python3 tools/prepara-foto.py` converte in WebP
+4. usa la foto in `build.py` con `foto("nome.webp", "descrizione", larghezza,
+   altezza)`; la prima immagine della home vuole `primaria=True`, che la
+   carica subito invece che in differita
+5. `python3 build.py`
+
+`build.py` non ha bisogno di Pillow: si limita a copiare i file gia' pronti.
+La conversione e' un passaggio a parte, da fare solo quando arrivano foto
+nuove.
+
+Dove mancano ancora le foto (le pagine servizio) resta un segnaposto
+`<div class="ph">` che dice quale scatto servirebbe.
 
 ## Da completare prima di pubblicare
 
