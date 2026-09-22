@@ -170,6 +170,30 @@ HOME = {
                                    "trasportiamo e rimontiamo. A fine "
                                    "giornata i mobili sono al loro posto."),
     ],
+    "faq": [
+        ("Quanto costa un trasloco a Napoli?",
+         "Non esiste un prezzo unico: dipende da quanti metri cubi si "
+         "spostano, dal piano e dall'ascensore in partenza e in arrivo, dallo "
+         "spazio per fermare il mezzo, dai mobili da smontare e rimontare e "
+         "dalla distanza. Per questo veniamo a vedere di persona e mettiamo "
+         "tutto per iscritto prima di cominciare: il sopralluogo e il "
+         "preventivo sono gratuiti e non vi impegnano."),
+        ("Quanto tempo prima conviene prenotare?",
+         "Prima ci si sente, più facile è tenere il giorno che serve a voi. "
+         "Fine mese, inizio mese e sabato sono i periodi più richiesti. "
+         "Chiamate appena avete una data indicativa, anche se non è ancora "
+         "definitiva: si aggiusta poi."),
+        ("Lavorate solo a Napoli città?",
+         "No, copriamo tutta la provincia: Casoria, Afragola, Arzano, "
+         "Casalnuovo, Giugliano, Marano, l'area flegrea con Pozzuoli, e la "
+         "fascia vesuviana con Portici, Ercolano e Torre del Greco, oltre a "
+         "Pomigliano d'Arco. Se il vostro comune non è in elenco chiedeteci "
+         "lo stesso: spesso ci andiamo."),
+        ("Posso chiamarvi solo per montare o smontare dei mobili?",
+         "Sì, il montaggio è un servizio a sé: lo facciamo anche per chi "
+         "non trasloca, compreso un singolo mobile o una cucina comprata in "
+         "negozio."),
+    ],
     "recensioni_nota": "Stiamo raccogliendo qui le recensioni lasciate dai "
                        "clienti sulla scheda Google. Se vi siete trovati bene, "
                        "lasciarne una è il modo più utile per aiutarci.",
@@ -707,6 +731,49 @@ ZONE = [
         ],
     },
 ]
+
+# Collegamenti interni: frasi gia' presenti nei testi delle zone che
+# diventano link alle pagine servizio. Si aggancia il link a un'espressione
+# che c'e' davvero, invece di aggiungere in fondo a ogni sezione la stessa
+# riga di collegamenti: quella sarebbe la classica coda uguale per tutti.
+LINK_ZONE = {
+    "casoria": [
+        ("uffici e attività commerciali", "/traslochi-uffici-napoli/"),
+    ],
+    "afragola": [
+        ("cucine su misura", "/montaggio-mobili-napoli/"),
+    ],
+    "arzano": [
+        ("sgomberi di cantine e garage", "/sgomberi-napoli/"),
+        ("montaggi di cucine e armadi", "/montaggio-mobili-napoli/"),
+    ],
+    "giugliano": [
+        ("periodi di deposito", "/deposito-mobili-napoli/"),
+    ],
+    "pozzuoli": [
+        ("deposito", "/deposito-mobili-napoli/"),
+    ],
+    "portici": [
+        ("appartamenti in edifici storici", "/traslochi-abitazioni-napoli/"),
+    ],
+    "ercolano": [
+        ("traslochi di case", "/traslochi-abitazioni-napoli/"),
+        ("sgomberi di cantine e depositi", "/sgomberi-napoli/"),
+    ],
+    "torre-del-greco": [
+        ("laboratori e attività artigianali", "/traslochi-uffici-napoli/"),
+    ],
+    "pomigliano": [
+        ("uffici da trasferire", "/traslochi-uffici-napoli/"),
+        ("magazzini da svuotare", "/sgomberi-napoli/"),
+    ],
+    "casalnuovo": [
+        ("case indipendenti", "/traslochi-abitazioni-napoli/"),
+    ],
+    "marano": [
+        ("mobili voluminosi", "/traslochi-abitazioni-napoli/"),
+    ],
+}
 
 PAGINA_ZONE = {
     "slug": "zone-servite",

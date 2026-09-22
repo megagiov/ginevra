@@ -269,6 +269,34 @@ def schema_azienda():
     }
 
 
+def schema_servizio(p):
+    """Descrive il singolo servizio e lo collega all'azienda.
+
+    Il riferimento e' allo stesso @id usato in home: cosi' i motori capiscono
+    che le pagine servizio e la scheda dell'azienda parlano della stessa
+    impresa, invece di trattarle come soggetti diversi.
+    """
+    return {
+        "@context": "https://schema.org",
+        "@type": "Service",
+        "name": p["h1"],
+        "description": p["intro"][0],
+        "serviceType": p["titolo_servizio"],
+        "provider": {"@id": url("/#azienda")},
+        "url": url("/%s/" % p["slug"]),
+        "areaServed": [{"@type": "City", "name": z["nome"]} for z in C.ZONE],
+        "availableChannel": {
+            "@type": "ServiceChannel",
+            "servicePhone": {"@type": "ContactPoint",
+                             "telephone": A["telefono_tel"],
+                             "contactType": "customer service",
+                             "areaServed": "IT",
+                             "availableLanguage": "Italian"},
+            "serviceUrl": url("/preventivo/"),
+        },
+    }
+
+
 def schema_faq(faq):
     return {
         "@context": "https://schema.org",
@@ -310,7 +338,11 @@ DOC = """<!doctype html>
 <meta property="og:description" content="{descr}">
 <meta property="og:url" content="{canon}">
 <meta property="og:image" content="{og}">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="628">
+<meta property="og:image:alt" content="Mezzi Sorgente Traslochi al lavoro davanti a un palazzo di Napoli">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="{og}">
 <meta name="theme-color" content="#0d2440">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/favicon.svg">
@@ -429,6 +461,12 @@ def costruisci_home():
   <p><a href="/zone-servite/">Vedi tutte le zone servite</a></p>
 </div></section>
 
+<section><div class="wrap stretto faq">
+  <p class="occhiello">Domande frequenti</p>
+  <h2>Le domande che ci fanno pi&ugrave; spesso</h2>
+  %(faq)s
+</div></section>
+
 <section class="tenue"><div class="wrap stretto">
   <p class="occhiello">Recensioni</p>
   <h2>Cosa dicono i clienti</h2>
@@ -457,13 +495,17 @@ def costruisci_home():
                        "pensili e forno a incasso allineati",
                        1000, 750),
         "zone": zone_link, "recnota": e(h["recensioni_nota"]), "maps": A["maps"],
+        "faq": "".join(
+            "<details><summary>%s</summary><p>%s</p></details>" % (e(q), e(r))
+            for q, r in h["faq"]),
         "cta": cta_finale("Serve un preventivo?",
                           "Sopralluogo e preventivo sono gratuiti e non "
                           "impegnano a nulla. Chiamate, scrivete su WhatsApp "
                           "o compilate il modulo: rispondiamo noi."),
     }
     scrivi("", h["title"], h["description"], corpo,
-           schema_blocchi=[schema_azienda()], briciole=None, priorita="1.0")
+           schema_blocchi=[schema_azienda(), schema_faq(h["faq"])],
+           briciole=None, priorita="1.0")
 
 
 # --------------------------------------------------------------------------
@@ -471,6 +513,9 @@ def costruisci_home():
 # --------------------------------------------------------------------------
 
 def costruisci_servizio(p):
+    p.setdefault("titolo_servizio",
+                 next(s["titolo"] for s in C.SERVIZI
+                      if s["url"] == "/%s/" % p["slug"]))
     intro = "".join("<p>%s</p>" % e(t) for t in p["intro"])
     cosa = "".join("<li>%s</li>" % e(t) for t in p["cosa_facciamo"])
     perche = "".join("<div><b>%s</b><p>%s</p></div>" % (e(t), e(d))
@@ -523,7 +568,7 @@ def costruisci_servizio(p):
                           "subito come lo faremmo e quanto costa."),
     }
     scrivi(p["slug"], p["title"], p["description"], corpo,
-           schema_blocchi=[schema_faq(p["faq"])],
+           schema_blocchi=[schema_servizio(p), schema_faq(p["faq"])],
            briciole=[("/%s/" % p["slug"], p["h1"])], priorita="0.9")
 
 
@@ -538,6 +583,10 @@ def costruisci_zone():
     sezioni = []
     for z in C.ZONE:
         testo = "".join("<p>%s</p>" % e(t) for t in z["testo"])
+        # i collegamenti si agganciano alla prima occorrenza della frase
+        for frase, destinazione in C.LINK_ZONE.get(z["id"], []):
+            marcato = '<a href="%s">%s</a>' % (destinazione, e(frase))
+            testo = testo.replace(e(frase), marcato, 1)
         sezioni.append(
             '<div class="zona" id="%s"><h2>%s</h2>%s</div>' % (z["id"], e(z["nome"]), testo))
     corpo = """<section><div class="wrap stretto">
@@ -599,6 +648,7 @@ def costruisci_chi_siamo():
                           "trasloco."),
     }
     scrivi(p["slug"], p["title"], p["description"], corpo,
+           schema_blocchi=[schema_azienda()],
            briciole=[("/chi-siamo/", "Chi siamo")], priorita="0.6")
 
 
@@ -746,6 +796,7 @@ def costruisci_preventivo():
         "orari": orari_riga("<li>Orari: %s</li>"),
     }
     scrivi(p["slug"], p["title"], p["description"], corpo,
+           schema_blocchi=[schema_azienda()],
            briciole=[("/preventivo/", "Preventivo")], priorita="0.9")
 
 
