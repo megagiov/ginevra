@@ -280,7 +280,7 @@ DOC = """<!doctype html>
 <title>{title}</title>
 <meta name="description" content="{descr}">
 <link rel="canonical" href="{canon}">
-<meta name="robots" content="index, follow, max-image-preview:large">
+<meta name="robots" content="{robots}">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Sorgente Traslochi">
 <meta property="og:locale" content="it_IT">
@@ -308,21 +308,27 @@ DOC = """<!doctype html>
 
 
 def scrivi(slug, titolo, descrizione, corpo, schema_blocchi=(), briciole=None,
-           priorita="0.7"):
+           priorita="0.7", robots="index, follow, max-image-preview:large",
+           in_sitemap=True, nome_file=None):
     percorso = "/" if slug == "" else "/%s/" % slug
     bc_markup, bc_schema = breadcrumb(briciole or [])
     doc = DOC.format(
-        title=e(titolo), descr=e(descrizione), canon=url(percorso),
+        title=e(titolo), descr=e(descrizione), canon=url(percorso), robots=robots,
         og=url("/og-sorgente-traslochi.png"),
         schema=jsonld(*(list(schema_blocchi) + [bc_schema])),
         header=header(percorso), breadcrumb=bc_markup, corpo=corpo,
         footer=footer(),
     )
-    cartella = DIST if slug == "" else os.path.join(DIST, slug)
-    os.makedirs(cartella, exist_ok=True)
-    with open(os.path.join(cartella, "index.html"), "w", encoding="utf-8") as f:
+    if nome_file:
+        destinazione = os.path.join(DIST, nome_file)
+    else:
+        cartella = DIST if slug == "" else os.path.join(DIST, slug)
+        os.makedirs(cartella, exist_ok=True)
+        destinazione = os.path.join(cartella, "index.html")
+    with open(destinazione, "w", encoding="utf-8") as f:
         f.write(doc)
-    SITEMAP.append((percorso, priorita))
+    if in_sitemap:
+        SITEMAP.append((percorso, priorita))
     return percorso
 
 
@@ -814,6 +820,39 @@ def costruisci_privacy():
 
 
 # --------------------------------------------------------------------------
+# Pagina 404
+# --------------------------------------------------------------------------
+
+def costruisci_404():
+    """Cloudflare Pages serve dist/404.html con stato 404 per gli indirizzi
+    inesistenti. Senza questo file servirebbe la home con stato 200, e Google
+    finirebbe per indicizzare indirizzi inventati."""
+    servizi = "".join('<li><a href="%s">%s</a></li>' % (s["url"], e(s["titolo"]))
+                      for s in C.SERVIZI)
+    corpo = """<section><div class="wrap stretto">
+  <p class="occhiello">Errore 404</p>
+  <h1>Questa pagina non c&#8217;&egrave;</h1>
+  <p>L&#8217;indirizzo che avete aperto non esiste, oppure la pagina &egrave;
+     stata spostata. Nessun problema: da qui si arriva ovunque.</p>
+  %(btn)s
+  <h2>I nostri servizi</h2>
+  <ul class="elenco">%(servizi)s</ul>
+  <h2>Altre pagine</h2>
+  <ul class="elenco">
+    <li><a href="/">Home</a></li>
+    <li><a href="/zone-servite/">Zone servite</a></li>
+    <li><a href="/chi-siamo/">Chi siamo</a></li>
+    <li><a href="/preventivo/">Preventivo gratuito</a></li>
+  </ul>
+</div></section>""" % {"btn": bottoni(), "servizi": servizi}
+    scrivi("404", "Pagina non trovata | Sorgente Traslochi",
+           "La pagina cercata non esiste. Da qui potete raggiungere i servizi "
+           "di trasloco, sgombero e montaggio mobili a Napoli e provincia.",
+           corpo, robots="noindex, follow", in_sitemap=False,
+           nome_file="404.html")
+
+
+# --------------------------------------------------------------------------
 # File statici
 # --------------------------------------------------------------------------
 
@@ -963,6 +1002,7 @@ def main():
     costruisci_chi_siamo()
     costruisci_preventivo()
     costruisci_privacy()
+    costruisci_404()
     scrivi_statici()
 
     print("Generate %d pagine in %s" % (len(SITEMAP), DIST))
