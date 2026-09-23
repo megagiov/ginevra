@@ -93,9 +93,12 @@ Non bloccano la pubblicazione, ma il sito rende molto di piu' con questi:
   recuperate i file originali dal telefono (inviandoli per email, non via
   WhatsApp, che li ricomprime) si rifa' la conversione in un minuto e la resa
   migliora.
-- **Recensioni Google**: nella home ci sono due segnaposto. Vanno sostituiti
-  con recensioni reali prese dalla scheda Google, citando nome e data.
-  Non inventarle: le recensioni false sono pubblicita' ingannevole.
+- **Recensioni recenti.** In home ci sono due recensioni vere prese dalla
+  scheda, riportate alla lettera. Il problema e' l'eta': delle sei sulla
+  scheda, quattro hanno cinque o sei anni e l'unica recente non ha testo. Le
+  recensioni fresche contano piu' di quelle vecchie, sia per chi legge sia per
+  Google: vale la pena chiederne a fine lavoro. Quando ne arrivano di nuove
+  con un testo, si sostituiscono queste.
 - **Immagine di anteprima social**: e' la foto dei mezzi davanti al palazzo,
   ritagliata a 1200x630 (`dist/og-sorgente-traslochi.jpg`). Essendo ingrandita
   da un originale piccolo, e' un po' morbida: si rifa' da sola quando arriva

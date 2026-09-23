@@ -193,7 +193,10 @@ section.tenue { background: var(--blu-tenue); }
 .zona { border-top: 1px solid var(--bordo); padding-top: 18px; margin-top: 22px; }
 .zona:first-of-type { border-top: 0; }
 
-.recensione { background: #fff; border: 1px solid var(--bordo); border-radius: var(--raggio); padding: 16px; }
+.recensione { background: #fff; border: 1px solid var(--bordo); border-radius: var(--raggio); padding: 16px; margin: 0; }
+.recensione blockquote { margin: 0; }
+.recensione blockquote p { margin: 0 0 .6em; }
+.recensione figcaption { font-size: .88rem; color: var(--testo-tenue); font-weight: 600; }
 .stelle { color: var(--arancio); letter-spacing: 2px; }
 
 .nota {

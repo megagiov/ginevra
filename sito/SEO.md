@@ -98,9 +98,12 @@ nel sito.
 - obiettivo ragionevole: due o tre al mese, costanti. Venti recensioni vere
   spalmate su un anno valgono piu' di cinquanta arrivate in una settimana
 
-Sul sito ci sono due segnaposto per le recensioni: quando ne avete di reali,
-le riporto con nome e data. **Non le inventiamo**: oltre a essere pubblicita'
-ingannevole, Google le riconosce e penalizza.
+In home ci sono ora due recensioni vere della scheda, riportate alla lettera.
+Restano un patrimonio invecchiato: quattro delle sei hanno cinque o sei anni,
+e l'unica degli ultimi mesi non ha testo. **Non se ne inventano altre**: oltre
+a essere pubblicita' ingannevole, Google le riconosce e penalizza. Se ne
+chiedono di nuove, ed e' l'attivita' con il ritorno piu' alto fra tutte quelle
+elencate in questo documento.
 
 ---
 
