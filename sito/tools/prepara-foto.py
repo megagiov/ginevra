@@ -54,6 +54,11 @@ FOTO = [
     ("carico-furgone-centro-storico-napoli.jpg",
      "carico-furgone-centro-storico-napoli.webp", 1000, None, False,
      (20, 250, 560, 655)),
+    # Stessa foto, inquadratura piu' larga sul palazzo e sulla strada: serve
+    # alla pagina degli uffici, dove non abbiamo ancora uno scatto dedicato.
+    ("carico-furgone-centro-storico-napoli.jpg",
+     "carico-mezzi-strada-napoli.webp", 1000, None, False,
+     (0, 140, 535, 665)),
     # Anteprima social. Unico caso in cui si ingrandisce: sotto i 600x315
     # WhatsApp e Facebook mostrano una miniatura quadratina invece della
     # scheda grande, e una foto un po' morbida rende comunque meglio di un

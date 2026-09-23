@@ -79,14 +79,16 @@ pubblicazione, perche' compare in evidenza.
 
 Non bloccano la pubblicazione, ma il sito rende molto di piu' con questi:
 
-- **Foto reali** al posto dei segnaposto rimasti (vedi README, sezione
-  Immagini). Online ce ne sono gia' sette: l'autoscala davanti al palazzo e
-  una cucina bianca in home, i furgoni in chi siamo, il montaggio di un letto
-  piu' due cucine sulla pagina montaggio, il carico nel centro storico sulla
-  pagina traslochi abitazioni. Restano senza foto tre pagine: **uffici e
-  negozi**, **sgomberi** e **deposito**. Servirebbero un ufficio o un negozio
-  in fase di trasloco, una cantina o una casa svuotata, e dei mobili
-  imballati in deposito.
+- **Foto dedicate per tre pagine.** Non ci sono piu' segnaposto: ogni pagina
+  ha una foto vera. Ma **uffici e negozi**, **sgomberi** e **deposito** usano
+  foto riprese da altre pagine, perche' scatti di quei lavori non ne abbiamo.
+  Le descrizioni dicono quello che si vede davvero e non fanno credere che
+  siano lavori di quel tipo, quindi non c'e' niente di scorretto; e' solo
+  meno efficace di una foto giusta.
+
+  Quando capita, fotografate: un ufficio o un negozio in fase di trasloco,
+  una cantina o una casa appena svuotata, dei mobili imballati in deposito.
+  Bastano scatti col telefono, fatti mentre si lavora.
 - **Originali delle prime due foto.** Quelle dei mezzi sono passate
   da una chat e sono arrivate a 516x387 pixel: bastano per il riquadro della
   home, ma sono tirate per l'anteprima social, che vuole 1200x630. Se
