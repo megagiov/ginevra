@@ -1,6 +1,6 @@
 # SEO: cosa e' fatto, cosa manca, cosa conta davvero
 
-Documento di lavoro per Sorgente Traslochi. Aggiornato al 22 settembre 2026.
+Documento di lavoro per Sorgente Traslochi. Aggiornato al 23 settembre 2026.
 
 Premessa onesta, perche' il resto si capisca meglio: per un'impresa di
 traslochi a Napoli, **la scheda Google Business pesa piu' del sito**. Chi cerca
@@ -48,21 +48,20 @@ guadagno sta nei contenuti e nella scheda Google.
 
 ## 2. Da fare subito, e puo' farlo solo chi ha gli account
 
-### Google Search Console (dieci minuti, il primo passo)
+### Google Search Console - FATTO il 23 settembre 2026
 
-Senza questo, Google scopre il sito da solo, con i suoi tempi. Con questo, si
-parte in giorni invece che in settimane e si vede cosa cercano le persone.
+- proprieta' `https://sorgentetraslochi.pages.dev` verificata con tag HTML
+  (il codice sta in `VERIFICA_GOOGLE` dentro `content.py` e finisce nella
+  testa di tutte le pagine)
+- sitemap inviata e accettata: 10 URL
+- resta da chiedere l'indicizzazione delle pagine principali con *Controllo
+  URL* > *Richiedi indicizzazione*, una alla volta: home, le cinque pagine
+  servizio, zone servite
 
-1. <https://search.google.com/search-console> con l'account Google
-   dell'azienda, lo stesso della scheda Business
-2. Aggiungi proprieta' > **Prefisso URL** > `https://sorgentetraslochi.pages.dev`
-3. Verifica: se siete gia' proprietari verificati della scheda Google
-   Business, spesso passa da sola. Altrimenti Google da' un `<meta>`:
-   mandatemelo, lo inserisco e ripubblico in un minuto
-4. Menu **Sitemap** > inserire `sitemap.xml` > Invia
-5. **Controllo URL** in alto: incollare l'indirizzo della home e premere
-   *Richiedi indicizzazione*. Ripetere per le cinque pagine servizio e per
-   zone servite
+Da qui in avanti Search Console si guarda, non si tocca. Il momento utile e'
+fra tre o quattro settimane, quando in **Rendimento** compaiono le prime
+ricerche: li' si legge cosa cerca davvero la gente e si decide su cosa
+insistere.
 
 Dopo tre o quattro settimane, in **Rendimento**, si legge con quali ricerche
 il sito compare. E' li' che si capisce su cosa insistere: se arriva traffico
