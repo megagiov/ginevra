@@ -209,9 +209,18 @@ HOME = {
          "non trasloca, compreso un singolo mobile o una cucina comprata in "
          "negozio."),
     ],
-    "recensioni_nota": "Stiamo raccogliendo qui le recensioni lasciate dai "
-                       "clienti sulla scheda Google. Se vi siete trovati bene, "
-                       "lasciarne una è il modo più utile per aiutarci.",
+    # Recensioni vere prese dalla scheda Google, riportate alla lettera:
+    # non si correggono e non si abbelliscono, sono parole di altri.
+    "recensioni": [
+        ("Aziende con ottimo personale qualificato, mi hanno modificato la "
+         "cucina per adattarla alla nuova casa sono molto professionali "
+         "CONSIGLIATO",
+         "Gennaro De Martino"),
+        ("Professionisti al tuo servizio ,fantastici personale qualificato",
+         "Giuseppe Viscardi"),
+    ],
+    "recensioni_nota": "Se vi siete trovati bene, lasciare una recensione è "
+                       "il modo più utile per aiutarci.",
 }
 
 # --------------------------------------------------------------------------

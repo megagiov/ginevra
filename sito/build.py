@@ -473,16 +473,11 @@ def costruisci_home():
 <section class="tenue"><div class="wrap stretto">
   <p class="occhiello">Recensioni</p>
   <h2>Cosa dicono i clienti</h2>
-  <div class="griglia">
-    <div class="recensione"><p class="stelle" aria-hidden="true">&#9733;&#9733;&#9733;&#9733;&#9733;</p>
-      <p>[SEGNAPOSTO &mdash; inserire qui una recensione reale presa dalla
-         scheda Google, con nome e data.]</p></div>
-    <div class="recensione"><p class="stelle" aria-hidden="true">&#9733;&#9733;&#9733;&#9733;&#9733;</p>
-      <p>[SEGNAPOSTO &mdash; inserire qui una seconda recensione reale.]</p></div>
-  </div>
-  <p class="nota">%(recnota)s
-     <a href="%(maps)s" rel="noopener" target="_blank">Lascia una recensione su
-     Google</a>.</p>
+  <div class="griglia">%(recensioni)s</div>
+  <p class="nota">Sono recensioni lasciate su Google, riportate come sono
+     state scritte:
+     <a href="%(maps)s" rel="noopener" target="_blank">si possono leggere
+     tutte sulla nostra scheda</a>. %(recnota)s</p>
 </div></section>
 
 %(cta)s""" % {
@@ -498,6 +493,13 @@ def costruisci_home():
                        "pensili e forno a incasso allineati",
                        1000, 750),
         "zone": zone_link, "recnota": e(h["recensioni_nota"]), "maps": A["maps"],
+        "recensioni": "".join(
+            '<figure class="recensione">'
+            '<p class="stelle" aria-hidden="true">&#9733;&#9733;&#9733;&#9733;&#9733;</p>'
+            '<blockquote><p>%s</p></blockquote>'
+            '<figcaption>%s &mdash; recensione su Google</figcaption>'
+            "</figure>" % (e(testo), e(autore))
+            for testo, autore in h["recensioni"]),
         "faq": "".join(
             "<details><summary>%s</summary><p>%s</p></details>" % (e(q), e(r))
             for q, r in h["faq"]),
