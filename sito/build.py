@@ -330,7 +330,7 @@ DOC = """<!doctype html>
 <title>{title}</title>
 <meta name="description" content="{descr}">
 <link rel="canonical" href="{canon}">
-<meta name="robots" content="{robots}">
+<meta name="robots" content="{robots}">{verifica}
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Sorgente Traslochi">
 <meta property="og:locale" content="it_IT">
@@ -366,8 +366,11 @@ def scrivi(slug, titolo, descrizione, corpo, schema_blocchi=(), briciole=None,
            in_sitemap=True, nome_file=None):
     percorso = "/" if slug == "" else "/%s/" % slug
     bc_markup, bc_schema = breadcrumb(briciole or [])
+    verifica = ('\n<meta name="google-site-verification" content="%s">'
+                % e(C.VERIFICA_GOOGLE)) if C.VERIFICA_GOOGLE else ""
     doc = DOC.format(
         title=e(titolo), descr=e(descrizione), canon=url(percorso), robots=robots,
+        verifica=verifica,
         og=url("/og-sorgente-traslochi.jpg"),
         schema=jsonld(*(list(schema_blocchi) + [bc_schema])),
         header=header(percorso), breadcrumb=bc_markup, corpo=corpo,
@@ -897,7 +900,8 @@ def costruisci_privacy():
         "indirizzo": e(INDIRIZZO), "piva": piva_frammento(prefisso=" &mdash; "),
         "tel": TEL_HREF,
         "telefono": e(A["telefono_display"]), "mail": MAIL_HREF,
-        "email": e(A["email"]), "data": date.today().strftime("%d/%m/%Y"),
+        "email": e(A["email"]),
+        "data": date.fromisoformat(C.DATA_AGGIORNAMENTO).strftime("%d/%m/%Y"),
     }
     scrivi(p["slug"], p["title"], p["description"], corpo,
            briciole=[("/privacy/", "Privacy e cookie")], priorita="0.3")
@@ -1030,7 +1034,7 @@ def scrivi_statici():
     with open(os.path.join(DIST, "robots.txt"), "w", encoding="utf-8") as f:
         f.write("User-agent: *\nAllow: /\n\nSitemap: %s\n" % url("/sitemap.xml"))
 
-    oggi = date.today().isoformat()
+    oggi = C.DATA_AGGIORNAMENTO
     voci = "".join(
         "  <url><loc>%s</loc><lastmod>%s</lastmod><priority>%s</priority></url>\n"
         % (url(p), oggi, pr) for p, pr in SITEMAP)

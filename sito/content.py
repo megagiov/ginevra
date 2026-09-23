@@ -52,6 +52,21 @@ ORARI_SCHEMA = [
 
 WHATSAPP_MSG = "Salve,%20vorrei%20un%20preventivo%20per%20un%20trasloco."
 
+# Data dell'ultima modifica reale ai contenuti, in formato ISO. Va aggiornata
+# a mano quando si cambiano i testi, NON a ogni generazione: compare come data
+# dell'informativa privacy e come lastmod nella sitemap. Se si muovesse da
+# sola a ogni build direbbe due bugie: che la privacy e' cambiata oggi e che
+# tutte le pagine sono state riscritte oggi, e i motori imparano a ignorare
+# un lastmod che cambia sempre.
+DATA_AGGIORNAMENTO = "2026-09-23"
+
+# Codice di verifica di Google Search Console. Google lo fornisce come
+# <meta name="google-site-verification" content="XXXX">: qui va solo la parte
+# dentro content. Vuoto = nessun tag, che e' la situazione prima della
+# verifica o quando si verifica in altro modo (per esempio tramite la scheda
+# Google Business, che spesso non richiede alcun tag).
+VERIFICA_GOOGLE = ""
+
 # Formspree: ID del form gratuito collegato a sorgentetraslochi@gmail.com.
 # Compare nell'endpoint del modulo (formspree.io/f/<ID>).
 FORMSPREE_ID = "mvkgajzy"

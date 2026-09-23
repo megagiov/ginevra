@@ -27,11 +27,15 @@ cd sito/dist && python3 -m http.server 8765
 | Cosa | File |
 | --- | --- |
 | Testi, FAQ, zone, dati azienda, P.IVA, orari | `content.py` |
+| Data dell'ultima modifica ai testi (`DATA_AGGIORNAMENTO`) | `content.py` |
 | Struttura delle pagine, dati strutturati, modulo | `build.py` |
 | Grafica, colori, layout | `src/style.css` |
 | Menu mobile (unico JS del sito) | `SCRIPT` dentro `build.py` |
 
-Dopo ogni modifica: `python3 build.py`. Il comando elenca in fondo i dati
+Dopo ogni modifica ai testi, aggiorna `DATA_AGGIORNAMENTO` in `content.py` e
+rigenera con `python3 build.py`. Quella data compare come data
+dell'informativa privacy e come `lastmod` nella sitemap: va spostata quando i
+contenuti cambiano davvero, non a ogni generazione. Il comando elenca in fondo i dati
 ancora mancanti (P.IVA, ragione sociale, orari, ID Formspree): finche' sono
 vuoti il sito li omette invece di mostrare segnaposto, ma vanno riempiti prima
 di pubblicare.
