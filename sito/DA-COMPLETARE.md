@@ -68,6 +68,13 @@ pubblicazione, perche' compare in evidenza.
    in `content.py` e il blocco `SERVIZIO_DEPOSITO` da `PAGINE_SERVIZIO`. Il
    resto del sito si riallinea da solo al prossimo `python3 build.py`.
 
+## 3-bis. Fatto
+
+- sito online su `sorgentetraslochi.pages.dev` (Cloudflare Pages, pubblicazione
+  automatica a ogni modifica)
+- modulo preventivo collegato a Formspree
+- Google Search Console: proprieta' verificata, sitemap inviata con 10 URL
+
 ## 4. Contenuti che migliorano la resa
 
 Non bloccano la pubblicazione, ma il sito rende molto di piu' con questi:
