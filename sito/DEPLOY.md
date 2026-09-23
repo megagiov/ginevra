@@ -162,34 +162,65 @@ vale quanto il sito, quindi conviene curarla.
 
 ## 5. Dismissione del vecchio sito Wix
 
-Da fare **solo dopo** che il nuovo sito e' online e funzionante, mai prima.
-
 `sorgentetraslochi.wixsite.com/website`
 
-1. **Non cancellate subito il sito Wix.** Finche' i due siti coesistono,
-   Google potrebbe considerarli concorrenti sulle stesse ricerche.
-2. Entrate su <https://www.wix.com> con l'account che gestisce il sito.
-3. Nell'editor, sostituite il contenuto della home con poche righe e un
-   collegamento al nuovo indirizzo, per esempio:
+### Fatto il 23 settembre 2026: tolto dall'indice
 
-   > Il nostro sito si e' trasferito: ora siamo su
-   > sorgentetraslochi.pages.dev. Per preventivi: 347 263 6504.
+Il sito Wix porta ora un tag `robots: noindex`, impostato via API sui tag SEO
+di sito. Vuol dire che resta online e raggiungibile da chi ha il link, ma
+chiede a Google di non mostrarlo piu' nei risultati, cosi' smette di farsi
+concorrenza con il sito nuovo.
 
-   Pubblicate. Cosi' chi arriva dal vecchio indirizzo o dai vecchi link vi
-   trova comunque.
-4. Verificate che nessun altro posto punti ancora al vecchio indirizzo:
-   Facebook (Informazioni > Sito web), Instagram (bio), firma email,
-   biglietti da visita, adesivi sui mezzi, eventuali annunci online.
-5. Cercate su Google `site:sorgentetraslochi.wixsite.com`: vi mostra quante
-   pagine Wix sono ancora indicizzate. Man mano che il nuovo sito viene
-   indicizzato, quelle spariranno.
-6. Dopo **due o tre mesi**, quando in Search Console il nuovo sito riceve
-   visite stabili, potete chiudere il sito Wix (Impostazioni del sito >
-   Elimina, oppure semplicemente togliete la pubblicazione). Se il piano Wix
-   e' a pagamento, disdite il rinnovo automatico.
+Non e' istantaneo: Google deve ripassare sulla pagina e toglierla
+dall'indice, e ci vogliono da qualche giorno a qualche settimana. Fino ad
+allora il vecchio sito puo' ancora comparire nelle ricerche.
 
-Nota: il piano gratuito di Wix non permette redirect 301 verso un dominio
-esterno. La pagina-ponte del punto 3 e' il sostituto praticabile.
+E' reversibile: basta togliere quel tag e il sito torna indicizzabile.
+
+### Cosa resta da fare a mano
+
+Il sito Wix e' **una pagina sola**: le voci del menu (Chi siamo, Servizi,
+Testimonianza, Contatti) sono ancore interne, non pagine separate. Questo ha
+due conseguenze:
+
+- **niente redirect automatico.** L'API dei redirect di Wix rifiuta la radice
+  del sito come punto di partenza, e la radice e' l'unica pagina che c'e'
+- **il contenuto non si modifica via API.** Il sito e' sull'editor classico
+  senza Velo: il testo si cambia solo aprendo l'editor
+
+Quindi, quando avete dieci minuti, aprite l'editor Wix e trasformate la home
+in una pagina-ponte. Testo suggerito:
+
+```
+Il nostro sito si e' trasferito
+
+Trovate tutto sul sito nuovo: sorgentetraslochi.pages.dev
+
+Traslochi, montaggio mobili, sgomberi e deposito a Napoli e provincia.
+Per preventivi: 347 263 6504
+```
+
+Piu' un pulsante che punta a `https://sorgentetraslochi.pages.dev`.
+
+Serve perche' il noindex agisce su Google, non su chi arriva dal link: chi ha
+il vecchio indirizzo salvato, o lo trova su un vecchio volantino, continua ad
+atterrare li'.
+
+### Fra due o tre mesi
+
+Quando in Search Console il sito nuovo riceve visite stabili, si puo' togliere
+del tutto la pubblicazione del sito Wix (Impostazioni del sito > Annulla
+pubblicazione). Se il piano Wix fosse a pagamento, disdite il rinnovo: questo
+e' sul piano gratuito, quindi non costa nulla tenerlo.
+
+### Da controllare comunque
+
+Verificate che nessun altro posto punti ancora al vecchio indirizzo:
+Facebook (Informazioni > Sito web), Instagram (bio), firma email, biglietti
+da visita, adesivi sui mezzi, eventuali annunci online.
+
+Cercando su Google `site:sorgentetraslochi.wixsite.com` si vede quante pagine
+sono ancora indicizzate: dovrebbero sparire nelle prossime settimane.
 
 ---
 

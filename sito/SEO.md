@@ -136,6 +136,14 @@ le costruisco io. Ne parliamo quando volete.
 
 ---
 
+## 3-ter. Vecchio sito Wix: tolto dall'indice
+
+Il 23 settembre il sito `sorgentetraslochi.wixsite.com/website` e' stato
+messo in `noindex` via API: resta online ma esce dai risultati di ricerca
+nelle prossime settimane, e smette di contendere le stesse ricerche al sito
+nuovo. Resta da mettere a mano una pagina-ponte verso il sito nuovo, perche'
+il noindex non tocca chi arriva dal vecchio link. Dettagli in DEPLOY.md.
+
 ## 4. Contenuti che mancano al sito
 
 In ordine di utilita':
