@@ -65,7 +65,7 @@ DATA_AGGIORNAMENTO = "2026-09-23"
 # dentro content. Vuoto = nessun tag, che e' la situazione prima della
 # verifica o quando si verifica in altro modo (per esempio tramite la scheda
 # Google Business, che spesso non richiede alcun tag).
-VERIFICA_GOOGLE = ""
+VERIFICA_GOOGLE = "MiEvUbrsDnjOOwDmFwMv1DVJUHVep4ws0AC31sVjnn4"
 
 # Formspree: ID del form gratuito collegato a sorgentetraslochi@gmail.com.
 # Compare nell'endpoint del modulo (formspree.io/f/<ID>).
