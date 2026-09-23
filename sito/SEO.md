@@ -75,7 +75,7 @@ prima.
    quelli del sito: `Sorgente Traslochi`, `Via Cupa Vicinale dell'Arco 72,
    80144 Napoli (NA)`, `347 263 6504`. Google incrocia i due: se coincidono,
    la scheda sale
-3. Orari: lunedi'-sabato 8:00-18:00, gli stessi che stanno sul sito
+3. Orari: lunedi'-sabato 8:00-20:00, gli stessi che stanno sul sito
 4. Servizi: traslochi abitazioni, traslochi uffici e negozi, montaggio mobili,
    sgomberi, deposito mobili. Stessi nomi delle pagine
 5. Aree servite: i dodici comuni della pagina zone servite

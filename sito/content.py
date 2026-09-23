@@ -17,7 +17,7 @@ AZIENDA = {
     # generazione che mancano. Vanno riempiti prima di pubblicare.
     "ragione_sociale": "",   # se vuota, il sito usa il nome commerciale
     "piva": "",              # obbligatoria per legge una volta pubblicato
-    "via": "Via Cupa Vicinale dell'Arco 72",
+    "via": "Via Cupa Vicinale dell'Arco, 72",
     "cap": "80144",
     "citta": "Napoli",
     "provincia": "NA",
@@ -29,7 +29,7 @@ AZIENDA = {
     "maps": "https://maps.google.com/?cid=16215080151173160187",
     "facebook": "https://it-it.facebook.com/pages/category/Home-Mover/Sorgente-Group-Trasporti-Traslochi-1445547735715866/",
     "instagram": "https://www.instagram.com/sorgentetraslochi/",
-    "orari": "lunedì - sabato, 8:00 - 18:00",
+    "orari": "lunedì - sabato, 8:00 - 20:00",
     "lat": "40.8797",
     "lon": "14.2350",
 }
@@ -46,7 +46,7 @@ ORARI_SCHEMA = [
         "giorni": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday",
                    "Saturday"],
         "apre": "08:00",
-        "chiude": "18:00",
+        "chiude": "20:00",
     },
 ]
 

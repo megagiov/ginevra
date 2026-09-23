@@ -39,7 +39,7 @@ mail di conferma con un pulsante da cliccare: finche' non lo si clicca, le
 richieste non arrivano. Fate quindi un invio di prova appena il sito e'
 online.
 
-Gli orari (lunedi' - sabato, 8:00 - 18:00) sono gia' inseriti: compaiono nel
+Gli orari (lunedi' - sabato, 8:00 - 20:00) sono gia' inseriti: compaiono nel
 footer, nella pagina preventivo e nei dati strutturati
 (`openingHoursSpecification`). Se cambiano, vanno aggiornati in due punti di
 `content.py`: `AZIENDA["orari"]` per il testo e `ORARI_SCHEMA` per Google.
