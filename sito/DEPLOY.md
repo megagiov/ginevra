@@ -177,34 +177,48 @@ allora il vecchio sito puo' ancora comparire nelle ricerche.
 
 E' reversibile: basta togliere quel tag e il sito torna indicizzabile.
 
-### Cosa resta da fare a mano
+### Fatto il 23 settembre 2026: la fascia-ponte
+
+Chi apre il vecchio indirizzo trova in fondo alla pagina una fascia nei colori
+dell'azienda: "Il nostro sito si e' trasferito", con il pulsante **Vai al sito
+nuovo** e un conto alla rovescia. Dopo sei secondi viene portato da solo su
+`sorgentetraslochi.pages.dev`. Chi preferisce restare clicca **Resta su questa
+pagina** e il rimando si ferma, per quella sessione.
+
+Serve perche' il noindex parla a Google, non a chi arriva dal link: chi ha il
+vecchio indirizzo salvato, o lo trova su un volantino o sulla fiancata di un
+mezzo, continua ad atterrare li'.
+
+E' stata inserita via API dei custom embed di Wix (id
+`099c46c1-fb05-4ba6-9886-071228d5dc5c`), in posizione `BODY_START`, categoria
+`ESSENTIAL` cosi' si carica sempre. Il codice non fa nulla se l'indirizzo non
+e' su `wixsite.com`, per non interferire con l'editor e con le anteprime.
+
+Due cose imparate provandola:
+
+- **la fascia non puo' stare in cima.** Il piano gratuito di Wix ci mette la
+  propria striscia pubblicitaria, che copriva il pulsante e lo rendeva non
+  cliccabile. Spostata in fondo alla pagina, dove non c'e' nulla
+- **il rimando automatico deve potersi fermare.** Un rimando senza via
+  d'uscita e' un problema di accessibilita': da qui il pulsante "Resta su
+  questa pagina"
+
+Per toglierla o modificarla si usa l'API dei custom embed con quell'id.
+
+### Quello che non si e' potuto fare
 
 Il sito Wix e' **una pagina sola**: le voci del menu (Chi siamo, Servizi,
 Testimonianza, Contatti) sono ancore interne, non pagine separate. Questo ha
 due conseguenze:
 
-- **niente redirect automatico.** L'API dei redirect di Wix rifiuta la radice
-  del sito come punto di partenza, e la radice e' l'unica pagina che c'e'
-- **il contenuto non si modifica via API.** Il sito e' sull'editor classico
-  senza Velo: il testo si cambia solo aprendo l'editor
-
-Quindi, quando avete dieci minuti, aprite l'editor Wix e trasformate la home
-in una pagina-ponte. Testo suggerito:
-
-```
-Il nostro sito si e' trasferito
-
-Trovate tutto sul sito nuovo: sorgentetraslochi.pages.dev
-
-Traslochi, montaggio mobili, sgomberi e deposito a Napoli e provincia.
-Per preventivi: 347 263 6504
-```
-
-Piu' un pulsante che punta a `https://sorgentetraslochi.pages.dev`.
-
-Serve perche' il noindex agisce su Google, non su chi arriva dal link: chi ha
-il vecchio indirizzo salvato, o lo trova su un vecchio volantino, continua ad
-atterrare li'.
+- **niente redirect 301.** L'API dei redirect di Wix rifiuta la radice del
+  sito come punto di partenza, e la radice e' l'unica pagina che c'e'. Da qui
+  il ripiego del rimando via JavaScript, che per le persone funziona uguale ma
+  per i motori vale meno (irrilevante, visto che il sito e' in noindex)
+- **il contenuto della pagina non si modifica via API.** Editor classico senza
+  Velo: i testi veri si cambiano solo aprendo l'editor. Se volete, resta
+  sensato sostituire a mano il testo della home con poche righe che rimandano
+  al sito nuovo
 
 ### Fra due o tre mesi
 

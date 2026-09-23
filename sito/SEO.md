@@ -141,8 +141,8 @@ le costruisco io. Ne parliamo quando volete.
 Il 23 settembre il sito `sorgentetraslochi.wixsite.com/website` e' stato
 messo in `noindex` via API: resta online ma esce dai risultati di ricerca
 nelle prossime settimane, e smette di contendere le stesse ricerche al sito
-nuovo. Resta da mettere a mano una pagina-ponte verso il sito nuovo, perche'
-il noindex non tocca chi arriva dal vecchio link. Dettagli in DEPLOY.md.
+nuovo. Chi ci arriva dal vecchio link trova una fascia che rimanda al sito
+nuovo e, dopo sei secondi, ci viene portato. Dettagli in DEPLOY.md.
 
 ## 4. Contenuti che mancano al sito
 
