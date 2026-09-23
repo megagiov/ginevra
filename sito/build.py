@@ -1082,6 +1082,25 @@ def main():
         "Carico di un armadio imballato su un furgone Sorgente Traslochi nel "
         "centro storico di Napoli",
         540, 405)
+    # Per uffici, sgomberi e deposito non ci sono ancora scatti dedicati:
+    # meglio riusare foto vere dell'azienda che lasciare un segnaposto. Le
+    # descrizioni dicono quello che si vede davvero, senza far credere che
+    # siano lavori di quel tipo.
+    C.SERVIZIO_UFFICI["immagine"] = foto(
+        "carico-mezzi-strada-napoli.webp",
+        "Furgone Sorgente Traslochi in carico in una strada del centro di "
+        "Napoli, con la squadra al lavoro",
+        535, 525)
+    C.SERVIZIO_SGOMBERI["immagine"] = foto(
+        "trasloco-autoscala-palazzo-napoli.webp",
+        "Mezzi Sorgente Traslochi e autoscala davanti a un palazzo di Napoli, "
+        "durante lo svuotamento di un appartamento",
+        516, 387)
+    C.SERVIZIO_DEPOSITO["immagine"] = foto(
+        "mezzi-sorgente-traslochi-napoli.webp",
+        "I furgoni Sorgente Traslochi nel piazzale, pronti per il ritiro "
+        "dell'arredamento",
+        533, 375)
     for p in C.PAGINE_SERVIZIO:
         costruisci_servizio(p)
     costruisci_zone()
