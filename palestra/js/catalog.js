@@ -39,7 +39,8 @@ const Catalog = (function () {
       if (f.muscle && it.m.indexOf(f.muscle) === -1 && it.s.indexOf(f.muscle) === -1) return false;
       if (f.equipment && it.eq !== f.equipment) return false;
       if (!terms.length) return true;
-      const hay = normalize(it.n + ' ' + it.k + ' ' + it.m.join(' ') + ' ' + it.eq);
+      // nome italiano e inglese: in palestra molti nomi si dicono in inglese
+      const hay = normalize(it.n + ' ' + (it.en || '') + ' ' + it.k + ' ' + it.m.join(' ') + ' ' + it.eq);
       return terms.every((t) => hay.indexOf(t) !== -1);
     });
   }

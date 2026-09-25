@@ -54,11 +54,18 @@ la cartella `palestra/` su quel ramo: finisce in
 gia' nella radice**.
 
 ```bash
+node palestra/tools/versione.js       # sul ramo dell'app, prima di pubblicare
 git checkout gh-pages
 git checkout <ramo-con-l-app> -- palestra/
 git commit -m "Pubblica l'app Palestra"
 git push origin gh-pages
 ```
+
+**Il primo comando non e' facoltativo.** Il service worker serve l'app dalla
+memoria del telefono e scarica una versione nuova solo se cambia la sua
+"versione". `tools/versione.js` la calcola dal contenuto dei file: senza,
+chi ha gia' installato l'app resta sulla vecchia per sempre. Le prove
+(`tests/run.sh`) si rifiutano di partire se la versione non e' aggiornata.
 
 Poi dal telefono apri `https://megagiov.github.io/ginevra/palestra/`:
 
@@ -69,7 +76,10 @@ Va bene qualunque altro hosting statico in https: la cartella `palestra/` e'
 autosufficiente, si copia dov'e' e funziona.
 
 Da li' in poi si apre a schermo intero come un'app e funziona anche in modalita'
-aereo. La prima apertura con rete scarica il catalogo esercizi (circa 1 MB) e lo
+aereo. **Gli aggiornamenti arrivano da soli**: riaprendo l'app la versione
+nuova si scarica in sottofondo e la pagina si ricarica una volta, con un
+avviso (mai mentre stai registrando una serie). La versione installata e'
+scritta in fondo ad **Altro**. La prima apertura con rete scarica il catalogo esercizi (circa 1 MB) e lo
 tiene salvato; le foto si salvano man mano che le apri.
 
 Per provarla sul computer basta un server statico nella cartella:
@@ -161,12 +171,16 @@ Il file `data/catalog.json` e' generato, non scritto a mano. Per rigenerarlo:
 node tools/build-catalog.js
 ```
 
-Lo script traduce in italiano i vocabolari chiusi (muscoli, attrezzi, categorie)
-e costruisce le chiavi di ricerca italiane. **I nomi degli esercizi restano in
-inglese**: tradurne 876 a macchina avrebbe prodotto italiano sbagliato, e in
-palestra meta' di quei nomi si dicono comunque in inglese. I 30 esercizi delle
-schede di partenza hanno invece il nome italiano scritto a mano, agganciato alla
-foto giusta del catalogo.
+Tutti i **876 nomi sono in italiano**, tradotti uno per uno con i termini che
+si usano davvero in palestra: "Barbell" diventa *con bilanciere*, "Cable" *ai
+cavi*, "Smith" *al multipower*, mentre squat, curl, lat machine, leg press e
+hip thrust restano come si dicono. Le traduzioni stanno in
+`tools/nomi-it.json`, lo script le unisce al dataset. Il nome inglese resta
+nel campo `en`: la ricerca trova l'esercizio in entrambe le lingue, e il
+dettaglio lo mostra sotto il nome italiano. Gli esercizi gia' salvati col nome
+inglese passano all'italiano da soli, a meno che tu non li abbia rinominati.
+
+Le **istruzioni di esecuzione** restano in inglese: sono 103.000 parole.
 
 Le foto **non sono nel repository**: restano sul CDN e il service worker le
 salva man mano che le apri. Scaricarle tutte sarebbero decine di MB per foto che
@@ -192,7 +206,8 @@ Niente framework, niente build, niente `node_modules`: si apre e va.
 | `js/hr.js` | Battito: Bluetooth, import da Salute, statistiche e zone |
 | `js/chart.js` | Grafici a linea in SVG, scritti a mano |
 | `js/seed.js` | I 30 esercizi e le 3 schede di partenza |
-| `sw.js` | Service worker: guscio in cache, catalogo, foto |
+| `sw.js` | Service worker: guscio in cache per versione, catalogo, foto |
+| `js/version.js` | Generato da `tools/versione.js`, non si tocca a mano |
 
 ## Prove
 
@@ -208,6 +223,7 @@ su iPhone. `NODE_PATH=<node_modules con playwright> ./tests/run.sh`.
   allenamento, con un tocco. In diretta serve Bluefy o un'app nativa.
 - **Su iPhone niente vibrazione**: Apple non la concede alle app web. A fine
   recupero lo schermo lampeggia e suona.
-- **Le istruzioni degli esercizi sono in inglese**, come nel dataset originale.
+- **Le istruzioni degli esercizi sono in inglese** (i nomi invece sono tutti in
+  italiano).
 - **Il massimale e' una stima** (formula di Epley), non un massimale vero.
 - Il catalogo va scaricato **una prima volta con la rete**. Dopo resta salvato.

@@ -20,12 +20,31 @@ const App = (function () {
     progressEx: null,
     lastTrainedEx: null,
     progressMetric: 'top',
-    pickTab: 'mine'
+    // Ricerca nel catalogo: resta com'era quando ci torni.
+    pick: { tab: 'mine', q: '', muscle: '', eq: '', scroll: 0 },
+    scrollByView: {},
+    lastView: null
   };
 
   /* ================= utilita' ================= */
 
   const $ = (sel, root) => (root || document).querySelector(sel);
+
+  // Filtri e ricerca sopravvivono anche alla chiusura dell'app. Sono comodita'
+  // di questo telefono, non dati: se il browser non li salva, pazienza.
+  const MEM_KEY = 'palestra-ui';
+  function memLoad() {
+    try {
+      const m = JSON.parse(localStorage.getItem(MEM_KEY) || '{}');
+      if (typeof m.muscleFilter === 'string') state.muscleFilter = m.muscleFilter;
+      if (m.pick && typeof m.pick === 'object') state.pick = Object.assign(state.pick, m.pick);
+    } catch (e) { /* niente memoria: si riparte dai valori normali */ }
+  }
+  function memSave() {
+    try {
+      localStorage.setItem(MEM_KEY, JSON.stringify({ muscleFilter: state.muscleFilter, pick: state.pick }));
+    } catch (e) { /* navigazione privata o spazio pieno */ }
+  }
   const $$ = (sel, root) => Array.prototype.slice.call((root || document).querySelectorAll(sel));
 
   function esc(s) {
@@ -521,7 +540,9 @@ const App = (function () {
 
     const byId = (id) => state.exMap[id];
     return [
-      { kind: 'oggi', title: 'Fatti oggi', items: oggiIds.map(byId).filter((e) => e && pass(e)) },
+      // Quello che hai gia' fatto oggi si vede sempre: il filtro serve a
+      // scegliere il prossimo esercizio, non a nascondere quelli fatti.
+      { kind: 'oggi', title: 'Fatti oggi', items: oggiIds.map(byId).filter(Boolean) },
       {
         kind: 'plan',
         title: state.session && state.session.routineId ? 'Ancora da fare' : 'In programma',
@@ -803,7 +824,8 @@ const App = (function () {
     h += '<section class="card"><h3>Zona pericolosa</h3>' +
       '<button class="btn danger wide" data-act="wipe" type="button">Cancella tutti i dati</button></section>';
 
-    h += '<p class="muted small center">Palestra · funziona offline · foto esercizi da free-exercise-db (dominio pubblico)</p>';
+    h += '<p class="muted small center">Palestra \u00b7 versione ' + esc(window.APP_VERSION || '?') +
+      ' \u00b7 funziona offline \u00b7 foto esercizi da free-exercise-db (dominio pubblico)</p>';
     return h;
   }
 
@@ -822,7 +844,13 @@ const App = (function () {
     // Il backup si rifa' a ogni apertura di Altro: una copia preparata prima
     // resterebbe ferma e lascerebbe fuori le serie registrate nel frattempo.
     else if (state.view === 'impostazioni') { view.innerHTML = viewImpostazioni(); preparaBackup(); }
-    window.scrollTo(0, 0);
+    // Si torna in cima solo cambiando sezione, e tornando a una sezione si
+    // ritrova il punto dove la si era lasciata. Prima ogni serie registrata
+    // riportava la lista in cima, dietro al pannello.
+    if (state.lastView !== state.view) {
+      window.scrollTo(0, state.scrollByView[state.view] || 0);
+      state.lastView = state.view;
+    }
   }
 
   // Qual e' l'ultimo esercizio che hai toccato: serve per aprire Progressi
@@ -848,7 +876,11 @@ const App = (function () {
       return s;
     });
   }
-  const go = (view) => { state.view = view; render(); };
+  const go = (view) => {
+    state.scrollByView[state.view] = window.scrollY;
+    state.view = view;
+    render();
+  };
 
   /* ================= pannello di registrazione ================= */
 
@@ -1137,22 +1169,30 @@ const App = (function () {
   }
 
   let pickHandler = null;
+  let pickTitle = null;
 
   function pickExerciseModal(onPick, title) {
     pickHandler = onPick;
+    pickTitle = title || null;
+    const P = state.pick;
     const body =
       '<div class="seg" id="pick-tabs">' +
-      '<button class="' + (state.pickTab === 'mine' ? 'on' : '') + '" data-tab="mine" type="button">I miei</button>' +
-      '<button class="' + (state.pickTab === 'catalog' ? 'on' : '') + '" data-tab="catalog" type="button">Catalogo con foto</button>' +
+      '<button class="' + (P.tab === 'mine' ? 'on' : '') + '" data-tab="mine" type="button">I miei</button>' +
+      '<button class="' + (P.tab === 'catalog' ? 'on' : '') + '" data-tab="catalog" type="button">Catalogo con foto</button>' +
       '</div>' +
       '<label class="field" style="margin-top:12px">Cerca<input class="search" id="ex-search" type="search" ' +
-      'placeholder="panca, stacco, curl…" autocomplete="off"></label>' +
+      'placeholder="panca, stacco, curl\u2026" autocomplete="off" value="' + esc(P.q) + '"></label>' +
       '<div id="pick-filters"></div>' +
       '<div id="pick-list"></div>' +
       '<button class="btn wide" data-act="exercise-new" type="button">' + icon('plus', 'sm') + ' Crea esercizio a mano</button>';
     openModal(title || 'Aggiungi esercizio', body);
-    renderPickList();
-    $('#ex-search').addEventListener('input', debounce(renderPickList, 180));
+    renderPickList(true);
+    $('#ex-search').addEventListener('input', debounce(() => {
+      state.pick.q = $('#ex-search') ? $('#ex-search').value : '';
+      state.pick.scroll = 0;
+      memSave();
+      renderPickList(false);
+    }, 180));
   }
 
   function debounce(fn, ms) {
@@ -1160,37 +1200,52 @@ const App = (function () {
     return function () { clearTimeout(t); t = setTimeout(fn, ms); };
   }
 
-  function renderPickList() {
+  // La lista scorre dentro il pannello: ricordo fin dove eri arrivato.
+  function watchPickScroll() {
+    const l = $('#ex-pick');
+    if (!l) return;
+    l.addEventListener('scroll', debounce(() => { state.pick.scroll = l.scrollTop; memSave(); }, 120), { passive: true });
+  }
+
+  function restorePickScroll(restore) {
+    const l = $('#ex-pick');
+    if (!l) return;
+    l.scrollTop = restore ? (state.pick.scroll || 0) : 0;
+    watchPickScroll();
+  }
+
+  function renderPickList(restore) {
     const listBox = $('#pick-list');
     const filterBox = $('#pick-filters');
     if (!listBox) return;
-    const q = $('#ex-search') ? $('#ex-search').value : '';
+    const P = state.pick;
 
-    if (state.pickTab === 'mine') {
+    if (P.tab === 'mine') {
       filterBox.innerHTML = '';
-      listBox.innerHTML = mineListHtml(q);
+      listBox.innerHTML = mineListHtml(P.q);
+      restorePickScroll(restore);
       return;
     }
 
     if (!Catalog.loaded()) {
-      listBox.innerHTML = '<p class="muted">Carico il catalogo (876 esercizi)…</p>';
-      Catalog.load().then(() => renderPickList()).catch((e) => {
+      listBox.innerHTML = '<p class="muted">Carico il catalogo (876 esercizi)\u2026</p>';
+      Catalog.load().then(() => renderPickList(restore)).catch((e) => {
         listBox.innerHTML = '<p class="empty">Catalogo non disponibile offline la prima volta: ' + esc(e.message) +
           '<br>Collegati a internet una volta sola, poi resta salvato.</p>';
       });
       return;
     }
 
-    const fm = $('#f-muscle') ? $('#f-muscle').value : '';
-    const fe = $('#f-eq') ? $('#f-eq').value : '';
     if (!$('#f-muscle')) {
+      const opt = (v, sel) => '<option' + (v === sel ? ' selected' : '') + '>' + esc(v) + '</option>';
       filterBox.innerHTML = '<div class="filters">' +
         '<select id="f-muscle" data-act="pick-filter"><option value="">Tutti i muscoli</option>' +
-        Catalog.muscles().map((m) => '<option>' + esc(m) + '</option>').join('') + '</select>' +
+        Catalog.muscles().map((m) => opt(m, P.muscle)).join('') + '</select>' +
         '<select id="f-eq" data-act="pick-filter"><option value="">Tutti gli attrezzi</option>' +
-        Catalog.equipment().map((m) => '<option>' + esc(m) + '</option>').join('') + '</select></div>';
+        Catalog.equipment().map((m) => opt(m, P.eq)).join('') + '</select></div>';
     }
-    listBox.innerHTML = catalogListHtml(Catalog.search(q, { muscle: fm, equipment: fe }));
+    listBox.innerHTML = catalogListHtml(Catalog.search(P.q, { muscle: P.muscle, equipment: P.eq }));
+    restorePickScroll(restore);
   }
 
   function catalogDetailModal(catalogId, backToPick) {
@@ -1201,6 +1256,7 @@ const App = (function () {
       h += '<div class="ex-gallery">' + it.img.map((i) =>
         '<img src="' + esc(Catalog.imageUrl(i)) + '" alt="Esecuzione di ' + esc(it.n) + '" loading="lazy" decoding="async">').join('') + '</div>';
     }
+    if (it.en && it.en !== it.n) h += '<p class="muted small">In inglese: ' + esc(it.en) + '</p>';
     h += '<p class="muted">' + esc(it.m.join(', ')) + (it.s.length ? ' · secondari: ' + esc(it.s.join(', ')) : '') +
       '<br>' + esc(it.eq) + ' · ' + esc(it.cat) + ' · ' + esc(it.lvl) + (it.f ? ' · ' + esc(it.f) : '') + '</p>';
     if (it.ins.length) {
@@ -1208,7 +1264,10 @@ const App = (function () {
         '<p class="muted small">Istruzioni in inglese: vengono dal dataset originale, non sono state tradotte a macchina per non storpiarle.</p>';
     }
     h += '<button class="btn primary wide" data-act="cat-add" data-id="' + esc(it.id) + '" type="button">' +
-      (backToPick ? 'Aggiungi all allenamento' : 'Aggiungi ai miei esercizi') + '</button>';
+      (pickHandler ? 'Aggiungi all\u2019allenamento' : 'Aggiungi ai miei esercizi') + '</button>';
+    if (backToPick) {
+      h += '<button class="btn wide" data-act="pick-back" type="button">\u2190 Torna alla lista</button>';
+    }
     openModal(it.n, h);
   }
 
@@ -1637,10 +1696,12 @@ const App = (function () {
   function onClick(ev) {
     const tab = ev.target.closest('#pick-tabs button[data-tab]');
     if (tab) {
-      state.pickTab = tab.dataset.tab;
+      state.pick.tab = tab.dataset.tab;
+      state.pick.scroll = 0;
+      memSave();
       $$('#pick-tabs button').forEach((b) => b.classList.toggle('on', b === tab));
       $('#pick-filters').innerHTML = '';
-      renderPickList();
+      renderPickList(false);
       return;
     }
     const pickLi = ev.target.closest('#ex-pick li[data-pick]');
@@ -1682,6 +1743,7 @@ const App = (function () {
         break;
       case 'filter-muscle':
         state.muscleFilter = t.dataset.muscle || '';
+        memSave();
         render();
         break;
       case 'resume-session':
@@ -1744,17 +1806,19 @@ const App = (function () {
         DB.put('sessions', state.session).then(() => toast('Nota salvata'));
         break;
       case 'pick-exercise':
-        pickExerciseModal((exId) => {
-          state.muscleFilter = '';
-          return addExerciseToSession(exId).then(() => openLog(exId));
-        });
+        pickExerciseModal((exId) => addExerciseToSession(exId).then(() => openLog(exId)));
+        break;
+      case 'pick-back':
+        pickExerciseModal(pickHandler, pickTitle);
         break;
       case 'browse-catalog':
-        state.pickTab = 'catalog';
+        state.pick.tab = 'catalog';
         pickExerciseModal(null, 'Catalogo esercizi');
         break;
       case 'cat-detail':
-        catalogDetailModal(id, !!pickHandler);
+        // prima di aprire il dettaglio fisso la posizione nella lista
+        if ($('#ex-pick')) { state.pick.scroll = $('#ex-pick').scrollTop; memSave(); }
+        catalogDetailModal(id, !!pickHandler || !!$('#pick-list'));
         break;
       case 'cat-add': {
         const fn = pickHandler;
@@ -1867,7 +1931,14 @@ const App = (function () {
     if (t.id === 'hr-file' && t.files && t.files[0]) { doHrImport(t.files[0]); t.value = ''; return; }
     const act = t.dataset ? t.dataset.act : null;
     if (!act) return;
-    if (act === 'pick-filter') { renderPickList(); return; }
+    if (act === 'pick-filter') {
+      state.pick.muscle = $('#f-muscle') ? $('#f-muscle').value : '';
+      state.pick.eq = $('#f-eq') ? $('#f-eq').value : '';
+      state.pick.scroll = 0;
+      memSave();
+      renderPickList(false);
+      return;
+    }
     if (act === 'progress-ex') { state.progressEx = t.value; renderProgressInto(); return; }
     const patch = {};
     if (act === 'set-rest') patch.restSeconds = Math.max(10, Math.min(600, Number(t.value) || 120));
@@ -1890,19 +1961,32 @@ const App = (function () {
   /* ================= avvio ================= */
 
   // Aggancia le foto del catalogo agli esercizi creati dal seed.
+  // Sistema gli esercizi salvati dal catalogo: foto mancanti, e nome
+  // inglese sostituito da quello italiano. Un nome cambiato a mano non si
+  // tocca: si aggiorna solo se e' ancora identico all'originale inglese.
   function backfillImages() {
-    const todo = state.exercises.filter((e) => e.catalogId && !e.img);
-    if (!todo.length) return Promise.resolve(false);
     const updated = [];
-    todo.forEach((e) => {
+    state.exercises.forEach((e) => {
+      if (!e.catalogId) return;
       const it = Catalog.get(e.catalogId);
-      if (it && it.img && it.img.length) { e.img = it.img[0]; updated.push(e); }
+      if (!it) return;
+      let cambiato = false;
+      if (!e.img && it.img && it.img.length) { e.img = it.img[0]; cambiato = true; }
+      if (it.en && e.name === it.en && it.n !== it.en) { e.name = it.n; cambiato = true; }
+      if (cambiato) updated.push(e);
     });
     if (!updated.length) return Promise.resolve(false);
     return DB.putMany('exercises', updated).then(() => true);
   }
 
   function init() {
+    memLoad();
+    try {
+      if (sessionStorage.getItem('palestra-aggiornata')) {
+        sessionStorage.removeItem('palestra-aggiornata');
+        setTimeout(() => toast('App aggiornata all\u2019ultima versione'), 600);
+      }
+    } catch (e) { /* pazienza */ }
     // Foto non raggiungibile (offline, CDN bloccato): metto l'icona al posto
     // dell'immagine rotta. L'evento error non risale, serve la fase di cattura.
     document.addEventListener('error', (ev) => {
@@ -1934,9 +2018,9 @@ const App = (function () {
       if (b) { Rest.unlock(); go(b.dataset.view); }
     });
 
-    $('#modal-close').addEventListener('click', () => { pickHandler = null; closeModal(); });
-    $('#modal-backdrop').addEventListener('click', () => { pickHandler = null; closeModal(); });
-    document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape') { pickHandler = null; closeModal(); } });
+    $('#modal-close').addEventListener('click', () => { pickHandler = null; pickTitle = null; closeModal(); });
+    $('#modal-backdrop').addEventListener('click', () => { pickHandler = null; pickTitle = null; closeModal(); });
+    document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape') { pickHandler = null; pickTitle = null; closeModal(); } });
 
     $('#rest-skip').addEventListener('click', () => Rest.stop());
     $$('#rest-bar .rest-adj').forEach((b) => b.addEventListener('click', () => Rest.adjust(Number(b.dataset.adj))));
@@ -1975,9 +2059,34 @@ const App = (function () {
   return { state, refresh, go };
 })();
 
-/* Service worker: installabile e utilizzabile senza rete. */
+/* Service worker: installabile, utilizzabile senza rete, e aggiornato.
+ *
+ * Il telefono scarica la versione nuova in sottofondo. Quando e' pronta
+ * la pagina si ricarica una volta sola, cosi' non resti sulla vecchia
+ * finche' non chiudi l'app a mano. Se stai registrando una serie aspetta
+ * che chiudi il pannello: niente ricariche a meta' esercizio. */
 if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) {
+  const gia = !!navigator.serviceWorker.controller;   // prima installazione: non ricaricare
+  let ricaricata = false;
+
+  const ricarica = () => {
+    if (ricaricata) return;
+    const modale = document.getElementById('modal-root');
+    if (modale && !modale.hidden) { setTimeout(ricarica, 1000); return; }
+    ricaricata = true;
+    try { sessionStorage.setItem('palestra-aggiornata', '1'); } catch (e) { /* pazienza */ }
+    location.reload();
+  };
+
+  navigator.serviceWorker.addEventListener('controllerchange', () => { if (gia) ricarica(); });
+
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('sw.js').catch(() => { /* niente offline, pazienza */ });
+    navigator.serviceWorker.register('sw.js').then((reg) => {
+      // Controllo gli aggiornamenti ogni volta che torni sull'app, non solo
+      // all'avvio: un'app lasciata aperta in sottofondo resterebbe vecchia.
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') reg.update().catch(() => {});
+      });
+    }).catch(() => { /* niente offline, pazienza */ });
   });
 }

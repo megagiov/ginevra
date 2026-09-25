@@ -8,10 +8,11 @@
  * mette in cache man mano che le guardi. Il catalogo pesa ~1 MB, le foto
  * tutte insieme sarebbero decine di MB.
  *
- * Il dataset e' in inglese. Qui traduciamo i vocabolari chiusi (muscoli,
- * attrezzi, categorie) e generiamo chiavi di ricerca italiane, cosi' cercando
- * "panca" o "stacco" trovi l'esercizio giusto. I nomi restano in inglese:
- * tradurne 876 a macchina produrrebbe italiano sbagliato.
+ * Il dataset e' in inglese. I nomi italiani stanno in tools/nomi-it.json,
+ * tradotti uno per uno con i termini che si usano davvero in palestra (lat
+ * machine resta lat machine, "Barbell" diventa "con bilanciere"). Il nome
+ * inglese resta nel campo `en`: serve alla ricerca e a riconoscere gli
+ * esercizi gia' salvati col nome vecchio.
  */
 const fs = require('fs');
 const path = require('path');
@@ -20,6 +21,7 @@ const SRC = 'https://cdn.jsdelivr.net/gh/yuhonas/free-exercise-db@main/dist/exer
 const CDN = 'https://cdn.jsdelivr.net/gh/yuhonas/free-exercise-db@main/exercises/';
 const OUT = path.join(__dirname, '..', 'data', 'catalog.json');
 const CACHE = path.join(__dirname, '.cache-exercises.json');
+const NOMI_IT = require('./nomi-it.json');
 
 const MUSCLES = {
   abdominals: 'Addominali', abductors: 'Abduttori', adductors: 'Adduttori',
@@ -103,9 +105,15 @@ function load() {
 }
 
 load().then((rows) => {
+  const mancanti = rows.filter((ex) => !NOMI_IT[ex.name]).map((ex) => ex.name);
+  if (mancanti.length) {
+    console.warn('Senza traduzione (restano in inglese): ' + mancanti.length);
+    mancanti.slice(0, 20).forEach((n) => console.warn('  - ' + n));
+  }
   const items = rows.map((ex) => ({
     id: slug(ex.name),
-    n: ex.name,
+    n: NOMI_IT[ex.name] || ex.name,
+    en: ex.name,
     m: (ex.primaryMuscles || []).map((x) => MUSCLES[x] || x),
     s: (ex.secondaryMuscles || []).map((x) => MUSCLES[x] || x),
     eq: EQUIPMENT[ex.equipment] || 'Altro',
@@ -115,7 +123,7 @@ load().then((rows) => {
     img: ex.images || [],
     ins: ex.instructions || [],
     k: keywords(ex)
-  })).sort((a, b) => a.n.localeCompare(b.n, 'en'));
+  })).sort((a, b) => a.n.localeCompare(b.n, 'it'));
 
   const seen = {};
   items.forEach((it) => {
