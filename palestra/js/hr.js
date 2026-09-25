@@ -122,6 +122,13 @@ const HR = (function () {
     if (it) {
       return new Date(+it[3], +it[2] - 1, +it[1], +it[4], +it[5], +(it[6] || 0)).getTime();
     }
+    // "25 set 2026 alle ore 18:03", "25 settembre 2026, 18:03:12": e' quello
+    // che scrive Comandi rapidi se non gli si chiede un formato preciso.
+    const mesi = { gen: 0, feb: 1, mar: 2, apr: 3, mag: 4, giu: 5, lug: 6, ago: 7, set: 8, ott: 9, nov: 10, dic: 11 };
+    const itl = s.toLowerCase().match(/^(\d{1,2})\s+([a-z\u00e0-\u00fa]+)\.?\s+(\d{4})(?:\s*,|\s+alle(?:\s+ore)?)?\s+(\d{1,2})[:.](\d{2})(?:[:.](\d{2}))?/);
+    if (itl && mesi[itl[2].slice(0, 3)] != null) {
+      return new Date(+itl[3], mesi[itl[2].slice(0, 3)], +itl[1], +itl[4], +itl[5], +(itl[6] || 0)).getTime();
+    }
     const t = Date.parse(s);
     return isNaN(t) ? NaN : t;
   }
@@ -156,9 +163,26 @@ const HR = (function () {
     return out.sort((a, b) => a.t - b.t);
   }
 
+  // Una riga per campione: il valore e' l'ultimo numero della riga, la data
+  // e' tutto quello che c'e' prima. Regge anche date con dentro la virgola.
+  function parseLines(lines) {
+    const out = [];
+    lines.forEach((l) => {
+      const m = l.trim().match(/^(.*?)[\s,;|\t]+(\d{2,3}(?:[.,]\d+)?)\s*(?:bpm|battiti\/min|count\/min|conteggio\/min)?\s*$/i);
+      if (!m) return;
+      const t = parseDate(m[1].replace(/[\s,;|]+$/, ''));
+      const v = parseFloat(m[2].replace(',', '.'));
+      if (!isNaN(t) && v >= 25 && v <= 250) out.push({ t, bpm: Math.round(v) });
+    });
+    return out.sort((a, b) => a.t - b.t);
+  }
+
   function parseCsv(text) {
     const lines = text.split(/\r?\n/).filter((l) => l.trim());
     if (!lines.length) return [];
+    // Prima prova riga per riga: e' il formato del Comando rapido.
+    const righe = parseLines(lines);
+    if (righe.length >= Math.max(1, Math.floor(lines.length * 0.6))) return righe;
     const sep = (lines[0].match(/;/g) || []).length > (lines[0].match(/,/g) || []).length ? ';' : ',';
     const head = lines[0].split(sep).map((h) => h.trim().replace(/^"|"$/g, ''));
     const headerLooksLikeData = !isNaN(parseDate(head[0])) && head.length >= 2 && !isNaN(parseFloat(head[1]));

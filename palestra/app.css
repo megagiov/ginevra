@@ -1046,3 +1046,13 @@ textarea { min-height: 80px; resize: vertical; }
   color: #0B0D11;
 }
 .wa-btn:hover { background: #3ee07a; }
+
+.paste-watch {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s2);
+  border-color: color-mix(in srgb, var(--hr) 45%, var(--border));
+  color: var(--hr);
+  margin-top: calc(var(--s2) * -1);
+}

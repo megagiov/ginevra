@@ -455,7 +455,9 @@ const App = (function () {
       '<span class="muted small">' + (r.autoClosed ? 'chiuso da solo per inattivit\u00e0' : 'chiuso da te') +
       ' · lo riprendi da dove eri</span></div>' +
       '<button class="btn primary" data-act="resume-session" data-id="' + r.id + '" type="button">Riprendi</button>' +
-      '</section>';
+      '</section>' +
+      (r.hr ? '' : '<button class="btn wide paste-watch" data-act="hr-paste" type="button">' +
+        icon('heart', 'sm') + ' Incolla il battito dal Watch</button>');
   }
 
   function sessionStatsLine() {
@@ -765,11 +767,12 @@ const App = (function () {
       '</section>';
 
     h += '<section class="card"><h3>' + icon('pulse') + ' Battito cardiaco</h3>' +
-      '<p class="muted">Importa qui il file che genera il Comando rapido di iPhone: i battiti si agganciano da soli agli allenamenti giusti confrontando gli orari.</p>' +
+      '<p class="muted">A fine allenamento sull\u2019Apple Watch un\u2019automazione copia i battiti: li incolli qui e si agganciano da soli all\u2019allenamento giusto, confrontando gli orari.</p>' +
       '<label class="field">La tua eta (serve per le zone)<input type="number" min="12" max="99" value="' +
       (s.age || '') + '" placeholder="es. 38" data-act="set-age"></label>' +
-      '<div class="row gap wrap"><button class="btn primary" data-act="hr-import" type="button">' + icon('upload', 'sm') + ' Importa da Salute</button>' +
-      '<button class="btn" data-act="hr-help" type="button">Come si fa</button></div>' +
+      '<div class="row gap wrap"><button class="btn primary" data-act="hr-paste" type="button">' + icon('heart', 'sm') + ' Incolla dal Watch</button>' +
+      '<button class="btn" data-act="hr-import" type="button">' + icon('upload', 'sm') + ' Da file</button>' +
+      '<button class="btn" data-act="hr-help" type="button">Come si prepara</button></div>' +
       '<input type="file" id="hr-file" accept=".json,.csv,.txt,application/json,text/csv,text/plain" hidden></section>';
 
     const ultimo = s.lastBackupAt
@@ -1086,7 +1089,9 @@ const App = (function () {
   }
 
   function hrOptionsModal() {
-    let h = '<p class="muted">Tre modi, scegli quello che ti viene comodo.</p><div class="stack">';
+    let h = '<div class="stack">' +
+      '<button class="btn primary wide" data-act="hr-paste" type="button">' + icon('heart', 'sm') + ' Incolla dal Watch</button>' +
+      '<p class="muted small">A fine allenamento l\u2019automazione copia i battiti dell\u2019Apple Watch: qui li incolli con un tocco.</p>';
     if (HR.connected()) {
       h += '<button class="btn wide" data-act="hr-disconnect" type="button">Scollega il sensore</button>';
     } else if (HR.supported()) {
@@ -1094,7 +1099,7 @@ const App = (function () {
         icon('bluetooth', 'sm') + ' Collega una fascia Bluetooth</button>';
     }
     h += '<button class="btn wide" data-act="hr-manual" type="button">Scrivi media e massimo a mano</button>';
-    h += '<button class="btn wide" data-act="hr-help" type="button">Come si porta dentro da Salute</button>';
+    h += '<button class="btn wide" data-act="hr-help" type="button">Come si prepara l\u2019automazione</button>';
     return openModal('Battito cardiaco', h + '</div>');
   }
 
@@ -1284,26 +1289,26 @@ const App = (function () {
   /* ================= battito: interfaccia ================= */
 
   function hrHelpModal() {
-    openModal('Battito cardiaco: come collegarlo',
-      '<h3>Apple Watch (via Salute)</h3>' +
-      '<p class="muted">Nessun browser puo leggere HealthKit: non esiste un API web per farlo, ne su Safari ne altrove. ' +
-      'Il giro che funziona davvero e questo, e si fa una volta sola.</p>' +
+    openModal('Battito dall\u2019Apple Watch',
+      '<h3>In automatico, a fine allenamento</h3>' +
+      '<p class="muted">Si prepara una volta sola. Poi, finito l\u2019allenamento sull\u2019orologio, apri l\u2019app e tocchi <b>Incolla dal Watch</b>.</p>' +
       '<ol class="steps">' +
-      '<li>Allenati con l app <b>Allenamento</b> dell Apple Watch, come fai di solito.</li>' +
-      '<li>Su iPhone apri <b>Comandi rapidi</b> e creane uno nuovo.</li>' +
-      '<li>Azione <b>Trova campioni di salute</b> (Find Health Samples): tipo <b>Frequenza cardiaca</b>, ' +
-      'filtro sulla data di inizio (es. ultime 24 ore), ordinati per data.</li>' +
-      '<li>Azione <b>Ripeti con ciascuno</b> e dentro <b>Ottieni dettagli del campione</b>: prendi <b>Valore</b> e <b>Data di inizio</b>. ' +
-      'Formatta la data come <code>yyyy-MM-dd HH:mm:ss</code>.</li>' +
-      '<li>Componi un testo con una riga per campione: <code>data,valore</code>. Poi <b>Salva file</b>.</li>' +
-      '<li>Torna qui: <b>Altro → Importa da Salute</b> e scegli quel file.</li>' +
+      '<li>Apri <b>Comandi rapidi</b> \u2192 <b>Automazione</b> \u2192 <b>+</b> \u2192 <b>Allenamento Apple Watch</b>. ' +
+        'Scegli <b>Termina</b> e <b>Esegui immediatamente</b>.</li>' +
+      '<li>Aggiungi <b>Trova campioni di salute</b>: tipo <b>Frequenza cardiaca</b>, data di inizio <b>nelle ultime 3 ore</b>.</li>' +
+      '<li>Aggiungi <b>Ripeti con ciascuno</b>. Dentro, un <b>Testo</b> con la <b>Data di inizio</b> dell\u2019elemento, una virgola e il suo <b>Valore</b>.</li>' +
+      '<li>Dopo la ripetizione: <b>Combina testo</b> con <b>A capo</b>, poi <b>Copia negli appunti</b>.</li>' +
+      '<li>Facoltativo: <b>Mostra notifica</b> \u201cBattito pronto, apri Palestra\u201d.</li>' +
       '</ol>' +
-      '<p class="muted small">I nomi delle azioni cambiano leggermente fra le versioni di iOS. ' +
-      'L import accetta JSON o CSV, con date ISO oppure in formato italiano: se il tuo file ha una colonna data e una valore, funziona.</p>' +
+      '<p class="muted small">Il formato della data non conta: l\u2019app legge sia quello italiano (\u201c25 set 2026 alle ore 18:03\u201d) sia gli altri. ' +
+      'Basta una riga per battito, con la data e il valore. I nomi delle azioni possono cambiare un po\u2019 fra le versioni di iOS.</p>' +
+      '<h3>In diretta, durante l\u2019allenamento</h3>' +
+      '<p class="muted">Si pu\u00f2, ma con un costo. Un\u2019app sull\u2019orologio (Echo, HeartBLE e simili) lo fa trasmettere come una fascia cardio; ' +
+      'Safari non la riceve, il browser <b>Bluefy</b> s\u00ec. Per\u00f2 Bluefy ha una memoria sua: gli allenamenti fatti qui non li vedrebbe, ' +
+      'andrebbero spostati col backup e poi useresti solo Bluefy.</p>' +
       '<h3>Fascia cardio Bluetooth</h3>' +
-      '<p class="muted">Si collega in diretta e vedi i bpm mentre ti alleni. Serve un browser con Bluetooth (Chrome su Android, Mac, Windows): ' +
-      'Safari su iPhone non lo espone. Vale anche per l Apple Watch se usi un app che lo fa trasmettere come cardiofrequenzimetro.</p>' +
-      '<p class="muted small">Stato qui: Bluetooth ' + (HR.supported() ? 'disponibile' : 'non disponibile in questo browser') + '.</p>');
+      '<p class="muted">Su Android, Mac e Windows con Chrome si collega in diretta dal pulsante del battito. Safari su iPhone il Bluetooth non lo espone.</p>' +
+      '<p class="muted small">Qui adesso: Bluetooth ' + (HR.supported() ? 'disponibile' : 'non disponibile in questo browser') + '.</p>');
   }
 
   function hrManualModal() {
@@ -1354,26 +1359,53 @@ const App = (function () {
     return DB.put('sessions', session).then(() => session);
   }
 
+  // Battiti in arrivo da Salute: si agganciano da soli agli allenamenti
+  // confrontando gli orari. Serve sia per gli appunti sia per i file.
+  function importaBattito(testo) {
+    let samples;
+    try { samples = HR.parseFile(String(testo || '')); }
+    catch (e) { toast(e.message, true); return Promise.resolve(false); }
+    if (!samples.length) {
+      toast('Qui non ci sono battiti: fai partire prima il Comando rapido', true);
+      return Promise.resolve(false);
+    }
+    return DB.listSessions().then((sessions) => {
+      const toccati = HR.attachToSessions(samples, sessions);
+      if (!toccati.length) {
+        toast(samples.length + ' battiti letti, ma nessuno cade dentro un allenamento registrato', true);
+        return false;
+      }
+      return DB.putMany('sessions', toccati).then(() => {
+        closeModal();
+        toast('Battito dal Watch aggiunto a ' + toccati.length + (toccati.length === 1 ? ' allenamento' : ' allenamenti'));
+        return refresh().then(() => true);
+      });
+    });
+  }
+
   function doHrImport(file) {
     const reader = new FileReader();
-    reader.onload = () => {
-      let samples;
-      try { samples = HR.parseFile(String(reader.result)); }
-      catch (e) { toast(e.message, true); return; }
-      if (!samples.length) { toast('Nel file non ho trovato campioni leggibili', true); return; }
-      DB.listSessions().then((sessions) => {
-        const touched = HR.attachToSessions(samples, sessions);
-        if (!touched.length) {
-          toast(samples.length + ' campioni letti, ma nessuno cade dentro un allenamento registrato', true);
-          return;
-        }
-        return DB.putMany('sessions', touched).then(() => {
-          toast('Battito aggiunto a ' + touched.length + ' allenamenti');
-          return refresh();
-        });
-      });
-    };
+    reader.onload = () => importaBattito(reader.result);
     reader.readAsText(file);
+  }
+
+  // Legge gli appunti, dove l'automazione di fine allenamento ha copiato i
+  // battiti. Se il browser non lo permette, si incolla a mano.
+  function incollaDalWatch() {
+    if (navigator.clipboard && navigator.clipboard.readText) {
+      navigator.clipboard.readText()
+        .then((t) => { if (t && t.trim()) return importaBattito(t); incollaAManoModal(); })
+        .catch(() => incollaAManoModal());
+      return;
+    }
+    incollaAManoModal();
+  }
+
+  function incollaAManoModal() {
+    openModal('Incolla dal Watch',
+      '<p class="muted">Tieni premuto nel riquadro e scegli <b>Incolla</b>.</p>' +
+      '<textarea id="hr-paste" rows="6" placeholder="25 set 2026 alle ore 18:03, 132"></textarea>' +
+      '<button class="btn primary wide" data-act="hr-paste-go" type="button">Importa il battito</button>');
   }
 
   /* ================= condivisione su WhatsApp ================= */
@@ -1660,6 +1692,12 @@ const App = (function () {
         break;
       case 'session-share':
         condividiModal(id);
+        break;
+      case 'hr-paste':
+        incollaDalWatch();
+        break;
+      case 'hr-paste-go':
+        importaBattito($('#hr-paste').value);
         break;
       case 'share-other':
         navigator.share({ text: testoDaCondividere }).catch(() => {});
