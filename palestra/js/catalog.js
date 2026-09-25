@@ -19,9 +19,15 @@ const Catalog = (function () {
     return loading;
   }
 
+  // L'indirizzo delle foto non deve dipendere dal catalogo: all'apertura la
+  // lista si disegna prima che il catalogo sia caricato, e senza questo
+  // l'indirizzo usciva monco (relativo) e tutte le foto sparivano.
+  const CDN = 'https://cdn.jsdelivr.net/gh/yuhonas/free-exercise-db@main/exercises/';
+
   function imageUrl(rel) {
     if (!rel) return '';
-    return (data && data.cdn ? data.cdn : '') + rel;
+    if (/^https?:\/\//.test(rel)) return rel;
+    return ((data && data.cdn) || CDN) + rel;
   }
 
   function normalize(s) {
