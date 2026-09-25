@@ -2042,9 +2042,12 @@ const App = (function () {
       .then(() => refresh())
       .then(() => {
         // Il catalogo si carica in sottofondo: serve per foto e ricerca.
+        // Caricato il catalogo ridisegno comunque: una foto che non era
+        // arrivata alla prima passata (rete lenta) ha cosi' un'altra occasione.
         Catalog.load()
           .then(() => backfillImages())
-          .then((changed) => { if (changed) return loadCore().then(render); })
+          .then((changed) => (changed ? loadCore() : null))
+          .then(() => render())
           .catch(() => { /* offline la prima volta: pazienza, riprova dopo */ });
       })
       .catch((e) => {
