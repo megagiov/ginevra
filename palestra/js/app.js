@@ -55,6 +55,13 @@ const App = (function () {
     return Math.floor(m / 60) + 'h ' + String(m % 60).padStart(2, '0') + 'm';
   }
 
+  function giorniFa(ts) {
+    const g = Math.floor((Date.now() - ts) / 86400000);
+    if (g <= 0) return 'oggi';
+    if (g === 1) return 'ieri';
+    return g + ' giorni fa';
+  }
+
   function mmss(sec) {
     const s = Math.max(0, Math.round(sec));
     return String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0');
@@ -101,39 +108,98 @@ const App = (function () {
   /* ================= timer di recupero ================= */
 
   const Rest = (function () {
-    let endAt = 0, iv = null, total = 0, audioCtx = null;
+    let endAt = 0, iv = null, total = 0, audioCtx = null, ctxMode = null;
+    let scheduled = [];          // oscillatori gia' programmati per il bip
+    let beepArmed = false;       // il bip e' affidato all'orologio audio
 
-    function beep() {
-      if (!state.settings || !state.settings.sound) return;
-      try {
-        audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
-        if (audioCtx.state === 'suspended') audioCtx.resume();
-        [0, 0.22, 0.44].forEach((offset) => {
-          const o = audioCtx.createOscillator();
-          const g = audioCtx.createGain();
-          o.type = 'sine';
-          o.frequency.value = 880;
-          g.gain.setValueAtTime(0.0001, audioCtx.currentTime + offset);
-          g.gain.exponentialRampToValueAtTime(0.35, audioCtx.currentTime + offset + 0.02);
-          g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + offset + 0.16);
-          o.connect(g); g.connect(audioCtx.destination);
-          o.start(audioCtx.currentTime + offset);
-          o.stop(audioCtx.currentTime + offset + 0.18);
-        });
-      } catch (e) { /* audio non disponibile */ }
+    // Modalita' del suono: 'mix' suona sopra la musica senza fermarla ma
+    // rispetta l'interruttore silenzioso; 'silent' suona anche col silenzioso
+    // ma su iPhone puo' mettere in pausa la musica; 'off' niente.
+    function mode() {
+      const s = state.settings || {};
+      if (s.soundMode) return s.soundMode;
+      return s.sound === false ? 'off' : 'mix';
     }
+
+    // Safari decide la categoria audio quando nasce il contesto: va impostata
+    // prima. Senza, l'audio web finisce in 'ambient' e il silenzioso lo zittisce.
+    function applySession() {
+      try {
+        if (navigator.audioSession) {
+          navigator.audioSession.type = mode() === 'silent' ? 'playback' : 'transient';
+        }
+      } catch (e) { /* API non disponibile: pazienza */ }
+    }
+
+    function ctx() {
+      if (mode() === 'off') return null;
+      try {
+        if (audioCtx && ctxMode !== mode()) {
+          // Cambiata la modalita': il contesto va ricreato perche' conti.
+          audioCtx.close().catch(() => {});
+          audioCtx = null;
+        }
+        if (!audioCtx) {
+          applySession();
+          audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+          ctxMode = mode();
+        }
+        if (audioCtx.state !== 'running') audioCtx.resume().catch(() => {});
+        return audioCtx;
+      } catch (e) { return null; }
+    }
+
+    // Tre bip programmati sull'orologio audio, non su un setInterval: cosi'
+    // suonano puntuali anche se il browser rallenta i timer della pagina.
+    function scheduleBeep(delaySec) {
+      cancelBeep();
+      const c = ctx();
+      if (!c) return false;
+      applySession();
+      const t0 = c.currentTime + Math.max(0.05, delaySec);
+      [0, 0.22, 0.44].forEach((off) => {
+        const o = c.createOscillator();
+        const g = c.createGain();
+        o.type = 'sine';
+        o.frequency.value = 880;
+        g.gain.setValueAtTime(0.0001, t0 + off);
+        g.gain.exponentialRampToValueAtTime(0.5, t0 + off + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, t0 + off + 0.16);
+        o.connect(g); g.connect(c.destination);
+        o.start(t0 + off);
+        o.stop(t0 + off + 0.18);
+        scheduled.push(o);
+      });
+      beepArmed = true;
+      return true;
+    }
+
+    function cancelBeep() {
+      scheduled.forEach((o) => { try { o.stop(); } catch (e) { /* gia' fermo */ } });
+      scheduled = [];
+      beepArmed = false;
+    }
+
+    function canVibrate() { return typeof navigator.vibrate === 'function'; }
 
     function buzz() {
-      if (state.settings && state.settings.vibrate && navigator.vibrate) navigator.vibrate([200, 90, 200]);
+      if (state.settings && state.settings.vibrate && canVibrate()) navigator.vibrate([200, 90, 200]);
     }
 
-    // iOS sblocca l'audio solo dentro un gesto dell'utente.
-    function unlock() {
-      try {
-        audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
-        if (audioCtx.state === 'suspended') audioCtx.resume();
-      } catch (e) { /* ignora */ }
+    // Su iPhone la vibrazione non esiste per le web app: al suo posto lo
+    // schermo lampeggia, cosi' il segnale arriva comunque se lo stai guardando.
+    function flash() {
+      const f = $('#rest-flash');
+      if (!f) return;
+      f.hidden = false;
+      f.classList.remove('go');
+      void f.offsetWidth;          // riavvia l'animazione
+      f.classList.add('go');
+      setTimeout(() => { f.hidden = true; f.classList.remove('go'); }, 1600);
     }
+
+    // Ogni tocco rianima l'audio: iOS lo sospende quando vuole.
+    function unlock() { ctx(); }
 
     function paint() {
       const left = (endAt - Date.now()) / 1000;
@@ -146,15 +212,22 @@ const App = (function () {
         sheet.hidden = false;
         sheet.textContent = 'Recupero ' + mmss(left);
       }
-      if (left <= 0) finish();
+      if (left <= 0) finish(false);
     }
 
-    function finish() {
+    // late = ci si accorge della fine solo tornando all'app: niente bip in
+    // ritardo, che suonerebbe a caso minuti dopo, solo il segnale visivo.
+    function finish(late) {
       clearInterval(iv); iv = null;
       $('#rest-time').textContent = '00:00';
       $('#rest-fill').style.width = '0%';
       $('#rest-bar').classList.add('done');
-      beep(); buzz();
+      if (late) cancelBeep();
+      else if (!beepArmed && mode() !== 'off') scheduleBeep(0);   // riserva
+      beepArmed = false;
+      scheduled = [];
+      flash();
+      buzz();
       setTimeout(stop, 2500);
     }
 
@@ -164,6 +237,7 @@ const App = (function () {
       $('#rest-bar').hidden = false;
       $('#rest-bar').classList.remove('done');
       document.body.classList.add('rest-on');
+      scheduleBeep(seconds);
       paint();
       clearInterval(iv);
       iv = setInterval(paint, 250);
@@ -171,6 +245,7 @@ const App = (function () {
 
     function stop() {
       clearInterval(iv); iv = null;
+      cancelBeep();
       const sheet = $('#sheet-rest');
       if (sheet) sheet.hidden = true;
       $('#rest-bar').hidden = true;
@@ -183,10 +258,31 @@ const App = (function () {
       endAt += sec * 1000;
       if (sec > 0) total += sec;
       if (endAt < Date.now()) endAt = Date.now();
+      scheduleBeep((endAt - Date.now()) / 1000);
       paint();
     }
 
-    return { start, stop, adjust, unlock };
+    // Tornando sull'app dopo aver bloccato lo schermo: se il recupero e'
+    // finito nel frattempo lo chiudo senza bip tardivi.
+    function resync() {
+      if (!iv) return;
+      if (Date.now() >= endAt) finish(true);
+      else { scheduleBeep((endAt - Date.now()) / 1000); paint(); }
+    }
+
+    // Per il pulsante di prova nelle impostazioni.
+    function test() {
+      const ok = scheduleBeep(0.05);
+      beepArmed = false;
+      scheduled = [];
+      flash();
+      buzz();
+      return { suono: ok, contesto: audioCtx ? audioCtx.state : 'assente',
+        sessione: navigator.audioSession ? navigator.audioSession.type : 'non supportata',
+        vibrazione: canVibrate() };
+    }
+
+    return { start, stop, adjust, unlock, resync, test, canVibrate, reset: () => { ctxMode = null; } };
   })();
 
   /* ================= schermo acceso ================= */
@@ -203,7 +299,9 @@ const App = (function () {
     } catch (e) { /* non supportato */ }
   }
   document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible' && state.session && !wakeLock) keepAwake(true);
+    if (document.visibilityState !== 'visible') return;
+    if (state.session && !wakeLock) keepAwake(true);
+    Rest.resync();
   });
 
   /* ================= modale ================= */
@@ -495,7 +593,8 @@ const App = (function () {
       }
       h += '<div class="row gap wrap"><button class="btn" data-act="routine-add-ex" data-id="' + r.id + '" type="button">' +
         icon('plus', 'sm') + ' Esercizio</button>' +
-        '<button class="btn primary" data-act="start-routine" data-id="' + r.id + '" type="button">Allenati con questa</button>' +
+        '<button class="btn primary" data-act="start-routine" data-id="' + r.id + '" type="button">' +
+          (state.session ? 'Aggiungi all\u2019allenamento in corso' : 'Allenati con questa') + '</button>' +
         '</div></section>';
     });
     return h;
@@ -544,6 +643,10 @@ const App = (function () {
           });
           h += '</ul>';
           if (s.note) h += '<p class="hint">' + esc(s.note) + '</p>';
+          if (sets.length) {
+            h += '<button class="btn wide share-btn" data-act="session-share" data-id="' + s.id + '" type="button">' +
+              icon('share', 'sm') + ' Condividi su WhatsApp</button>';
+          }
           h += '</section>';
         });
         box.innerHTML = h;
@@ -627,12 +730,26 @@ const App = (function () {
 
   function viewImpostazioni() {
     const s = state.settings;
+    const modo = s.soundMode || (s.sound === false ? 'off' : 'mix');
     let h = '<section class="card"><h3>' + icon('timer') + ' Recupero</h3>' +
       '<label class="field">Secondi di recupero predefiniti' +
       '<input type="number" min="10" max="600" step="5" value="' + s.restSeconds + '" data-act="set-rest"></label>' +
-      '<label class="chk big"><input type="checkbox" data-act="set-autorest"' + (s.autoRest ? ' checked' : '') + '> Parte da solo quando salvo una serie</label>' +
-      '<label class="chk big"><input type="checkbox" data-act="set-sound"' + (s.sound ? ' checked' : '') + '> Suono a fine recupero</label>' +
-      '<label class="chk big"><input type="checkbox" data-act="set-vibrate"' + (s.vibrate ? ' checked' : '') + '> Vibrazione a fine recupero</label></section>';
+      '<label class="chk big"><input type="checkbox" data-act="set-autorest"' + (s.autoRest ? ' checked' : '') + '> Parte da solo quando registro una serie</label>' +
+      '<label class="field">Suono a fine recupero<select data-act="set-soundmode">' +
+      '<option value="mix"' + (modo === 'mix' ? ' selected' : '') + '>Normale: suona sopra la musica, tace col silenzioso</option>' +
+      '<option value="silent"' + (modo === 'silent' ? ' selected' : '') + '>Anche col silenzioso: pu\u00f2 mettere in pausa la musica</option>' +
+      '<option value="off"' + (modo === 'off' ? ' selected' : '') + '>Spento</option>' +
+      '</select></label>';
+    if (Rest.canVibrate()) {
+      h += '<label class="chk big"><input type="checkbox" data-act="set-vibrate"' + (s.vibrate ? ' checked' : '') + '> Vibrazione a fine recupero</label>';
+    } else {
+      h += '<p class="note-ios"><b>Vibrazione: non disponibile su questo telefono.</b> Su iPhone Apple non la permette alle app web, in nessuna versione. ' +
+        'Al suo posto, a fine recupero lo schermo lampeggia di verde.</p>';
+    }
+    h += '<p class="note-ios">Il segnale arriva solo se l\u2019app \u00e8 aperta e lo schermo acceso: col telefono bloccato in tasca il browser si ferma. ' +
+      'Durante l\u2019allenamento l\u2019app chiede di tenere lo schermo acceso.</p>' +
+      '<button class="btn" data-act="test-sound" type="button">' + icon('timer', 'sm') + ' Prova suono e segnale</button>' +
+      '<div id="test-out"></div></section>';
 
     h += '<section class="card"><h3>' + icon('dumbbell') + ' Registrazione</h3>' +
       '<label class="field">Di quanto salgono i pulsanti + e \u2212' +
@@ -655,8 +772,15 @@ const App = (function () {
       '<button class="btn" data-act="hr-help" type="button">Come si fa</button></div>' +
       '<input type="file" id="hr-file" accept=".json,.csv,.txt,application/json,text/csv,text/plain" hidden></section>';
 
+    const ultimo = s.lastBackupAt
+      ? 'Ultimo backup: ' + fmtDate(s.lastBackupAt) + ' (' + giorniFa(s.lastBackupAt) + ')'
+      : 'Nessun backup fatto finora.';
     h += '<section class="card"><h3>' + icon('download') + ' Backup</h3>' +
-      '<p class="muted">I dati stanno solo su questo telefono. Esporta ogni tanto: quel file \u00e8 la tua unica copia.</p>' +
+      '<p class="muted">I dati stanno solo su questo telefono. Il file di backup \u00e8 la tua unica copia.</p>' +
+      '<p class="note-ios"><b>Su iPhone:</b> premi Esporta, si apre il menu Condividi. Scorri le azioni e scegli ' +
+      '<b>\u201cSalva su File\u201d</b>, poi <b>iCloud Drive</b>. Non scegliere le app nella fila in alto (AnyDesk, WhatsApp\u2026): ' +
+      'quelle aprono il file, non lo salvano.</p>' +
+      '<p class="muted small">' + esc(ultimo) + '</p>' +
       '<div class="row gap wrap"><button class="btn primary" data-act="export" type="button">Esporta backup</button>' +
       '<button class="btn" data-act="import" type="button">Importa backup</button></div>' +
       '<input type="file" id="import-file" accept="application/json,.json" hidden></section>';
@@ -692,7 +816,9 @@ const App = (function () {
     else if (state.view === 'schede') view.innerHTML = viewSchede();
     else if (state.view === 'storico') { view.innerHTML = viewStorico(); renderStoricoInto(); }
     else if (state.view === 'progressi') { view.innerHTML = viewProgressi(); renderProgressInto(); }
-    else if (state.view === 'impostazioni') view.innerHTML = viewImpostazioni();
+    // Il backup si rifa' a ogni apertura di Altro: una copia preparata prima
+    // resterebbe ferma e lascerebbe fuori le serie registrate nel frattempo.
+    else if (state.view === 'impostazioni') { view.innerHTML = viewImpostazioni(); preparaBackup(); }
     window.scrollTo(0, 0);
   }
 
@@ -745,11 +871,17 @@ const App = (function () {
       warmup: false
     };
     openModal(ex.name, logBody());
+    watchInfo();
   }
 
   function renderLog() {
     const box = $('#modal-body');
-    if (box && state.logExId) box.innerHTML = logBody();
+    if (box && state.logExId) { box.innerHTML = logBody(); watchInfo(); }
+  }
+
+  function watchInfo() {
+    const d = $('#modal-body .ex-info');
+    if (d) d.addEventListener('toggle', () => { state.logInfoOpen = d.open; });
   }
 
   function logBody() {
@@ -762,6 +894,9 @@ const App = (function () {
 
     let h = '<div id="sheet-rest" hidden></div>';
 
+    h += schedaInfo(ex, today);
+    h += infoEsercizio(ex);
+
     h += '<p class="log-last">' + (last
       ? 'Ultima volta (' + fmtDateShort(last.ts) + '): <b>' + esc(describeSets(last.sets)) + '</b>'
       : 'Prima volta che lo registri.') +
@@ -770,14 +905,14 @@ const App = (function () {
     h += stepper('weight', u.w.toUpperCase(), d.weight, ex);
     h += stepper('reps', u.r.toUpperCase(), d.reps, ex);
 
-    h += '<div class="rpe-row"><span class="stepper-label">SFORZO (RPE)</span><div class="chips">' +
+    h += '<div class="rpe-row"><div class="rpe-head"><span class="stepper-label">SFORZO (RPE)</span>' +
+      '<label class="chk"><input type="checkbox" data-act="log-warmup"' + (d.warmup ? ' checked' : '') +
+      '> riscaldamento</label></div><div class="chips">' +
       ['', '6', '7', '8', '9', '10'].map((v) =>
         '<button class="chip' + ((d.rpe == null ? '' : String(d.rpe)) === v ? ' on' : '') +
         '" data-act="set-rpe" data-v="' + v + '" type="button">' + (v === '' ? 'niente' : v) + '</button>'
       ).join('') + '</div></div>';
 
-    h += '<label class="chk big"><input type="checkbox" data-act="log-warmup"' + (d.warmup ? ' checked' : '') +
-      '> Serie di riscaldamento</label>';
 
     h += '<button class="btn primary huge" data-act="log-save" type="button">' +
       (d.warmup ? 'Registra riscaldamento' : 'Registra serie') + '</button>';
@@ -799,6 +934,55 @@ const App = (function () {
     }
 
     h += '<button class="btn wide" data-act="close-log" type="button">Fatto</button>';
+    return h;
+  }
+
+  // Cosa dice la scheda su questo esercizio. Vale sia se l'hai aperto dalla
+  // scheda sia se l'hai scelto dalla lista: basta che stia in una scheda.
+  function schedaInfo(ex, today) {
+    const fatte = today.filter((x) => !x.warmup).length;
+    const piano = state.session && state.session.plan
+      ? state.session.plan.filter((p) => p.exerciseId === ex.id && p.sets)[0]
+      : null;
+    if (piano) {
+      const r = state.routines.filter((x) => x.id === (piano.routineId || state.session.routineId))[0];
+      const obiettivo = Number(piano.sets) || 0;
+      const pct = obiettivo ? Math.min(100, Math.round((fatte / obiettivo) * 100)) : 0;
+      return '<div class="scheda-box"><div class="row between"><span class="sb-label">' +
+        esc(r ? r.name : 'Scheda') + '</span><b>' + esc(piano.sets) + ' \u00d7 ' + esc(piano.reps) + '</b></div>' +
+        '<div class="sb-track"><div class="sb-fill" style="width:' + pct + '%"></div></div>' +
+        '<span class="sb-count">' + fatte + ' di ' + esc(piano.sets) + ' serie' +
+        (obiettivo && fatte >= obiettivo ? ' \u00b7 fatto' : '') + '</span></div>';
+    }
+    const inSchede = state.routines
+      .map((r) => ({ r, it: (r.items || []).filter((i) => i.exerciseId === ex.id)[0] }))
+      .filter((x) => x.it);
+    if (!inSchede.length) return '';
+    return '<div class="scheda-box muted-box"><span class="sb-label">Nelle tue schede</span>' +
+      inSchede.map((x) => '<div class="row between"><span>' + esc(x.r.name) + '</span><b>' +
+        esc(x.it.sets) + ' \u00d7 ' + esc(x.it.reps) + '</b></div>').join('') + '</div>';
+  }
+
+  // Le foto restano sempre in vista: di molti esercizi e' la foto a dirti
+  // cosa sono. Le istruzioni invece stanno chiuse, altrimenti il testo spinge
+  // i pulsanti + e \u2212 fuori dallo schermo.
+  function infoEsercizio(ex) {
+    const it = ex.catalogId && Catalog.loaded() ? Catalog.get(ex.catalogId) : null;
+    const foto = it && it.img.length ? it.img : (ex.img ? [ex.img] : []);
+    let h = '';
+    if (foto.length) {
+      h += '<div class="ex-gallery log-photos">' + foto.slice(0, 2).map((f, i) =>
+        '<img src="' + esc(Catalog.imageUrl(f)) + '" alt="' + esc(ex.name) + (foto.length > 1 ? (i ? ', fine movimento' : ', inizio movimento') : '') +
+        '" loading="lazy" decoding="async">').join('') + '</div>';
+    }
+    if (it && (it.ins.length || it.m.length)) {
+      h += '<details class="ex-info"' + (state.logInfoOpen ? ' open' : '') + '>' +
+        '<summary><span>Istruzioni</span><span class="muted small">' + esc(it.m.join(', ')) + '</span></summary>' +
+        (it.s.length ? '<p class="muted small">Muscoli secondari: ' + esc(it.s.join(', ')) + '</p>' : '') +
+        (it.ins.length ? '<ol class="steps">' + it.ins.map((i) => '<li>' + esc(i) + '</li>').join('') + '</ol>' +
+          '<p class="muted small">In inglese, come nel dataset originale.</p>' : '') +
+        '</details>';
+    }
     return h;
   }
 
@@ -876,6 +1060,9 @@ const App = (function () {
         state.lastUsed[exId] = Date.now();
         state.resumable = null;
         d.warmup = false;          // la prossima e' una serie di lavoro
+        // Peso e ripetizioni restano (di solito si ripetono), lo sforzo no: e'
+        // un giudizio su quella serie e non va copiato su quella dopo.
+        d.rpe = null;
         renderLog();
         render();                  // aggiorna la lista dietro al pannello
       });
@@ -1189,16 +1376,131 @@ const App = (function () {
     reader.readAsText(file);
   }
 
+  /* ================= condivisione su WhatsApp ================= */
+
+  // Una serie scritta come la scrive chi allena: 80×8, @8 per l'RPE.
+  function serieTesto(x, ex) {
+    let t;
+    if (ex && ex.unit === 'time') t = (x.weight > 0 ? num(x.weight) + ' kg ' : '') + x.reps + ' s';
+    else if (!x.weight) t = x.reps + ' rip';
+    else t = num(x.weight) + '×' + x.reps;
+    if (x.rpe) t += ' @' + num(x.rpe);
+    return t;
+  }
+
+  // Il messaggio per il personal. Grassetto con gli asterischi, che
+  // WhatsApp rende da solo; niente fronzoli.
+  function testoAllenamento(s, sets, bestPrima) {
+    const lavoro = sets.filter((x) => !x.warmup);
+    const ordine = [];
+    sets.forEach((x) => { if (ordine.indexOf(x.exerciseId) === -1) ordine.push(x.exerciseId); });
+
+    let titolo = s.name || 'Allenamento';
+    if (/^Allenamento( libero)?$/.test(titolo)) {
+      const gruppi = [];
+      ordine.forEach((id) => {
+        const m = state.exMap[id] && state.exMap[id].muscle;
+        if (m && gruppi.indexOf(m) === -1) gruppi.push(m);
+      });
+      if (gruppi.length) titolo = 'Allenamento: ' + gruppi.join(', ');
+    }
+    const quando = new Date(s.startedAt).toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' });
+    const vol = Math.round(volume(sets));
+
+    const r = [];
+    r.push('*' + titolo + '*');
+    r.push(quando.charAt(0).toUpperCase() + quando.slice(1) + ' · ' + fmtDur((s.endedAt || Date.now()) - s.startedAt));
+    r.push(lavoro.length + ' serie · ' + vol.toLocaleString('it-IT') + ' kg sollevati');
+    r.push('');
+
+    ordine.forEach((id) => {
+      const ex = state.exMap[id];
+      const mie = sets.filter((x) => x.exerciseId === id);
+      const risc = mie.filter((x) => x.warmup);
+      const lav = mie.filter((x) => !x.warmup);
+      r.push('*' + (ex ? ex.name : 'Esercizio') + '*');
+      if (risc.length) r.push('risc. ' + risc.map((x) => serieTesto(x, ex)).join(' · '));
+      if (lav.length) {
+        const top = lav.reduce((b, x) => Math.max(b, e1rm(x.weight, x.reps)), 0);
+        const prima = bestPrima[id] || 0;
+        r.push(lav.map((x) => serieTesto(x, ex)).join(' · ') + (prima > 0 && top > prima ? '  — nuovo record' : ''));
+      }
+      mie.filter((x) => x.note).forEach((x) => r.push('_' + x.note + '_'));
+      r.push('');
+    });
+
+    if (s.hr && s.hr.avg) r.push('Battito: media ' + s.hr.avg + (s.hr.max ? ', massimo ' + s.hr.max : ''));
+    if (s.note) r.push('Nota: ' + s.note);
+    return r.join('\n').trim();
+  }
+
+  // Senza numero, WhatsApp si apre col testo gia' scritto e chiede a chi
+  // mandarlo: il contatto lo scegli tu.
+  function linkWa(testo) {
+    return 'https://wa.me/?text=' + encodeURIComponent(testo);
+  }
+
+  let testoDaCondividere = '';
+
+  function condividiModal(sessionId) {
+    Promise.all([DB.get('sessions', sessionId), DB.setsOfSession(sessionId), DB.getAll('sets')])
+      .then(([s, sets, tutte]) => {
+        if (!s || !sets.length) { toast('Allenamento vuoto: niente da condividere', true); return; }
+        // record battuti: confronto con quello che avevi fatto PRIMA di quel giorno
+        const bestPrima = {};
+        tutte.forEach((x) => {
+          if (x.warmup || x.ts >= s.startedAt) return;
+          bestPrima[x.exerciseId] = Math.max(bestPrima[x.exerciseId] || 0, e1rm(x.weight, x.reps));
+        });
+        testoDaCondividere = testoAllenamento(s, sets, bestPrima);
+        openModal('Condividi l\u2019allenamento',
+          '<p class="muted small">Questo \u00e8 il testo che parte. Il grassetto lo mette WhatsApp.</p>' +
+          '<pre class="share-preview">' + esc(testoDaCondividere) + '</pre>' +
+          '<a class="btn primary wide wa-btn" href="' + esc(linkWa(testoDaCondividere)) + '" target="_blank" rel="noopener">' +
+            'Invia su WhatsApp</a>' +
+          '<p class="muted small center">Si apre WhatsApp col messaggio gi\u00e0 scritto: scegli tu la chat.</p>' +
+          '<div class="row gap wrap">' +
+          (navigator.share ? '<button class="btn" data-act="share-other" type="button">' + icon('share', 'sm') + ' Altre app</button>' : '') +
+          '<button class="btn" data-act="share-copy" type="button">Copia il testo</button></div>');
+      });
+  }
+
+  function copiaTesto(t) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      return navigator.clipboard.writeText(t).then(() => toast('Testo copiato: incollalo nella chat'));
+    }
+    const ta = document.createElement('textarea');
+    ta.value = t;
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); toast('Testo copiato: incollalo nella chat'); }
+    catch (e) { toast('Non riesco a copiare: tieni premuto sul testo', true); }
+    document.body.removeChild(ta);
+    return Promise.resolve();
+  }
+
   /* ================= azioni varie ================= */
 
+  // Se un allenamento e' gia' aperto la scheda si aggiunge a quello: prima ne
+  // apriva un secondo e lasciava il primo aperto per sempre.
   function startRoutine(routineId) {
     const r = state.routines.filter((x) => x.id === routineId)[0];
     if (!r) return;
-    DB.startSession({
-      name: r.name,
-      routineId: r.id,
-      plan: (r.items || []).map((i) => ({ exerciseId: i.exerciseId, sets: i.sets, reps: i.reps }))
-    }).then(() => { state.view = 'oggi'; HR.resetLive(); toast('Buon allenamento'); return refresh(); });
+    const piano = (r.items || []).map((i) => ({ exerciseId: i.exerciseId, sets: i.sets, reps: i.reps, routineId: r.id }));
+    const s = state.session;
+    if (s) {
+      s.plan = s.plan || [];
+      piano.forEach((pl) => { if (!s.plan.some((x) => x.exerciseId === pl.exerciseId)) s.plan.push(pl); });
+      s.routineId = s.routineId || r.id;
+      if (!s.name || s.name === 'Allenamento' || s.name === 'Allenamento libero') s.name = r.name;
+      return DB.put('sessions', s).then(() => {
+        state.view = 'oggi';
+        toast('Scheda aggiunta all\u2019allenamento in corso');
+        return refresh();
+      });
+    }
+    DB.startSession({ name: r.name, routineId: r.id, plan: piano })
+      .then(() => { state.view = 'oggi'; HR.resetLive(); toast('Buon allenamento'); return refresh(); });
   }
 
   // Mette l'esercizio in programma. Se non c'e' una sessione aperta non la
@@ -1219,19 +1521,62 @@ const App = (function () {
     return DB.put('routines', r).then(() => loadCore()).then(render);
   }
 
+  // Il file di backup si prepara in anticipo, appena apri Altro: iPhone
+  // concede il menu Condividi solo nell'istante del tocco, e leggere il
+  // database dopo il tocco rischia di far scadere il permesso.
+  let backupPronto = null;
+  function preparaBackup() {
+    backupPronto = null;
+    return DB.exportAll().then((data) => {
+      const nome = 'palestra-backup-' + new Date().toISOString().slice(0, 10) + '.json';
+      const json = JSON.stringify(data, null, 2);
+      backupPronto = { nome, json, file: new File([json], nome, { type: 'application/json' }) };
+      return backupPronto;
+    });
+  }
+
+  function segnaBackup() {
+    return DB.saveSettings({ lastBackupAt: Date.now() }).then((st) => {
+      state.settings = st;
+      if (state.view === 'impostazioni') render();
+    });
+  }
+
+  function scaricaFile(nome, json) {
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = nome;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+  }
+
   function doExport() {
-    DB.exportAll().then((data) => {
-      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'palestra-backup-' + new Date().toISOString().slice(0, 10) + '.json';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      setTimeout(() => URL.revokeObjectURL(url), 4000);
-      toast('Backup esportato');
-    }).catch((e) => toast(e.message, true));
+    const b = backupPronto;
+    if (!b) {
+      toast('Preparo il backup, ripremi tra un attimo');
+      preparaBackup();
+      return;
+    }
+    const puoCondividere = navigator.canShare && navigator.share && navigator.canShare({ files: [b.file] });
+    if (puoCondividere) {
+      navigator.share({ files: [b.file], title: 'Backup Palestra' })
+        .then(() => { toast('Backup condiviso'); return segnaBackup(); })
+        .catch((e) => {
+          if (e && e.name === 'AbortError') return;     // hai chiuso tu il menu
+          scaricaFile(b.nome, b.json);
+          toast('Backup scaricato');
+          return segnaBackup();
+        })
+        .then(() => preparaBackup());
+      return;
+    }
+    scaricaFile(b.nome, b.json);
+    toast('Backup scaricato');
+    segnaBackup().then(() => preparaBackup());
   }
 
   function doImport(file) {
@@ -1313,6 +1658,32 @@ const App = (function () {
       case 'hr-options':
         hrOptionsModal();
         break;
+      case 'session-share':
+        condividiModal(id);
+        break;
+      case 'share-other':
+        navigator.share({ text: testoDaCondividere }).catch(() => {});
+        break;
+      case 'share-copy':
+        copiaTesto(testoDaCondividere);
+        break;
+      case 'test-sound': {
+        const r = Rest.test();
+        const out = $('#test-out');
+        if (out) {
+          out.className = 'test-out';
+          out.textContent =
+            'Suono: ' + (r.suono ? 'inviato' : 'spento nelle impostazioni') + '\n' +
+            'Audio: ' + r.contesto + '\n' +
+            'Categoria audio: ' + r.sessione + '\n' +
+            'Vibrazione: ' + (r.vibrazione ? 'disponibile' : 'non disponibile su questo telefono') + '\n\n' +
+            (r.suono
+              ? 'Non hai sentito niente? Controlla l\u2019interruttore silenzioso sul lato del telefono e il volume. ' +
+                'Se lo tieni sempre in silenzioso, scegli \u201cAnche col silenzioso\u201d qui sopra.'
+              : '');
+        }
+        break;
+      }
       case 'session-details':
         sessionDetailsModal();
         break;
@@ -1467,6 +1838,7 @@ const App = (function () {
     else if (act === 'set-autorest') patch.autoRest = t.checked;
     else if (act === 'set-age') patch.age = Number(t.value) || null;
     else if (act === 'set-step') patch.weightStep = Number(t.value) || 2.5;
+    else if (act === 'set-soundmode') patch.soundMode = t.value;
     else if (act === 'set-autoclose') patch.autoCloseMinutes = Number(t.value) || 15;
     else if (act === 'log-warmup') {
       state.logDraft.warmup = t.checked;
@@ -1505,6 +1877,15 @@ const App = (function () {
       span.innerHTML = '<svg class="ico" aria-hidden="true"><use href="#i-dumbbell"/></svg>';
       t.replaceWith(span);
     }, true);
+
+    // iOS sospende l'audio quando vuole: ogni tocco lo rianima, cosi' il bip
+    // di fine recupero trova il contesto pronto.
+    document.addEventListener('pointerdown', () => Rest.unlock(), { passive: true });
+
+    // Chiedo al browser di non cancellare i dati per fare spazio.
+    try {
+      if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
+    } catch (e) { /* non supportato */ }
 
     document.addEventListener('click', onClick);
     document.addEventListener('submit', onSubmit);

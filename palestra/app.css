@@ -867,3 +867,182 @@ textarea { min-height: 80px; resize: vertical; }
   .ex-row { min-height: 92px; }
   .ex-name { font-size: 1.6rem; }
 }
+
+/* Fine recupero: su iPhone la vibrazione non esiste per le web app, quindi
+   il segnale e' lo schermo che lampeggia di verde. */
+#rest-flash {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  pointer-events: none;
+  background: var(--accent);
+  opacity: 0;
+}
+#rest-flash.go { animation: rest-flash 1.5s var(--ease); }
+@keyframes rest-flash {
+  0%, 30%, 60% { opacity: .55; }
+  15%, 45%, 100% { opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  /* niente lampeggi per chi li ha disattivati: resta la barra verde */
+  #rest-flash.go { animation: none; }
+}
+
+.test-out {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: .8rem;
+  color: var(--fg-muted);
+  background: var(--surface-2);
+  border-radius: var(--radius-sm);
+  padding: var(--s2) var(--s3);
+  margin-top: var(--s2);
+  white-space: pre-wrap;
+}
+.note-ios {
+  font-size: .9rem;
+  color: var(--fg-muted);
+  border-left: 3px solid var(--border);
+  padding-left: var(--s3);
+  margin: var(--s2) 0 var(--s3);
+}
+
+/* Obiettivo della scheda dentro il pannello di registrazione */
+.scheda-box {
+  background: var(--surface-2);
+  border: 1px solid color-mix(in srgb, var(--primary) 45%, var(--border));
+  border-radius: var(--radius-sm);
+  padding: var(--s2) var(--s3);
+  margin-bottom: var(--s3);
+}
+.scheda-box.muted-box { border-color: var(--border); }
+.scheda-box b { font-family: var(--font-head); font-size: 1.25rem; }
+.scheda-box .row { min-height: 28px; }
+.sb-label { font-size: .8rem; letter-spacing: .08em; text-transform: uppercase; color: var(--fg-muted); }
+.sb-track { height: 6px; background: var(--border); border-radius: 999px; margin: var(--s2) 0 var(--s1); overflow: hidden; }
+.sb-fill { height: 100%; background: var(--primary); border-radius: 999px; transition: width var(--t-base) var(--ease); }
+.sb-count { font-size: .9rem; color: var(--fg-muted); }
+
+/* Foto e istruzioni dell'esercizio, richiudibili */
+.ex-info {
+  background: var(--surface-2);
+  border-radius: var(--radius-sm);
+  margin-bottom: var(--s3);
+}
+.ex-info summary {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  min-height: var(--tap);
+  padding: var(--s1) var(--s3);
+  cursor: pointer;
+  font-weight: 600;
+  list-style: none;
+}
+.ex-info summary::-webkit-details-marker { display: none; }
+.ex-info summary::after { content: '\203A'; margin-left: auto; color: var(--fg-muted); font-size: 1.4rem; transition: transform var(--t-fast) var(--ease); }
+.ex-info[open] summary::after { transform: rotate(90deg); }
+.ex-info > :not(summary) { margin-left: var(--s3); margin-right: var(--s3); }
+.ex-info > :last-child { padding-bottom: var(--s3); }
+.info-thumb { width: 40px; height: 40px; border-radius: 8px; object-fit: cover; background: var(--surface); flex: none; }
+
+/* ============================================================
+   Foto grandi: di molti esercizi il nome non dice niente, e'
+   la foto che fa riconoscere il movimento.
+   ============================================================ */
+
+.ex-row { min-height: 132px; align-items: center; }
+.ex-row .ex-thumb {
+  width: 112px;
+  height: 112px;
+  border-radius: var(--radius-sm);
+  object-fit: cover;
+  background: #fff;              /* le foto del catalogo sono su fondo chiaro */
+}
+.ex-row .ex-thumb.ph { background: var(--surface-2); }
+.ex-row .ex-thumb.ph .ico { width: 40px; height: 40px; }
+
+/* Con la foto grande il testo ha meno spazio: il nome va su due righe
+   invece di essere tagliato, e cosi' i carichi dell'ultima volta. */
+.ex-name {
+  font-size: 1.4rem;
+  white-space: normal;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.ex-last {
+  white-space: normal;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  font-size: 1rem;
+}
+
+/* catalogo: stesse ragioni, foto piu' grandi */
+.pick li { min-height: 104px; }
+.pick img, .pick .ph { width: 88px; height: 88px; }
+.pick img { background: #fff; }
+
+/* pannello di registrazione: le due foto (inizio e fine movimento)
+   affiancate e ben visibili */
+.ex-info .ex-gallery { margin-top: 0; }
+.ex-info .ex-gallery img { width: 49%; background: #fff; }
+.ex-info[open] .info-thumb { display: none; }
+
+@media (min-width: 720px) {
+  .ex-row .ex-thumb { width: 128px; height: 128px; }
+  .ex-row { min-height: 148px; }
+}
+
+/* Foto del movimento nel pannello: sempre visibili, basse abbastanza da
+   lasciare in vista i pulsanti sotto. */
+.log-photos { margin: 0 0 var(--s3); gap: var(--s2); }
+.log-photos img {
+  width: calc(50% - var(--s1));
+  aspect-ratio: 16 / 10;
+  background: #fff;
+  border-radius: var(--radius-sm);
+}
+.log-photos img:only-child { width: 100%; aspect-ratio: 16 / 9; }
+.ex-info summary { justify-content: flex-start; }
+.ex-info summary .muted { margin: 0; }
+
+/* Pannello di registrazione piu' compatto: con le foto in vista il
+   pulsante "Registra serie" deve comunque stare nello schermo. */
+#modal-card { max-height: 94dvh; }
+.log-last { margin-bottom: var(--s2); font-size: 1rem; }
+.stepper-block { margin-bottom: var(--s3); }
+.scheda-box { margin-bottom: var(--s2); }
+.log-photos { margin-bottom: var(--s2); }
+.ex-info { margin-bottom: var(--s2); }
+.rpe-head { display: flex; align-items: center; justify-content: space-between; gap: var(--s2); }
+.rpe-head .chk { min-height: var(--tap); font-size: .95rem; color: var(--fg); }
+.btn.huge { margin: var(--s2) 0; }
+
+/* Condivisione col personal */
+.share-btn { margin-top: var(--s3); margin-bottom: 0; display: flex; align-items: center; justify-content: center; gap: var(--s2); }
+.share-preview {
+  font-family: var(--font-body);
+  font-size: .95rem;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  word-break: break-word;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: var(--s3);
+  margin: var(--s2) 0 var(--s3);
+  max-height: 38vh;
+  overflow-y: auto;
+}
+.wa-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  min-height: 56px;
+  background: #25D366;          /* il verde WhatsApp: si capisce al volo dove va */
+  border-color: #25D366;
+  color: #0B0D11;
+}
+.wa-btn:hover { background: #3ee07a; }
