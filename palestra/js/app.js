@@ -999,8 +999,9 @@ const App = (function () {
   }
 
   // Le foto restano sempre in vista: di molti esercizi e' la foto a dirti
-  // cosa sono. Le istruzioni invece stanno chiuse, altrimenti il testo spinge
-  // i pulsanti + e \u2212 fuori dallo schermo.
+  // cosa sono. Sotto, il riassunto in italiano: chiuso ne mostra due righe,
+  // aperto tutto, piu' i muscoli e le istruzioni complete in inglese. Cosi'
+  // i pulsanti + e \u2212 restano nello schermo.
   function infoEsercizio(ex) {
     const it = ex.catalogId && Catalog.loaded() ? Catalog.get(ex.catalogId) : null;
     const foto = it && it.img.length ? it.img : (ex.img ? [ex.img] : []);
@@ -1010,15 +1011,26 @@ const App = (function () {
         '<img src="' + esc(Catalog.imageUrl(f)) + '" alt="' + esc(ex.name) + (foto.length > 1 ? (i ? ', fine movimento' : ', inizio movimento') : '') +
         '" loading="lazy" decoding="async">').join('') + '</div>';
     }
-    if (it && (it.ins.length || it.m.length)) {
+    if (it && (it.r || it.ins.length || it.m.length)) {
       h += '<details class="ex-info"' + (state.logInfoOpen ? ' open' : '') + '>' +
-        '<summary><span>Istruzioni</span><span class="muted small">' + esc(it.m.join(', ')) + '</span></summary>' +
-        (it.s.length ? '<p class="muted small">Muscoli secondari: ' + esc(it.s.join(', ')) + '</p>' : '') +
-        (it.ins.length ? '<ol class="steps">' + it.ins.map((i) => '<li>' + esc(i) + '</li>').join('') + '</ol>' +
-          '<p class="muted small">In inglese, come nel dataset originale.</p>' : '') +
+        (it.r
+          ? '<summary><span class="ex-r">' + esc(it.r) + '</span></summary>' +
+            '<p class="muted small">' + esc(it.m.join(', ')) + (it.s.length ? ' \u00b7 secondari: ' + esc(it.s.join(', ')) : '') + '</p>'
+          : '<summary><span>Istruzioni</span><span class="muted small">' + esc(it.m.join(', ')) + '</span></summary>' +
+            (it.s.length ? '<p class="muted small">Muscoli secondari: ' + esc(it.s.join(', ')) + '</p>' : '')) +
+        istruzioniInglese(it, !it.r) +
         '</details>';
     }
     return h;
+  }
+
+  // Le istruzioni originali, passo passo, in inglese. Dove c'e' il riassunto
+  // italiano stanno chiuse: servono solo per i dettagli.
+  function istruzioniInglese(it, aperte) {
+    if (!it.ins.length) return '';
+    const lista = '<ol class="steps">' + it.ins.map((i) => '<li>' + esc(i) + '</li>').join('') + '</ol>';
+    if (aperte) return lista + '<p class="muted small">In inglese, come nel dataset originale.</p>';
+    return '<details class="ex-en"><summary>Istruzioni complete (in inglese)</summary>' + lista + '</details>';
   }
 
   function stepper(field, label, value, ex) {
@@ -1259,9 +1271,10 @@ const App = (function () {
     if (it.en && it.en !== it.n) h += '<p class="muted small">In inglese: ' + esc(it.en) + '</p>';
     h += '<p class="muted">' + esc(it.m.join(', ')) + (it.s.length ? ' · secondari: ' + esc(it.s.join(', ')) : '') +
       '<br>' + esc(it.eq) + ' · ' + esc(it.cat) + ' · ' + esc(it.lvl) + (it.f ? ' · ' + esc(it.f) : '') + '</p>';
-    if (it.ins.length) {
-      h += '<h3>Esecuzione</h3><ol class="steps">' + it.ins.map((i) => '<li>' + esc(i) + '</li>').join('') + '</ol>' +
-        '<p class="muted small">Istruzioni in inglese: vengono dal dataset originale, non sono state tradotte a macchina per non storpiarle.</p>';
+    if (it.r) {
+      h += '<h3>Come si fa</h3><p class="ex-r-big">' + esc(it.r) + '</p>' + istruzioniInglese(it, false);
+    } else if (it.ins.length) {
+      h += '<h3>Esecuzione</h3>' + istruzioniInglese(it, true);
     }
     h += '<button class="btn primary wide" data-act="cat-add" data-id="' + esc(it.id) + '" type="button">' +
       (pickHandler ? 'Aggiungi all\u2019allenamento' : 'Aggiungi ai miei esercizi') + '</button>';

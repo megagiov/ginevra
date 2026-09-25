@@ -37,6 +37,8 @@ const check = (n, c, x) => { if (!c) bad++; console.log((c ? '  ok  ' : ' FAIL '
   await page.locator('#ex-pick li[data-cat] [data-act="cat-detail"]').first().click();
   await page.waitForTimeout(600);
   check('il dettaglio mostra le istruzioni', (await page.locator('.steps li').count()) > 0);
+  const rb = await page.locator('.ex-r-big').innerText().catch(() => '');
+  check('il dettaglio mostra il riassunto in italiano', rb.length > 30 && !/\bthe\b/i.test(rb), rb);
   await page.locator('[data-act="cat-add"]').click();
   await page.waitForTimeout(1200);
   check('scegliendolo si apre subito la registrazione', (await page.locator('.stepper').count()) === 2);
