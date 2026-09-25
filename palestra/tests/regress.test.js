@@ -1,0 +1,95 @@
+const { chromium } = require('playwright');
+let bad = 0;
+const check = (n, c, x) => { if (!c) bad++; console.log((c ? '  ok  ' : ' FAIL ') + n + (x ? ' — ' + x : '')); };
+(async () => {
+  const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || undefined });
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, locale: 'it-IT' });
+  const page = await ctx.newPage();
+  const errs = [];
+  page.on('pageerror', (e) => errs.push(e.message));
+  page.on('dialog', (d) => d.accept());
+  await page.goto((process.env.PALESTRA_URL || 'http://127.0.0.1:8777/index.html'), { waitUntil: 'networkidle' });
+  await page.waitForTimeout(1500);
+
+  console.log('\n== schede: partire da una scheda ==');
+  await page.locator('#tabbar button[data-view="schede"]').click();
+  await page.waitForTimeout(700);
+  check('le 3 schede ci sono', (await page.locator('[data-act="start-routine"]').count()) === 3);
+  check('gli esercizi della scheda sono elencati', (await page.locator('.list.ordered li').count()) >= 5);
+  await page.locator('[data-act="start-routine"]').first().click();
+  await page.waitForTimeout(1200);
+  check('torna al pannello con l allenamento aperto', (await page.locator('.session-bar').count()) === 1);
+  const titoli = await page.evaluate(() => Array.from(document.querySelectorAll('.group-title')).map(e => e.textContent.trim().toLowerCase()));
+  check('gli esercizi della scheda sono in cima', titoli[0].includes('ancora da fare'), JSON.stringify(titoli));
+  const primi = await page.evaluate(() => Array.from(document.querySelectorAll('.ex-list'))[0].children.length);
+  check('la scheda porta i suoi 5 esercizi', primi === 5, primi + '');
+
+  console.log('\n== catalogo con foto ==');
+  await page.locator('[data-act="pick-exercise"]').click();
+  await page.waitForTimeout(500);
+  await page.locator('#pick-tabs button[data-tab="catalog"]').click();
+  await page.waitForTimeout(2000);
+  check('il catalogo carica', (await page.locator('#ex-pick li[data-cat]').count()) > 0);
+  await page.locator('#ex-search').fill('panca');
+  await page.waitForTimeout(700);
+  const primo = await page.locator('#ex-pick li[data-cat] b').first().innerText();
+  check('la ricerca italiana funziona', /bench|press/i.test(primo), primo);
+  await page.locator('#ex-pick li[data-cat] [data-act="cat-detail"]').first().click();
+  await page.waitForTimeout(600);
+  check('il dettaglio mostra le istruzioni', (await page.locator('.steps li').count()) > 0);
+  await page.locator('[data-act="cat-add"]').click();
+  await page.waitForTimeout(1200);
+  check('scegliendolo si apre subito la registrazione', (await page.locator('.stepper').count()) === 2);
+  await page.locator('[data-act="log-save"]').click();
+  await page.waitForTimeout(900);
+  await page.locator('[data-act="close-log"]').click();
+  await page.waitForTimeout(700);
+
+  console.log('\n== battito a mano ==');
+  await page.locator('[data-act="hr-options"]').click();
+  await page.waitForTimeout(500);
+  await page.locator('[data-act="hr-manual"]').click();
+  await page.waitForTimeout(500);
+  await page.locator('#hr-manual-form input[name="avg"]').fill('134');
+  await page.locator('#hr-manual-form input[name="max"]').fill('171');
+  await page.locator('#hr-manual-form button[type="submit"]').click();
+  await page.waitForTimeout(900);
+  check('il battito finisce nella barra', (await page.locator('.hr-chip').innerText()).includes('134'), await page.locator('.hr-chip').innerText());
+
+  console.log('\n== nome e nota dell allenamento ==');
+  await page.locator('.session-bar .sb-main').click();
+  await page.waitForTimeout(500);
+  await page.locator('#sess-form input[name="name"]').fill('Petto pesante');
+  await page.locator('#sess-form textarea[name="note"]').fill('spalla destra un po fastidiosa');
+  await page.locator('#sess-form button[type="submit"]').click();
+  await page.waitForTimeout(900);
+  check('il nome si salva', (await page.locator('.session-bar').innerText()).includes('Petto pesante'));
+
+  console.log('\n== storico, progressi, export ==');
+  await page.locator('#tabbar button[data-view="storico"]').click();
+  await page.waitForTimeout(1000);
+  const st = (await page.locator('#view').innerText()).replace(/\s+/g, ' ');
+  check('lo storico mostra l allenamento rinominato', st.includes('Petto pesante'));
+  check('lo storico mostra i bpm', st.includes('134'));
+  check('lo storico mostra la nota', st.includes('fastidiosa'));
+  await page.locator('#tabbar button[data-view="progressi"]').click();
+  await page.waitForTimeout(1000);
+  check('i progressi mostrano i record', (await page.locator('#view').innerText()).includes('Record personali'));
+  await page.locator('#tabbar button[data-view="impostazioni"]').click();
+  await page.waitForTimeout(700);
+  const dl = page.waitForEvent('download', { timeout: 6000 }).catch(() => null);
+  await page.locator('[data-act="export"]').click();
+  const d = await dl;
+  check('il backup si scarica', !!d, d ? d.suggestedFilename() : 'niente');
+
+  console.log('\n== persistenza ==');
+  await page.reload({ waitUntil: 'networkidle' });
+  await page.waitForTimeout(1500);
+  check('l allenamento e ancora aperto dopo il riavvio', (await page.locator('.session-bar:not(.resume)').count()) === 1);
+  check('le serie registrate sono ancora li', (await page.locator('.ex-badge').count()) >= 1);
+
+  console.log('\n===== ' + (bad ? bad + ' FALLITI' : 'tutti passati') + ' =====');
+  console.log(errs.length ? 'errori JS: ' + errs.slice(0, 6).join(' | ') : 'nessun errore JavaScript');
+  await browser.close();
+  process.exit(bad || errs.length ? 1 : 0);
+})().catch((e) => { console.error('CRASH:', e.message); process.exit(2); });
