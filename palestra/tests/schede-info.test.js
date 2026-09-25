@@ -34,6 +34,15 @@ const check = (n, c, x) => { if (!c) bad++; console.log((c ? '  ok  ' : ' FAIL '
   check('le foto sono ben visibili', fh >= 90, fh + ' px di altezza');
   check('le istruzioni ci sono', (await p.locator('.ex-info .steps li').count()) > 0);
   check('le istruzioni partono chiuse', (await p.locator('.ex-info[open]').count()) === 0);
+  const rias = await p.evaluate(() => {
+    const r = document.querySelector('.ex-info > summary .ex-r');
+    if (!r) return null;
+    const lh = parseFloat(getComputedStyle(r).lineHeight);
+    return { testo: r.textContent, righe: Math.round(r.getBoundingClientRect().height / lh) };
+  });
+  check('il riassunto in italiano e\u2019 in vista', !!rias && /panca/i.test(rias.testo) && /petto/.test(rias.testo), rias && rias.testo);
+  check('da chiuso occupa al massimo due righe', !!rias && rias.righe <= 2, rias && rias.righe + ' righe');
+  check('le istruzioni inglesi sono a parte, chiuse', (await p.locator('.ex-info .ex-en:not([open])').count()) === 1);
   const bt = await p.evaluate(() => {
     const b = document.querySelector('[data-act="log-save"]').getBoundingClientRect();
     return { basso: Math.round(b.bottom), schermo: window.innerHeight };
@@ -44,12 +53,12 @@ const check = (n, c, x) => { if (!c) bad++; console.log((c ? '  ok  ' : ' FAIL '
   await p.locator('[data-act="log-save"]').click();
   await p.waitForTimeout(900);
   check('le foto restano dopo aver registrato', (await p.locator('.log-photos img').count()) === 2);
-  await p.locator('.ex-info summary').click();
+  await p.locator('.ex-info > summary').click();
   await p.waitForTimeout(300);
   await p.locator('[data-act="log-save"]').click();
   await p.waitForTimeout(900);
   check('se apri le istruzioni restano aperte anche dopo la serie', (await p.locator('.ex-info[open]').count()) === 1);
-  await p.locator('.ex-info summary').click();
+  await p.locator('.ex-info > summary').click();
   await p.locator('[data-act="close-log"]').click();
   await p.waitForTimeout(500);
   await p.locator('.chip', { hasText: 'Tutti' }).first().click();

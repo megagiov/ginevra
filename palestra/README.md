@@ -29,7 +29,7 @@ il pannello di registrazione, premi + o − e registri. Tre tocchi.
 - **Schede** (Push / Pull / Gambe gia' pronte): quando ne apri una, i suoi
   esercizi vanno in cima al pannello sotto "Ancora da fare".
 - **876 esercizi con foto**, ricercabili in italiano ("panca", "stacco",
-  "trazioni"), con le istruzioni di esecuzione.
+  "trazioni"), ognuno con un riassunto in italiano di come si esegue.
 - **Timer di recupero** che parte da solo quando registri una serie, con suono e
   vibrazione. Il conto alla rovescia si vede anche dentro il pannello.
 - **Suggerimento carico e record**: sotto ogni esercizio l'ultima volta, e la
@@ -180,7 +180,13 @@ nel campo `en`: la ricerca trova l'esercizio in entrambe le lingue, e il
 dettaglio lo mostra sotto il nome italiano. Gli esercizi gia' salvati col nome
 inglese passano all'italiano da soli, a meno che tu non li abbia rinominati.
 
-Le **istruzioni di esecuzione** restano in inglese: sono 103.000 parole.
+Le **istruzioni di esecuzione** complete restano in inglese (sono 103.000
+parole). Al loro posto l'app mostra un **riassunto breve in italiano**, una o
+due frasi per esercizio: posizione, movimento e il dettaglio che conta. Sono
+scritti a mano in `tools/riassunti-it.json`, con il nome inglese come chiave;
+lo script li mette nel campo `r`. Nel pannello di registrazione il riassunto si
+vede in due righe sotto le foto e si apre con un tocco; le istruzioni inglesi
+stanno sotto, chiuse.
 
 Le foto **non sono nel repository**: restano sul CDN e il service worker le
 salva man mano che le apri. Scaricarle tutte sarebbero decine di MB per foto che
@@ -223,7 +229,8 @@ su iPhone. `NODE_PATH=<node_modules con playwright> ./tests/run.sh`.
   allenamento, con un tocco. In diretta serve Bluefy o un'app nativa.
 - **Su iPhone niente vibrazione**: Apple non la concede alle app web. A fine
   recupero lo schermo lampeggia e suona.
-- **Le istruzioni degli esercizi sono in inglese** (i nomi invece sono tutti in
-  italiano).
+- **Le istruzioni complete degli esercizi sono in inglese.** In italiano ci sono
+  i nomi e un riassunto breve per ognuno (tranne due esercizi che nel dataset
+  non hanno istruzioni).
 - **Il massimale e' una stima** (formula di Epley), non un massimale vero.
 - Il catalogo va scaricato **una prima volta con la rete**. Dopo resta salvato.

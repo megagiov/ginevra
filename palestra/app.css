@@ -928,7 +928,7 @@ textarea { min-height: 80px; resize: vertical; }
   border-radius: var(--radius-sm);
   margin-bottom: var(--s3);
 }
-.ex-info summary {
+.ex-info > summary {
   display: flex;
   align-items: center;
   gap: var(--s3);
@@ -938,9 +938,9 @@ textarea { min-height: 80px; resize: vertical; }
   font-weight: 600;
   list-style: none;
 }
-.ex-info summary::-webkit-details-marker { display: none; }
-.ex-info summary::after { content: '\203A'; margin-left: auto; color: var(--fg-muted); font-size: 1.4rem; transition: transform var(--t-fast) var(--ease); }
-.ex-info[open] summary::after { transform: rotate(90deg); }
+.ex-info > summary::-webkit-details-marker { display: none; }
+.ex-info > summary::after { content: '\203A'; margin-left: auto; color: var(--fg-muted); font-size: 1.4rem; transition: transform var(--t-fast) var(--ease); }
+.ex-info[open] > summary::after { transform: rotate(90deg); }
 .ex-info > :not(summary) { margin-left: var(--s3); margin-right: var(--s3); }
 .ex-info > :last-child { padding-bottom: var(--s3); }
 .info-thumb { width: 40px; height: 40px; border-radius: 8px; object-fit: cover; background: var(--surface); flex: none; }
@@ -1004,8 +1004,33 @@ textarea { min-height: 80px; resize: vertical; }
   border-radius: var(--radius-sm);
 }
 .log-photos img:only-child { width: 100%; aspect-ratio: 16 / 9; }
-.ex-info summary { justify-content: flex-start; }
-.ex-info summary .muted { margin: 0; }
+.ex-info > summary { justify-content: flex-start; }
+.ex-info > summary .muted { margin: 0; }
+
+/* Riassunto in italiano: chiuso mostra due righe, aperto tutto. */
+.ex-r { flex: 1; color: var(--fg); font-weight: 400; line-height: 1.4; }
+.ex-info:not([open]) .ex-r {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.ex-r-big { font-size: 1.1rem; line-height: 1.5; margin: var(--s2) 0 var(--s3); }
+.ex-en { margin: var(--s2) 0; }
+.ex-en > summary {
+  cursor: pointer;
+  min-height: var(--tap);
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  color: var(--fg-muted);
+  font-size: .95rem;
+  font-weight: 400;
+  list-style: none;
+}
+.ex-en > summary::-webkit-details-marker { display: none; }
+.ex-en > summary::after { content: '\203A'; font-size: 1.3rem; transition: transform var(--t-fast) var(--ease); }
+.ex-en[open] > summary::after { transform: rotate(90deg); }
 
 /* Pannello di registrazione piu' compatto: con le foto in vista il
    pulsante "Registra serie" deve comunque stare nello schermo. */

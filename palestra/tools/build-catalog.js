@@ -13,6 +13,11 @@
  * machine resta lat machine, "Barbell" diventa "con bilanciere"). Il nome
  * inglese resta nel campo `en`: serve alla ricerca e a riconoscere gli
  * esercizi gia' salvati col nome vecchio.
+ *
+ * Le istruzioni complete restano in inglese (`ins`). Al loro posto l'app
+ * mostra un riassunto breve in italiano (`r`), scritto a mano esercizio per
+ * esercizio in tools/riassunti-it.json: posizione, movimento, dettaglio
+ * che conta.
  */
 const fs = require('fs');
 const path = require('path');
@@ -22,6 +27,7 @@ const CDN = 'https://cdn.jsdelivr.net/gh/yuhonas/free-exercise-db@main/exercises
 const OUT = path.join(__dirname, '..', 'data', 'catalog.json');
 const CACHE = path.join(__dirname, '.cache-exercises.json');
 const NOMI_IT = require('./nomi-it.json');
+const RIASSUNTI = require('./riassunti-it.json');
 
 const MUSCLES = {
   abdominals: 'Addominali', abductors: 'Abduttori', adductors: 'Adduttori',
@@ -122,6 +128,7 @@ load().then((rows) => {
     f: FORCE[ex.force] || '',
     img: ex.images || [],
     ins: ex.instructions || [],
+    r: RIASSUNTI[ex.name] || '',
     k: keywords(ex)
   })).sort((a, b) => a.n.localeCompare(b.n, 'it'));
 

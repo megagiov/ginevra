@@ -25,5 +25,6 @@ commit e spiegazioni in italiano.
 
 ## Catalogo
 
-I nomi italiani stanno in `tools/nomi-it.json`. Dopo averli cambiati:
+I nomi italiani stanno in `tools/nomi-it.json`, i riassunti di esecuzione in
+`tools/riassunti-it.json` (chiave: nome inglese). Dopo averli cambiati:
 `node tools/build-catalog.js`, poi `node tools/versione.js`.
