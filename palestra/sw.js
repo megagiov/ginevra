@@ -1,10 +1,17 @@
 /* Service worker: l'app parte anche senza rete.
- * - guscio dell'app: precaricato all'installazione
- * - catalogo esercizi: aggiornato quando c'e' rete, servito dalla cache quando non c'e'
- * - foto degli esercizi: salvate man mano che le guardi */
-const VERSION = 'v1';
+ *
+ * - guscio dell'app: scaricato tutto insieme quando arriva una versione
+ *   nuova, e servito sempre dalla stessa versione, cosi' pagina, script e
+ *   stili non si mescolano mai fra versioni diverse
+ * - catalogo esercizi: aggiornato quando c'e' rete, dalla memoria quando no
+ * - foto degli esercizi: salvate man mano che le guardi
+ *
+ * VERSION e DATA_VERSION li scrive tools/versione.js: sono l'impronta dei
+ * file. Se non cambiano, il telefono non scarica mai la versione nuova. */
+const VERSION = 'e1f5637395';
+const DATA_VERSION = '04b3317b27';
 const SHELL = 'palestra-shell-' + VERSION;
-const DATA = 'palestra-data-' + VERSION;
+const DATA = 'palestra-data-' + DATA_VERSION;
 const IMAGES = 'palestra-img';           // niente versione: le foto non cambiano mai
 const IMG_HOST = 'cdn.jsdelivr.net';
 
@@ -14,6 +21,7 @@ const SHELL_FILES = [
   'app.css',
   'fonts.css',
   'manifest.webmanifest',
+  'js/version.js',
   'js/db.js',
   'js/seed.js',
   'js/chart.js',
@@ -34,8 +42,10 @@ const SHELL_FILES = [
 self.addEventListener('install', (ev) => {
   ev.waitUntil(
     caches.open(SHELL)
-      // addAll fallisce tutto se un file manca: meglio uno per uno.
-      .then((c) => Promise.all(SHELL_FILES.map((f) => c.add(f).catch(() => null))))
+      // cache: 'reload' salta la cache del browser: altrimenti un file
+      // appena scaricato dalla versione vecchia finirebbe in quella nuova.
+      .then((c) => Promise.all(SHELL_FILES.map((f) =>
+        c.add(new Request(f, { cache: 'reload' })).catch(() => null))))
       .then(() => self.skipWaiting())
   );
 });
@@ -90,22 +100,21 @@ self.addEventListener('fetch', (ev) => {
     return;
   }
 
-  // Navigazione: sempre il guscio, cosi' l'app apre anche offline.
+  // Pagina e guscio: sempre dalla versione installata, tutta insieme.
+  // L'aggiornamento arriva col service worker nuovo, non file per file.
   if (req.mode === 'navigate') {
     ev.respondWith(
-      fetch(req).catch(() => caches.match('index.html', { cacheName: SHELL })
-        .then((hit) => hit || caches.match('./')))
+      caches.open(SHELL)
+        .then((c) => c.match('index.html'))
+        .then((hit) => hit || fetch(req))
+        .catch(() => fetch(req))
     );
     return;
   }
 
   ev.respondWith(
-    caches.match(req).then((hit) => hit || fetch(req).then((res) => {
-      if (res && res.ok && (url.pathname.indexOf('/js/') !== -1 || url.pathname.indexOf('/fonts/') !== -1)) {
-        const copy = res.clone();
-        caches.open(SHELL).then((c) => c.put(req, copy));
-      }
-      return res;
-    }))
+    caches.open(SHELL)
+      .then((c) => c.match(req, { ignoreSearch: true }))
+      .then((hit) => hit || fetch(req))
   );
 });

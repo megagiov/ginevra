@@ -33,7 +33,7 @@ const check = (n, c, x) => { if (!c) bad++; console.log((c ? '  ok  ' : ' FAIL '
   await page.locator('#ex-search').fill('panca');
   await page.waitForTimeout(700);
   const primo = await page.locator('#ex-pick li[data-cat] b').first().innerText();
-  check('la ricerca italiana funziona', /bench|press/i.test(primo), primo);
+  check('la ricerca italiana funziona', /panca/i.test(primo), primo);
   await page.locator('#ex-pick li[data-cat] [data-act="cat-detail"]').first().click();
   await page.waitForTimeout(600);
   check('il dettaglio mostra le istruzioni', (await page.locator('.steps li').count()) > 0);

@@ -54,11 +54,18 @@ la cartella `palestra/` su quel ramo: finisce in
 gia' nella radice**.
 
 ```bash
+node palestra/tools/versione.js       # sul ramo dell'app, prima di pubblicare
 git checkout gh-pages
 git checkout <ramo-con-l-app> -- palestra/
 git commit -m "Pubblica l'app Palestra"
 git push origin gh-pages
 ```
+
+**Il primo comando non e' facoltativo.** Il service worker serve l'app dalla
+memoria del telefono e scarica una versione nuova solo se cambia la sua
+"versione". `tools/versione.js` la calcola dal contenuto dei file: senza,
+chi ha gia' installato l'app resta sulla vecchia per sempre. Le prove
+(`tests/run.sh`) si rifiutano di partire se la versione non e' aggiornata.
 
 Poi dal telefono apri `https://megagiov.github.io/ginevra/palestra/`:
 
@@ -69,7 +76,10 @@ Va bene qualunque altro hosting statico in https: la cartella `palestra/` e'
 autosufficiente, si copia dov'e' e funziona.
 
 Da li' in poi si apre a schermo intero come un'app e funziona anche in modalita'
-aereo. La prima apertura con rete scarica il catalogo esercizi (circa 1 MB) e lo
+aereo. **Gli aggiornamenti arrivano da soli**: riaprendo l'app la versione
+nuova si scarica in sottofondo e la pagina si ricarica una volta, con un
+avviso (mai mentre stai registrando una serie). La versione installata e'
+scritta in fondo ad **Altro**. La prima apertura con rete scarica il catalogo esercizi (circa 1 MB) e lo
 tiene salvato; le foto si salvano man mano che le apri.
 
 Per provarla sul computer basta un server statico nella cartella:
@@ -93,50 +103,56 @@ con *Importa backup* (ti chiede se sostituire tutto o unire).
 
 ## Battito cardiaco
 
-Mettiamo in chiaro una cosa, perche' cambia tutto: **nessun browser puo' leggere
-HealthKit**. Non e' una mancanza di questa app, e' che un'API web per entrare
-nell'app Salute non esiste, ne' su Safari ne' altrove. Un'app che leggesse il
-battito dell'Apple Watch in diretta va scritta in Swift, con Xcode e un account
-sviluppatore Apple: e' un altro progetto, non una pagina web.
+Le app che leggono il battito dell'Apple Watch in tempo reale sono **app
+native**, scaricate dall'App Store: Apple a loro da' accesso a Salute e
+all'orologio. A una pagina web, anche installata sulla schermata Home, non da'
+nessuno dei due: **Safari non ha un modo per leggere HealthKit ne' il
+Bluetooth**. Da qui le strade qui sotto.
 
-Detto questo, le strade che **funzionano davvero** sono tre.
+### 1. Apple Watch, a fine allenamento, con un tocco (consigliata)
 
-### 1. Apple Watch, dopo l'allenamento (Comandi rapidi)
+Si prepara una volta sola. Poi, quando chiudi l'allenamento sull'orologio,
+l'automazione copia i battiti da sola; tu apri l'app e tocchi **Incolla dal
+Watch**. Il battito si aggancia all'allenamento giusto confrontando gli orari:
+media, massimo e grafico finiscono nello storico e nel messaggio per il
+personal.
 
-Ti alleni con l'app **Allenamento** dell'orologio come fai di solito, poi porti
-i dati qui con un Comando rapido. Si prepara una volta sola.
+1. **Comandi rapidi** -> **Automazione** -> **+** -> **Allenamento Apple
+   Watch**. Scegli **Termina** e **Esegui immediatamente**.
+2. **Trova campioni di salute**: tipo **Frequenza cardiaca**, data di inizio
+   **nelle ultime 3 ore**.
+3. **Ripeti con ciascuno**: dentro, un **Testo** con la **Data di inizio**
+   dell'elemento, una virgola e il suo **Valore**.
+4. Dopo la ripetizione: **Combina testo** con **A capo**, poi **Copia negli
+   appunti**.
+5. Facoltativo: **Mostra notifica** "Battito pronto, apri Palestra".
 
-1. Su iPhone apri **Comandi rapidi** → nuovo comando.
-2. **Trova campioni di salute**: tipo *Frequenza cardiaca*, filtro sulla *Data
-   di inizio* (per esempio "ultime 24 ore"), ordinati per data.
-3. **Ripeti con ciascuno** e dentro **Ottieni dettagli del campione**: prendi
-   *Valore* e *Data di inizio*. Formatta la data come `yyyy-MM-dd HH:mm:ss`.
-4. Costruisci un testo con una riga per campione, nella forma `data,valore`.
-5. **Salva file**.
-6. Nell'app: **Altro → Importa da Salute**, scegli quel file.
+Il formato della data non conta: l'app legge quello italiano ("25 set 2026
+alle ore 18:03"), ISO e gg/mm/aaaa, con o senza "bpm". I nomi delle azioni
+possono cambiare un po' fra le versioni di iOS. Se il browser non concede gli
+appunti, si apre un riquadro dove incollare a mano. Resta anche l'import da
+file, per chi preferisce salvarlo.
 
-I battiti si agganciano da soli agli allenamenti giusti confrontando gli orari,
-e li vedi nello storico con media, massimo e grafico.
+### 2. Apple Watch in diretta, con un altro browser
 
-> I nomi delle azioni cambiano un po' fra le versioni di iOS. Non serve che il
-> file sia esattamente in quel formato: l'import accetta **JSON o CSV**, con date
-> ISO (`2026-09-21T18:03:12`) o italiane (`21/09/2026, 18:03`). Se c'e' una
-> colonna con la data e una con il valore, funziona.
+Un'app sull'orologio ([Echo](https://echoheartrate.com/), HeartBLE e simili)
+lo fa trasmettere come una fascia cardio Bluetooth. Safari non la riceve, il
+browser [Bluefy](https://apps.apple.com/us/app/bluefy-web-ble-browser/id1492822055)
+si': aprendo l'app li' dentro, il pulsante del battito si collega in diretta.
 
-### 2. Fascia cardio Bluetooth, in diretta
+Il costo: **Bluefy ha una memoria sua**. Gli allenamenti registrati in Safari
+non li vede; andrebbero spostati col backup, e da quel momento useresti solo
+Bluefy. Questa combinazione non e' stata provata su un telefono vero.
 
-Se hai una fascia toracica (Polar, Garmin, Decathlon…) l'app la legge in diretta
-e vedi i bpm mentre ti alleni, con la zona di sforzo. Usa lo standard Bluetooth
-*Heart Rate Service*.
+### 3. Fascia cardio Bluetooth
 
-Funziona su **Chrome/Edge** (Android, Mac, Windows). **Non su Safari iPhone**,
-che il Bluetooth dal web non lo espone proprio. Vale anche per l'Apple Watch se
-usi un'app che lo fa trasmettere come cardiofrequenzimetro BLE.
+Su Android, Mac e Windows con Chrome/Edge si collega in diretta e mostra i bpm
+con la zona di sforzo. Usa lo standard Bluetooth *Heart Rate Service*.
 
-### 3. A mano
+### 4. A mano
 
-Guardi media e massimo sull'orologio a fine allenamento e li scrivi:
-**Battito cardiaco → Inserisci a mano**. Due numeri, cinque secondi.
+Media e massimo letti sull'orologio: **Battito -> Scrivi media e massimo a
+mano**.
 
 Se metti la tua eta' in **Altro**, l'app calcola anche le zone di sforzo
 (frequenza massima stimata come 220 meno l'eta': una formula grossolana, va
@@ -155,12 +171,16 @@ Il file `data/catalog.json` e' generato, non scritto a mano. Per rigenerarlo:
 node tools/build-catalog.js
 ```
 
-Lo script traduce in italiano i vocabolari chiusi (muscoli, attrezzi, categorie)
-e costruisce le chiavi di ricerca italiane. **I nomi degli esercizi restano in
-inglese**: tradurne 876 a macchina avrebbe prodotto italiano sbagliato, e in
-palestra meta' di quei nomi si dicono comunque in inglese. I 30 esercizi delle
-schede di partenza hanno invece il nome italiano scritto a mano, agganciato alla
-foto giusta del catalogo.
+Tutti i **876 nomi sono in italiano**, tradotti uno per uno con i termini che
+si usano davvero in palestra: "Barbell" diventa *con bilanciere*, "Cable" *ai
+cavi*, "Smith" *al multipower*, mentre squat, curl, lat machine, leg press e
+hip thrust restano come si dicono. Le traduzioni stanno in
+`tools/nomi-it.json`, lo script le unisce al dataset. Il nome inglese resta
+nel campo `en`: la ricerca trova l'esercizio in entrambe le lingue, e il
+dettaglio lo mostra sotto il nome italiano. Gli esercizi gia' salvati col nome
+inglese passano all'italiano da soli, a meno che tu non li abbia rinominati.
+
+Le **istruzioni di esecuzione** restano in inglese: sono 103.000 parole.
 
 Le foto **non sono nel repository**: restano sul CDN e il service worker le
 salva man mano che le apri. Scaricarle tutte sarebbero decine di MB per foto che
@@ -186,15 +206,24 @@ Niente framework, niente build, niente `node_modules`: si apre e va.
 | `js/hr.js` | Battito: Bluetooth, import da Salute, statistiche e zone |
 | `js/chart.js` | Grafici a linea in SVG, scritti a mano |
 | `js/seed.js` | I 30 esercizi e le 3 schede di partenza |
-| `sw.js` | Service worker: guscio in cache, catalogo, foto |
+| `sw.js` | Service worker: guscio in cache per versione, catalogo, foto |
+| `js/version.js` | Generato da `tools/versione.js`, non si tocca a mano |
+
+## Prove
+
+`tests/` contiene le prove nel browser vero (Playwright + Chromium): pannello,
+schede, catalogo, battito, backup, condivisione, e una simulazione di Safari
+su iPhone. `NODE_PATH=<node_modules con playwright> ./tests/run.sh`.
 
 ## Limiti, detti chiaramente
 
 - **I dati stanno su un solo dispositivo.** Niente sincronizzazione fra telefono
   e computer: si passa dal file di backup.
-- **Il battito dell'Apple Watch non e' in diretta.** Arriva dopo, dal file dei
-  Comandi rapidi. In diretta serve una fascia Bluetooth e un browser che non sia
-  Safari.
-- **Le istruzioni degli esercizi sono in inglese**, come nel dataset originale.
+- **Il battito dell'Apple Watch non e' in diretta in Safari.** Arriva a fine
+  allenamento, con un tocco. In diretta serve Bluefy o un'app nativa.
+- **Su iPhone niente vibrazione**: Apple non la concede alle app web. A fine
+  recupero lo schermo lampeggia e suona.
+- **Le istruzioni degli esercizi sono in inglese** (i nomi invece sono tutti in
+  italiano).
 - **Il massimale e' una stima** (formula di Epley), non un massimale vero.
 - Il catalogo va scaricato **una prima volta con la rete**. Dopo resta salvato.

@@ -17,6 +17,9 @@ if ! curl -s -o /dev/null "${PALESTRA_URL:-http://127.0.0.1:8777/index.html}"; t
   trap 'kill $SERVER 2>/dev/null' EXIT
   sleep 1
 fi
+# Prima di tutto: la versione. Se e' vecchia, i telefoni non si aggiornano.
+node tools/versione.js --check || exit 1
+
 fallite=0
 for t in tests/*.test.js; do
   echo "######## $t"
