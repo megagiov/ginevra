@@ -1,7 +1,7 @@
 // Tiene l'app disponibile anche senza rete (in campo spesso non c'e').
 // Cambia VERSION a ogni pubblicazione per aggiornare la cache.
-const VERSION = 'padel-v2';
-const FILES = ['./', './index.html', './style.css', './app.js', './engine.js', './manifest.webmanifest',
+const VERSION = 'padel-v3';
+const FILES = ['./', './index.html', './style.css', './app.js', './engine.js', './manifest.json',
   './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png'];
 
 self.addEventListener('install', (e) => {
