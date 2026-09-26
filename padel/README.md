@@ -155,3 +155,30 @@ Da sapere:
 - Aggiornando i file sul server, cambia `VERSION` in `sw.js`.
 
 Test del motore JS: `node --test padel/web/`.
+
+---
+
+## NAS Synology (DS120j o simili)
+
+### Backup sul NAS (consigliato, nessuna esposizione in rete)
+1. DSM → Pannello di controllo → Servizi file → **SMB** attivo (lo è di default).
+2. Crea una cartella condivisa, es. `Padel`.
+3. iPhone → app **File** → ⋯ → **Connetti al server** → `smb://IP-DEL-NAS` → utente e password DSM.
+4. Nell'app: Impostazioni → **Esporta backup** → **Salva in File** → NAS → `Padel`.
+   Per ripristinare: **Importa backup** e scegli il file dal NAS. Funziona sulla Wi-Fi di casa.
+
+### Ospitare la PWA sul NAS
+Serve HTTPS con certificato valido, quindi il NAS deve essere raggiungibile da Internet sulle porte 80/443.
+1. Centro pacchetti → installa **Web Station** (crea la cartella condivisa `web`).
+2. File Station → `web` → crea `padel` e carica il contenuto di `padel/web/`
+   (`index.html`, `app.js`, `engine.js`, `style.css`, `sw.js`, `manifest.json`, cartella `icons`;
+   i file di test non servono).
+3. Pannello di controllo → Accesso esterno → **DDNS** → Aggiungi → provider *Synology* →
+   scegli `tuonome.synology.me` e spunta **Ottieni un certificato da Let's Encrypt**.
+4. Sul router inoltra le porte TCP **80** e **443** all'IP del NAS (non esporre le porte di DSM 5000/5001).
+5. Safari sull'iPhone → `https://tuonome.synology.me/padel/` → Condividi → **Aggiungi alla schermata Home**.
+
+Sicurezza se esponi il NAS: password forte e verifica in due passaggi sull'account DSM,
+blocco automatico attivo (Pannello di controllo → Sicurezza → Account), DSM sempre aggiornato,
+account `admin` disattivato. Se non vuoi esporre il NAS, ospita la PWA su GitHub Pages
+e usa il NAS solo per i backup.
