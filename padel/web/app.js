@@ -221,7 +221,7 @@ function renderPlay() {
         <h1 class="${s.winner === US ? 'us' : 'them'}">${s.winner === US ? 'Vittoria!' : 'Sconfitta'}</h1>
         <p class="bigsets">${esc(s.completedSets.map(E.setCompact).join('  '))}</p>
         <button class="btn wide" id="finish">Salva partita</button>
-        <button class="btn ghost wide" id="undo">Annulla ultimo punto</button>
+        <button class="btn ghost wide" id="undo">↶ Indietro</button>
       </section>`;
     $('#finish').onclick = () => finishLive(live);
     $('#undo').onclick = () => { E.undoLastPoint(match); save(LIVE, live); renderPlay(); };
@@ -236,8 +236,6 @@ function renderPlay() {
       <span class="dots">${[0, 1].map((i) => `<i class="${i < E.sets(s, t) ? 'on' : ''}"></i>`).join('')}</span>
     </button>`;
   const status = E.statusLabel(match);
-  // Mostra a chi e' andato l'ultimo punto: un tocco sbagliato si vede subito.
-  const lastTeam = [...match.events].reverse().find((e) => e.type === 'point')?.team;
   $('#main').innerHTML = `
     <section class="board">
       <div class="top">
@@ -248,7 +246,7 @@ function renderPlay() {
       ${panel(US)}
       ${panel(THEM)}
       <div class="controls">
-        <button class="btn ghost" id="undo" ${E.canUndo(match) ? '' : 'disabled'}>↶ Annulla${lastTeam ? ` ${lastTeam === US ? 'NOI' : 'LORO'}` : ''}</button>
+        <button class="btn ghost" id="undo" ${E.canUndo(match) ? '' : 'disabled'}>↶ Indietro</button>
         <button class="btn ghost" id="server">Servizio: ${E.teamLabel(s.server)}</button>
         <button class="btn danger" id="end">Termina</button>
       </div>

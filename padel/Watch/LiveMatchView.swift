@@ -46,15 +46,17 @@ struct ScoreboardView: View {
             Button {
                 session.undo()
             } label: {
-                Image(systemName: "arrow.uturn.backward")
-                    .font(.system(size: 14, weight: .heavy))
+                Label("Indietro", systemImage: "arrow.uturn.backward")
+                    .labelStyle(.titleAndIcon)
+                    .font(.system(size: 13, weight: .heavy, design: .rounded))
                     .foregroundStyle(engine.canUndo ? .black : .gray)
-                    .frame(width: 30, height: 24)
+                    .padding(.horizontal, 7)
+                    .frame(height: 24)
                     .background(engine.canUndo ? Color.white : Color.white.opacity(0.2), in: Capsule())
             }
             .buttonStyle(.plain)
             .disabled(!engine.canUndo)
-            .accessibilityLabel("Annulla ultimo punto")
+            .accessibilityLabel("Indietro: annulla l'ultimo punto")
             if engine.state.completedSets.isEmpty {
                 Text("Set 1").foregroundStyle(.secondary)
             } else {
@@ -155,7 +157,7 @@ struct MatchWonView: View {
                 Button {
                     session.undo()
                 } label: {
-                    Label("Annulla ultimo punto", systemImage: "arrow.uturn.backward")
+                    Label("Indietro", systemImage: "arrow.uturn.backward")
                 }
             }
         }
@@ -176,7 +178,7 @@ struct ControlsView: View {
                     session.undo()
                     page = 1
                 } label: {
-                    Label("Annulla punto", systemImage: "arrow.uturn.backward")
+                    Label("Indietro", systemImage: "arrow.uturn.backward")
                 }
                 .disabled(!session.engine.canUndo)
 
