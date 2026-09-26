@@ -67,14 +67,20 @@ final class WorkoutManager: NSObject {
             self.session = session
             self.builder = builder
             session.startActivity(with: date)
-            builder.beginCollection(withStart: date) { _, error in
-                let text = error?.localizedDescription
-                Task { @MainActor in
-                    if let text { self.metrics.message = "Registrazione non avviata: \(text)" }
-                }
-            }
+            beginCollection(builder, at: date)
         } catch {
             metrics.message = "Allenamento non avviato: \(error.localizedDescription)"
+        }
+    }
+
+    /// Sincrona di proposito: la variante `async` di HealthKit farebbe
+    /// uscire il builder (non-Sendable) dal MainActor.
+    private func beginCollection(_ builder: HKLiveWorkoutBuilder, at date: Date) {
+        builder.beginCollection(withStart: date) { _, error in
+            let text = error?.localizedDescription
+            Task { @MainActor in
+                if let text { self.metrics.message = "Registrazione non avviata: \(text)" }
+            }
         }
     }
 
@@ -170,6 +176,17 @@ final class WorkoutManager {
     func start(indoor: Bool, at date: Date) async {
         metrics.isRunning = true
         metrics.message = "HealthKit disattivato in questa build"
+    }
+
+    /// Sincrona di proposito: la variante `async` di HealthKit farebbe
+    /// uscire il builder (non-Sendable) dal MainActor.
+    private func beginCollection(_ builder: HKLiveWorkoutBuilder, at date: Date) {
+        builder.beginCollection(withStart: date) { _, error in
+            let text = error?.localizedDescription
+            Task { @MainActor in
+                if let text { self.metrics.message = "Registrazione non avviata: \(text)" }
+            }
+        }
     }
 
     func stop(at date: Date) async {
