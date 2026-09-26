@@ -2,6 +2,7 @@
 # Scatta screenshot di iPhone e Apple Watch sui simulatori, con dati demo.
 # Uso: scripts/screenshot.sh [cartella-output]
 set -euo pipefail
+set -x
 cd "$(dirname "$0")/.."
 OUT="${1:-screenshots}"
 mkdir -p "$OUT"

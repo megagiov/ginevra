@@ -19,6 +19,7 @@ jobs:
   xcode:
     name: Build iPhone + Watch (xcodebuild)
     runs-on: macos-latest
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
       - name: Versioni
@@ -31,9 +32,11 @@ jobs:
         working-directory: padel
         run: scripts/verifica.sh
       - name: Screenshot
+        timeout-minutes: 15
         working-directory: padel
         run: scripts/screenshot.sh screenshots
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: screenshot-padel
           path: padel/screenshots/*.png
