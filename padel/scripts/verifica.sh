@@ -18,11 +18,17 @@ xcodegen generate --quiet
 echo "▸ Test del motore di punteggio (PadelKit)"
 swift test --package-path PadelKit
 
-# Usa il simulatore indicato se esiste, altrimenti uno generico.
+# Usa il simulatore indicato (per UDID, il nome con le parentesi confonde
+# xcodebuild), con il sistema piu' recente; altrimenti uno generico.
 destination() {
-  local platform="$1" name="$2"
-  if xcrun simctl list devices available | grep -qF "$name ("; then
-    echo "platform=$platform Simulator,name=$name"
+  local platform="$1" name="$2" udid
+  udid="$(xcrun simctl list devices available -j | /usr/bin/python3 -c '
+import json, sys
+name = sys.argv[1]
+found = [(rt, d["udid"]) for rt, ds in json.load(sys.stdin)["devices"].items() for d in ds if d["name"] == name]
+print(sorted(found)[-1][1] if found else "")' "$name")"
+  if [[ -n "$udid" ]]; then
+    echo "platform=$platform Simulator,id=$udid"
   else
     echo "generic/platform=$platform Simulator"
   fi
