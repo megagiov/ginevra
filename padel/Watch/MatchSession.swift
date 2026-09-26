@@ -35,6 +35,17 @@ final class MatchSession {
 
     init() {
         sender.activate()
+        // Solo per gli screenshot automatici: partita a meta' del secondo set.
+        if ProcessInfo.processInfo.arguments.contains("-demo") {
+            var demo = MatchEngine(rules: MatchRules(deuceRule: .goldenPoint, format: .bestOfThree, firstServer: .us))
+            let script: [(Team, Int)] = [(.us, 4), (.them, 4), (.us, 4), (.us, 4), (.them, 4), (.us, 4), (.them, 4), (.us, 4), (.them, 4), (.us, 4),
+                                         (.them, 4), (.us, 4), (.us, 4), (.them, 4), (.them, 4), (.us, 2), (.them, 3)]
+            for (team, points) in script { for _ in 0..<points { demo.point(for: team) } }
+            engine = demo
+            startDate = Date().addingTimeInterval(-47 * 60 - 12)
+            phase = .playing
+            return
+        }
         if let data = UserDefaults.standard.data(forKey: Self.savedKey),
            let saved = try? JSONDecoder().decode(Saved.self, from: data) {
             matchID = saved.id

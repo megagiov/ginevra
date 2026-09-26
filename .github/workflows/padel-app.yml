@@ -30,3 +30,10 @@ jobs:
       - name: Verifica completa
         working-directory: padel
         run: scripts/verifica.sh
+      - name: Screenshot
+        working-directory: padel
+        run: scripts/screenshot.sh screenshots
+      - uses: actions/upload-artifact@v4
+        with:
+          name: screenshot-padel
+          path: padel/screenshots/*.png
