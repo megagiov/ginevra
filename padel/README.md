@@ -158,6 +158,37 @@ Da sapere:
 - iPhone non supporta la vibrazione dal web: niente feedback aptico.
 - Aggiornando i file sul server, cambia `VERSION` in `sw.js`.
 
+### Aggiungi veloce (partite segnate con un'altra app sul Watch)
+
+Per chi in campo usa un segnapunti dell'App Store (Padel Point, Padel Watch…) e qui tiene
+storico e statistiche. **Partite → ⚡ Veloce**:
+
+1. **Punteggio** in una riga, il primo numero è sempre il vostro:
+   `6-4 3-6 7-5` · `7-6(5) 6-4` (tra parentesi i punti di chi perde il tie-break) ·
+   `7-6(7-3)` · `6-4 3-6 [10-8]` (super tie-break). Accetta anche `/`, `:` e virgole.
+   L'anteprima mostra subito il risultato o l'errore.
+2. **⌚ Incolla dal Watch**: legge gli appunti copiati dal Comando rapido qui sotto e compila
+   data e ora d'inizio, durata, FC media e massima (e le calorie, se ci sono).
+   Tiene solo il tratto fitto di misure della partita, scartando il prima.
+   Se Safari non concede gli appunti, compare un riquadro dove incollare a mano.
+3. **Giocatori**: i più frequenti compaiono come pulsanti da toccare; un nome nuovo
+   entra da solo nella rubrica. Il circolo propone l'ultimo usato.
+
+**Il Comando rapido** è lo stesso di Palestra: se l'hai già, non serve farne un altro.
+Altrimenti, nell'app **Comandi**:
+
+1. **Automazione → + → Allenamento Apple Watch** → **Termina** → **Esegui immediatamente**.
+2. **Trova campioni di salute**: *Frequenza cardiaca*, data di inizio *nelle ultime 3 ore*.
+3. **Ripeti con ciascuno**: un **Testo** con *Data di inizio*, una virgola e *Valore*.
+4. **Combina testo** con *A capo* → **Copia negli appunti**.
+5. Facoltativo, calorie: prima di copiare aggiungi una riga `kcal: 540`
+   (per esempio da **Trova campioni di salute** *Energia attiva* + **Calcola statistiche** *Somma*;
+   è una stima che comprende anche l'eventuale riscaldamento).
+
+Non ho potuto verificare su un Watch vero se l'automazione "Allenamento Apple Watch" scatta
+anche per gli allenamenti avviati da app di terzi. Se non parte da sola, aggiungi il comando
+alla schermata Home o come widget e lancialo a mano dopo la partita: fa la stessa cosa.
+
 Test del motore JS: `node --test padel/web/`.
 
 ---
