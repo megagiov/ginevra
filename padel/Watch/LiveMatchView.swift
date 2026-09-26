@@ -42,6 +42,20 @@ struct ScoreboardView: View {
 
     private func header(_ engine: MatchEngine) -> some View {
         HStack(spacing: 6) {
+            // Punto dato alla squadra sbagliata: si torna indietro da qui,
+            // senza cambiare pagina.
+            Button {
+                session.undo()
+            } label: {
+                Image(systemName: "arrow.uturn.backward")
+                    .font(.system(size: 14, weight: .heavy))
+                    .foregroundStyle(engine.canUndo ? .black : .gray)
+                    .frame(width: 30, height: 24)
+                    .background(engine.canUndo ? Color.white : Color.white.opacity(0.2), in: Capsule())
+            }
+            .buttonStyle(.plain)
+            .disabled(!engine.canUndo)
+            .accessibilityLabel("Annulla ultimo punto")
             if engine.state.completedSets.isEmpty {
                 Text("Set 1").foregroundStyle(.secondary)
             } else {
