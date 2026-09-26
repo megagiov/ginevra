@@ -1,6 +1,6 @@
 // Tiene l'app disponibile anche senza rete (in campo spesso non c'e').
 // Cambia VERSION a ogni pubblicazione per aggiornare la cache.
-const VERSION = 'padel-v3';
+const VERSION = 'padel-v4';
 const FILES = ['./', './index.html', './style.css', './app.js', './engine.js', './manifest.json',
   './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png'];
 
@@ -10,7 +10,8 @@ self.addEventListener('install', (e) => {
 
 self.addEventListener('activate', (e) => {
   e.waitUntil(caches.keys()
-    .then((keys) => Promise.all(keys.filter((k) => k !== VERSION).map((k) => caches.delete(k))))
+    // Solo le cache di Padel: sullo stesso dominio possono esserci altre app.
+    .then((keys) => Promise.all(keys.filter((k) => k.startsWith('padel-') && k !== VERSION).map((k) => caches.delete(k))))
     .then(() => self.clients.claim()));
 });
 
