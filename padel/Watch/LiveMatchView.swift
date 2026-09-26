@@ -13,7 +13,6 @@ struct LiveMatchView: View {
             MetricsView().tag(2)
         }
         .tabViewStyle(.page)
-        .toolbar(.hidden, for: .navigationBar)
     }
 }
 
