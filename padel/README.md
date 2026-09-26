@@ -136,6 +136,10 @@ sui simulatori (iPhone 17, Apple Watch Ultra 3) con HealthKit attivo e disattivo
 
 ## PWA (`web/`)
 
+**Pubblicata su GitHub Pages: https://megagiov.github.io/ginevra/padel/**
+(cartella `padel/` del branch `gh-pages`, accanto a Palestra). Per aggiornarla, copia di nuovo
+i file di `padel/web/` in quella cartella e alza `VERSION` in `sw.js`.
+
 Sono file statici: vanno pubblicati via **HTTPS** (necessario per service worker e installazione).
 
 - **Sul tuo hosting**: carica il contenuto di `padel/web/` in una cartella, es.
