@@ -54,6 +54,9 @@ self.addEventListener('activate', (ev) => {
   ev.waitUntil(
     caches.keys()
       .then((keys) => Promise.all(keys.map((k) => {
+        // Le cache sono condivise da tutto il dominio: quelle delle altre app
+        // (es. Padel in /ginevra/padel/) non si toccano.
+        if (!k.startsWith('palestra-')) return null;
         if (k === SHELL || k === DATA || k === IMAGES) return null;
         return caches.delete(k);
       })))
