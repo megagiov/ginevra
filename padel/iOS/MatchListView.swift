@@ -32,7 +32,6 @@ struct MatchListView: View {
                     } label: {
                         MatchRow(match: match, names: names)
                     }
-                    .listRowBackground(match.needsDetails ? Theme.them.opacity(0.12) : nil)
                 }
                 .onDelete(perform: delete)
             }
@@ -71,39 +70,98 @@ struct MatchListView: View {
     }
 }
 
+/// Scheda partita: intestazione con data e durata, poi una riga per
+/// squadra con i game di ogni set (quelli vincenti in verde).
 struct MatchRow: View {
     let match: Match
     let names: [UUID: String]
 
     var body: some View {
-        HStack(spacing: 14) {
-            ResultBadge(result: match.result)
-            VStack(alignment: .leading, spacing: 3) {
-                Text(match.sets.display.isEmpty ? "Nessun set" : match.sets.display)
-                    .font(.headline.monospacedDigit())
-                Text(opponentsText)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-                HStack(spacing: 6) {
-                    Text(match.date, format: .dateTime.day().month(.abbreviated).year())
-                    if !match.club.isEmpty { Text("· \(match.club)").lineLimit(1) }
-                }
-                .font(.caption)
-                .foregroundStyle(.secondary)
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 6) {
+                Text(match.source == .watch ? "WATCH" : "PARTITA")
+                    .font(.caption2.weight(.heavy))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(Theme.navy, in: RoundedRectangle(cornerRadius: 4))
                 if match.needsDetails {
-                    Label("Da completare", systemImage: "exclamationmark.circle.fill")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(Theme.them)
+                    Text("DA COMPLETARE")
+                        .font(.caption2.weight(.heavy))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(Theme.them, in: RoundedRectangle(cornerRadius: 4))
+                }
+                Spacer()
+                Label(match.date.formatted(.dateTime.day().month(.twoDigits).year()), systemImage: "calendar")
+                if match.duration > 0 {
+                    Label("\(Int(match.duration / 60))′", systemImage: "timer")
                 }
             }
+            .font(.caption)
+            .foregroundStyle(.secondary)
+            .labelStyle(CompactLabelStyle())
+
+            teamRow(.us, title: usTitle)
+            Divider()
+            teamRow(.them, title: themTitle)
+
+            if !match.club.isEmpty {
+                Text(match.club + (match.court.isEmpty ? "" : " · " + match.court))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
         }
-        .padding(.vertical, 2)
+        .padding(.vertical, 6)
     }
 
-    private var opponentsText: String {
+    private var usTitle: String {
+        guard let partner = match.partnerID.flatMap({ names[$0] }) else { return "Noi" }
+        return "Noi · \(partner)"
+    }
+
+    private var themTitle: String {
         let opponents = [match.opponent1ID, match.opponent2ID].compactMap { $0 }.compactMap { names[$0] }
-        return opponents.isEmpty ? "Avversari non indicati" : "contro " + opponents.joined(separator: " e ")
+        return opponents.isEmpty ? "Avversari" : opponents.joined(separator: " e ")
+    }
+
+    private func teamRow(_ team: Team, title: String) -> some View {
+        HStack(spacing: 0) {
+            Image(systemName: "trophy.circle.fill")
+                .font(.title3)
+                .foregroundStyle(Theme.navy, Theme.ball)
+                .opacity(match.result == team ? 1 : 0)
+                .frame(width: 30, alignment: .leading)
+            Text(title)
+                .font(.body.weight(match.result == team ? .semibold : .regular))
+                .lineLimit(1)
+            Spacer(minLength: 8)
+            ForEach(Array(match.sets.enumerated()), id: \.offset) { _, set in
+                Text("\(value(of: set, for: team))")
+                    .font(.title2.weight(.medium).monospacedDigit())
+                    .foregroundStyle(set.winner == team ? Theme.win : .primary)
+                    .frame(width: 30)
+            }
+        }
+        .accessibilityElement(children: .combine)
+    }
+
+    private func value(of set: SetScore, for team: Team) -> Int {
+        if set.isSuperTiebreak {
+            return (team == .us ? set.tiebreakUs : set.tiebreakThem) ?? 0
+        }
+        return team == .us ? set.us : set.them
+    }
+}
+
+/// Icona e testo vicini, in piccolo.
+struct CompactLabelStyle: LabelStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        HStack(spacing: 3) {
+            configuration.icon
+            configuration.title
+        }
     }
 }
 

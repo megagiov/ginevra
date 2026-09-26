@@ -18,20 +18,23 @@ struct LiveMatchView: View {
 
 // MARK: - Segnapunti
 
+/// Layout ispirato alle app segnapunti da polso: azioni in alto, tabellina
+/// set/game al centro, due grandi riquadri dei punti da toccare in basso.
 struct ScoreboardView: View {
     @Environment(MatchSession.self) private var session
 
     var body: some View {
         let engine = session.engine
-        let state = engine.state
-        if state.isFinished {
+        if engine.state.isFinished {
             MatchWonView()
         } else {
-            VStack(spacing: 4) {
-                header(engine)
-                HStack(spacing: 5) {
-                    teamButton(.us, engine: engine)
-                    teamButton(.them, engine: engine)
+            VStack(spacing: 5) {
+                actions(engine)
+                scoreTable(engine.state)
+                statusLine(engine)
+                HStack(spacing: 6) {
+                    pointTile(.us, engine: engine)
+                    pointTile(.them, engine: engine)
                 }
             }
             .padding(.horizontal, 2)
@@ -39,128 +42,208 @@ struct ScoreboardView: View {
         }
     }
 
-    private func header(_ engine: MatchEngine) -> some View {
+    // Indietro (rosso) e cambio servizio (blu), sempre a portata di dito.
+    private func actions(_ engine: MatchEngine) -> some View {
         HStack(spacing: 6) {
-            // Punto dato alla squadra sbagliata: si torna indietro da qui,
-            // senza cambiare pagina.
-            Button {
+            WatchActionButton(systemImage: "arrow.uturn.backward", title: "Indietro", color: Theme.danger,
+                              enabled: engine.canUndo) {
                 session.undo()
-            } label: {
-                Label("Indietro", systemImage: "arrow.uturn.backward")
-                    .labelStyle(.titleAndIcon)
-                    .font(.system(size: 13, weight: .heavy, design: .rounded))
-                    .foregroundStyle(engine.canUndo ? .black : .gray)
-                    .padding(.horizontal, 7)
-                    .frame(height: 24)
-                    .background(engine.canUndo ? Color.white : Color.white.opacity(0.2), in: Capsule())
             }
-            .buttonStyle(.plain)
-            .disabled(!engine.canUndo)
             .accessibilityLabel("Indietro: annulla l'ultimo punto")
-            if engine.state.completedSets.isEmpty {
-                Text("Set 1").foregroundStyle(.secondary)
-            } else {
-                Text(engine.state.completedSets.compactDisplay)
-                    .foregroundStyle(.white)
+            WatchActionButton(systemImage: "arrow.left.arrow.right", title: "Servizio", color: Theme.info,
+                              enabled: true) {
+                session.switchServer()
             }
-            Spacer(minLength: 2)
-            if let status = engine.statusLabel {
-                Text(status)
-                    .font(.system(size: 13, weight: .heavy, design: .rounded))
-                    .foregroundStyle(.black)
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 1)
-                    .background(Theme.ball, in: Capsule())
-            }
+            .accessibilityLabel("Cambia chi serve")
         }
-        .font(.system(size: 15, weight: .semibold, design: .rounded).monospacedDigit())
-        .lineLimit(1)
-        .minimumScaleFactor(0.7)
+        .frame(height: 30)
     }
 
-    private func teamButton(_ team: Team, engine: MatchEngine) -> some View {
-        let state = engine.state
-        let serving = state.server == team
-        let color = Theme.color(for: team)
+    private func scoreTable(_ state: MatchState) -> some View {
+        HStack(spacing: 0) {
+            teamMark(.us, serving: state.server == .us)
+            Spacer(minLength: 2)
+            numbers(sets: state.sets(.us), games: state.games(.us))
+            VStack(spacing: 2) {
+                Text("SET")
+                Text("GAME")
+            }
+            .font(.system(size: 12, weight: .semibold, design: .rounded))
+            .foregroundStyle(.secondary)
+            .frame(width: 50)
+            numbers(sets: state.sets(.them), games: state.games(.them))
+            Spacer(minLength: 2)
+            teamMark(.them, serving: state.server == .them)
+        }
+    }
+
+    private func numbers(sets: Int, games: Int) -> some View {
+        VStack(spacing: 0) {
+            Text("\(sets)")
+            Text("\(games)")
+        }
+        .font(.system(size: 22, weight: .bold, design: .rounded).monospacedDigit())
+        .frame(width: 26)
+    }
+
+    /// Nome della squadra con il pallino giallo del servizio sopra.
+    private func teamMark(_ team: Team, serving: Bool) -> some View {
+        VStack(spacing: 2) {
+            Circle()
+                .fill(serving ? Theme.ball : Color.white.opacity(0.18))
+                .frame(width: 9, height: 9)
+            Text(team == .us ? "NOI" : "LORO")
+                .font(.system(size: 13, weight: .heavy, design: .rounded))
+                .foregroundStyle(Theme.color(for: team))
+        }
+        .frame(width: 40)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(team.label)\(serving ? ", al servizio" : "")")
+    }
+
+    @ViewBuilder
+    private func statusLine(_ engine: MatchEngine) -> some View {
+        let previous = engine.state.completedSets.compactDisplay
+        let status = engine.statusLabel
+        if !previous.isEmpty || status != nil {
+            HStack(spacing: 6) {
+                if !previous.isEmpty {
+                    Text(previous)
+                        .font(.system(size: 13, weight: .semibold, design: .rounded).monospacedDigit())
+                        .foregroundStyle(.secondary)
+                }
+                if let status {
+                    Text(status)
+                        .font(.system(size: 12, weight: .heavy, design: .rounded))
+                        .foregroundStyle(.black)
+                        .padding(.horizontal, 6)
+                        .background(Theme.ball, in: Capsule())
+                }
+            }
+            .lineLimit(1)
+            .minimumScaleFactor(0.7)
+        }
+    }
+
+    private func pointTile(_ team: Team, engine: MatchEngine) -> some View {
+        let serving = engine.state.server == team
         return Button {
             session.point(for: team)
         } label: {
-            VStack(spacing: 0) {
-                HStack(spacing: 3) {
-                    Text(team == .us ? "NOI" : "LORO")
-                        .font(.system(size: 15, weight: .black, design: .rounded))
-                    if serving {
-                        Image(systemName: "tennisball.fill")
-                            .font(.system(size: 13, weight: .bold))
-                    }
-                }
-                .frame(height: 18)
-                Spacer(minLength: 0)
+            ZStack(alignment: .top) {
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(Theme.tile)
+                // Striscia colorata: si capisce a colpo d'occhio di chi e' il riquadro.
+                UnevenRoundedRectangle(topLeadingRadius: 16, topTrailingRadius: 16)
+                    .fill(Theme.color(for: team))
+                    .frame(height: 5)
                 Text(engine.pointLabel(for: team))
-                    .font(.system(size: 60, weight: .heavy, design: .rounded).monospacedDigit())
+                    .font(.system(size: 56, weight: .bold, design: .rounded).monospacedDigit())
+                    .foregroundStyle(.white)
                     .minimumScaleFactor(0.5)
                     .lineLimit(1)
-                Spacer(minLength: 0)
-                Text("\(state.games(team))")
-                    .font(.system(size: 30, weight: .bold, design: .rounded).monospacedDigit())
-                Text("game")
-                    .font(.system(size: 11, weight: .semibold))
-                    .opacity(0.8)
-                setDots(won: state.sets(team))
-                    .padding(.top, 3)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                if serving {
+                    Circle()
+                        .fill(Theme.ball)
+                        .frame(width: 8, height: 8)
+                        .frame(maxWidth: .infinity, alignment: .trailing)
+                        .padding(.top, 11)
+                        .padding(.trailing, 10)
+                }
             }
-            .foregroundStyle(.black)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .padding(.vertical, 6)
-            .background(color, in: RoundedRectangle(cornerRadius: 14))
-            .overlay {
-                RoundedRectangle(cornerRadius: 14)
-                    .strokeBorder(serving ? Theme.ball : .clear, lineWidth: 4)
-            }
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("\(team.label): \(engine.pointLabel(for: team)), \(state.games(team)) game\(serving ? ", al servizio" : "")")
-        .accessibilityHint("Tocca per assegnare il punto")
+        .accessibilityLabel("Punto a \(team.label). Adesso \(engine.pointLabel(for: team))")
+    }
+}
+
+/// Pulsante d'azione colorato in stile watchOS (sfondo tenue, icona piena).
+struct WatchActionButton: View {
+    let systemImage: String
+    let title: String
+    let color: Color
+    let enabled: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Label(title, systemImage: systemImage)
+                .labelStyle(.iconOnly)
+                .font(.system(size: 17, weight: .bold))
+                .foregroundStyle(enabled ? color : .gray)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background((enabled ? color : .gray).opacity(0.25), in: RoundedRectangle(cornerRadius: 10))
+        }
+        .buttonStyle(.plain)
+        .disabled(!enabled)
+    }
+}
+
+/// Tabella dei set: una riga per squadra, i game vincenti in verde.
+struct SetsTable: View {
+    let sets: [SetScore]
+    let winner: Team?
+
+    var body: some View {
+        Grid(horizontalSpacing: 2, verticalSpacing: 2) {
+            row(.us)
+            row(.them)
+        }
+        .font(.system(size: 22, weight: .semibold, design: .rounded).monospacedDigit())
     }
 
-    private func setDots(won: Int) -> some View {
-        HStack(spacing: 4) {
-            ForEach(0..<MatchRules.setsToWin, id: \.self) { i in
-                Circle()
-                    .fill(i < won ? Color.black : Color.black.opacity(0.2))
-                    .frame(width: 8, height: 8)
+    private func row(_ team: Team) -> some View {
+        GridRow {
+            HStack(spacing: 2) {
+                Text(team == .us ? "NOI" : "LORO")
+                    .font(.system(size: 13, weight: .heavy, design: .rounded))
+                    .foregroundStyle(Theme.color(for: team))
+                if winner == team {
+                    Image(systemName: "trophy.fill")
+                        .font(.system(size: 12))
+                        .foregroundStyle(Theme.ball)
+                }
+            }
+            .frame(width: 58, height: 34)
+            .background(Theme.tile)
+            ForEach(Array(sets.enumerated()), id: \.offset) { _, set in
+                let value = set.isSuperTiebreak ? (team == .us ? set.tiebreakUs : set.tiebreakThem) ?? 0
+                                                : (team == .us ? set.us : set.them)
+                Text("\(value)")
+                    .foregroundStyle(set.winner == team ? Theme.win : .white)
+                    .frame(width: 32, height: 34)
+                    .background(Theme.tile)
             }
         }
     }
 }
 
-/// A vittoria raggiunta: si puo' ancora annullare prima di salvare.
+/// A vittoria raggiunta: si puo' ancora tornare indietro prima di salvare.
 struct MatchWonView: View {
     @Environment(MatchSession.self) private var session
 
     var body: some View {
         let state = session.state
-        ScrollView {
-            VStack(spacing: 8) {
-                Text(state.winner == .us ? "Vittoria!" : "Sconfitta")
-                    .font(.system(size: 30, weight: .heavy, design: .rounded))
-                    .foregroundStyle(state.winner == .us ? Theme.us : Theme.them)
-                Text(state.completedSets.compactDisplay)
-                    .font(.system(size: 20, weight: .bold, design: .rounded).monospacedDigit())
-                Button {
-                    Task { await session.finish() }
-                } label: {
-                    Label("Salva partita", systemImage: "checkmark.circle.fill")
-                }
-                .tint(Theme.us)
-                .disabled(session.isFinishing)
-                Button {
+        VStack(spacing: 10) {
+            Text(state.winner == .us ? "Vittoria!" : "Partita persa")
+                .font(.system(size: 22, weight: .heavy, design: .rounded))
+            SetsTable(sets: state.completedSets, winner: state.winner)
+                .clipShape(RoundedRectangle(cornerRadius: 8))
+            Spacer(minLength: 0)
+            HStack(spacing: 6) {
+                WatchActionButton(systemImage: "arrow.uturn.backward", title: "Indietro", color: Theme.danger, enabled: true) {
                     session.undo()
-                } label: {
-                    Label("Indietro", systemImage: "arrow.uturn.backward")
+                }
+                WatchActionButton(systemImage: "checkmark.circle.fill", title: "Salva partita", color: Theme.info,
+                                  enabled: !session.isFinishing) {
+                    Task { await session.finish() }
                 }
             }
+            .frame(height: 40)
         }
+        .padding(.top, 4)
     }
 }
 

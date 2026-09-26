@@ -42,9 +42,43 @@ struct StatsView: View {
     // MARK: - Riepilogo
 
     private func summaryGrid(_ s: PadelStatistics) -> some View {
+        VStack(spacing: 12) {
+            overviewCard(s)
+            grid(s)
+        }
+    }
+
+    /// Scheda blu in testa: partite giocate e barra vinte/perse.
+    private func overviewCard(_ s: PadelStatistics) -> some View {
+        VStack(spacing: 12) {
+            HStack(alignment: .firstTextBaseline) {
+                Text("\(s.played)")
+                    .font(.system(size: 44, weight: .bold, design: .rounded).monospacedDigit())
+                Text(s.played == 1 ? "PARTITA" : "PARTITE")
+                    .font(.subheadline.weight(.semibold))
+                Spacer()
+                VStack(alignment: .trailing, spacing: 2) {
+                    Text("\(s.won) VINTE")
+                    Text("\(s.lost) PERSE")
+                }
+                .font(.subheadline.weight(.semibold).monospacedDigit())
+            }
+            GeometryReader { geo in
+                HStack(spacing: 2) {
+                    Capsule().fill(Theme.win)
+                        .frame(width: max(0, geo.size.width * CGFloat(s.won) / CGFloat(max(s.played, 1)) - 1))
+                    Capsule().fill(Theme.loss)
+                }
+            }
+            .frame(height: 6)
+        }
+        .foregroundStyle(.white)
+        .padding(16)
+        .background(Theme.navy, in: RoundedRectangle(cornerRadius: 14))
+    }
+
+    private func grid(_ s: PadelStatistics) -> some View {
         LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
-            StatTile(title: "Partite", value: "\(s.played)")
-            StatTile(title: "Vinte – Perse", value: "\(s.won) – \(s.lost)")
             StatTile(title: "% vittorie", value: s.winPercentage.formatted(.number.precision(.fractionLength(0))) + "%",
                      color: s.winPercentage >= 50 ? Theme.win : Theme.loss)
             StatTile(title: "Set vinti – persi", value: "\(s.setsWon) – \(s.setsLost)")

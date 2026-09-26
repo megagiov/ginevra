@@ -11,6 +11,13 @@ enum Theme {
     static let ball = Color(red: 0.93, green: 1.0, blue: 0.20)
     static let win = Color(red: 0.16, green: 0.78, blue: 0.40)
     static let loss = Color(red: 0.93, green: 0.26, blue: 0.24)
+    /// Riquadri dei punti sul Watch: grigio scuro, numeri bianchi.
+    static let tile = Color(white: 0.2)
+    /// Azione "indietro" (rosso) e azioni secondarie/conferma (azzurro).
+    static let danger = Color(red: 1.0, green: 0.27, blue: 0.40)
+    static let info = Color(red: 0.25, green: 0.70, blue: 1.0)
+    /// Blu notte per le schede riepilogo su iPhone.
+    static let navy = Color(red: 0.12, green: 0.17, blue: 0.27)
 
     static func color(for team: Team) -> Color { team == .us ? us : them }
 }

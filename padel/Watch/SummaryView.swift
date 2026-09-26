@@ -12,8 +12,16 @@ struct SummaryView: View {
                     Text(title)
                         .font(.system(size: 26, weight: .heavy, design: .rounded))
                         .foregroundStyle(color)
-                    Text(setsText)
-                        .font(.system(size: 18, weight: .bold, design: .rounded).monospacedDigit())
+                    if summary.sets.isEmpty {
+                        Text("Nessun set concluso").foregroundStyle(.secondary)
+                    } else {
+                        SetsTable(sets: summary.sets, winner: summary.winner)
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                    }
+                    if let partial = summary.unfinishedSet {
+                        Text("Set interrotto sul \(partial.us)-\(partial.them)")
+                            .font(.footnote).foregroundStyle(.secondary)
+                    }
                 }
             }
             Section {
@@ -55,11 +63,5 @@ struct SummaryView: View {
         case .them: Theme.them
         case nil: .secondary
         }
-    }
-
-    private var setsText: String {
-        var parts = summary.sets.map(\.compactDisplay)
-        if let partial = summary.unfinishedSet { parts.append("(\(partial.us)-\(partial.them))") }
-        return parts.isEmpty ? "Nessun set concluso" : parts.joined(separator: " ")
     }
 }
