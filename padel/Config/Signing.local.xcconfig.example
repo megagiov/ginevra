@@ -1,0 +1,4 @@
+// Copia questo file in Signing.local.xcconfig e compila i valori.
+DEVELOPMENT_TEAM = ABCDE12345
+PADEL_BUNDLE_PREFIX = it.tuonome.padel
+PADEL_HEALTHKIT = YES

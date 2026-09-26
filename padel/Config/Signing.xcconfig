@@ -1,0 +1,18 @@
+// Impostazioni di firma e funzioni opzionali.
+// NON modificare questo file: copia Signing.local.xcconfig.example in
+// Signing.local.xcconfig (ignorato da git) e metti li' i tuoi valori.
+
+// Team ID del tuo Personal Team (10 caratteri, lo trovi in Xcode >
+// Settings > Accounts, oppure lo stampa scripts/reinstalla.sh --team).
+DEVELOPMENT_TEAM =
+
+// Prefisso univoco per i bundle ID. Con il Personal Team deve essere un
+// identificativo che nessun altro ha gia' registrato.
+PADEL_BUNDLE_PREFIX = it.esempio.padel
+
+// YES = sessione di allenamento HealthKit sul Watch (battito, calorie,
+// allenamento salvato in Salute). NO = l'app funziona lo stesso, ma senza
+// dati di salute e senza restare attiva al polso.
+PADEL_HEALTHKIT = YES
+
+#include? "Signing.local.xcconfig"

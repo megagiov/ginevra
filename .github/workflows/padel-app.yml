@@ -1,0 +1,32 @@
+name: Padel app
+
+on:
+  push:
+    paths:
+      - "padel/**"
+      - ".github/workflows/padel-app.yml"
+  workflow_dispatch:
+
+jobs:
+  kit-linux:
+    name: Test motore (Linux)
+    runs-on: ubuntu-latest
+    container: swift:6.1
+    steps:
+      - uses: actions/checkout@v4
+      - run: swift test --package-path padel/PadelKit
+
+  xcode:
+    name: Build iPhone + Watch (xcodebuild)
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Versioni
+        run: |
+          xcodebuild -version
+          xcrun simctl list devices available | grep -E "iPhone|Watch" | head -20
+      - name: XcodeGen
+        run: brew install xcodegen
+      - name: Verifica completa
+        working-directory: padel
+        run: scripts/verifica.sh
