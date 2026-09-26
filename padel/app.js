@@ -1,4 +1,5 @@
 import * as E from './engine.js';
+import { parseScore, parseWatchPaste } from './quick.js';
 
 const US = E.US, THEM = E.THEM;
 const $ = (sel) => document.querySelector(sel);
@@ -48,13 +49,13 @@ const badge = (sets) => {
 
 // ---- Router ----------------------------------------------------------------
 
-const routes = { partite: renderList, gioca: renderPlay, statistiche: renderStats, impostazioni: renderSettings, partita: renderEdit };
+const routes = { partite: renderList, gioca: renderPlay, statistiche: renderStats, impostazioni: renderSettings, partita: renderEdit, veloce: renderQuick };
 
 function route() {
   stopTicker();
   const [name, arg] = location.hash.replace(/^#\/?/, '').split('/');
   const view = routes[name] ? name : 'partite';
-  document.querySelectorAll('nav a').forEach((a) => a.classList.toggle('active', a.dataset.view === (view === 'partita' ? 'partite' : view)));
+  document.querySelectorAll('nav a').forEach((a) => a.classList.toggle('active', a.dataset.view === (view === 'partita' || view === 'veloce' ? 'partite' : view)));
   document.body.classList.toggle('playing', view === 'gioca' && !!load(LIVE, null));
   routes[view](arg);
   window.scrollTo(0, 0);
@@ -66,7 +67,7 @@ window.addEventListener('hashchange', route);
 function renderList() {
   const matches = [...db.matches].sort((a, b) => new Date(b.date) - new Date(a.date));
   $('#main').innerHTML = `
-    <header class="bar"><h1>Partite</h1><a class="btn small" href="#/partita/nuova">+ Nuova</a></header>
+    <header class="bar"><h1>Partite</h1><a class="btn small" href="#/veloce">⚡ Veloce</a><a class="btn small ghost" href="#/partita/nuova">+ Nuova</a></header>
     ${matches.length === 0 ? `<p class="empty">Nessuna partita. Tocca <b>Gioca</b> per il segnapunti oppure <b>+ Nuova</b> per inserirla a mano.</p>` : ''}
     ${matches.map(matchCard).join('')}`;
 }
@@ -204,6 +205,142 @@ function renderEdit(id) {
   };
 
   draw();
+}
+
+// ---- Aggiungi veloce --------------------------------------------------------
+// Per chi segna i punti con un'altra app sul Watch: punteggio in una riga,
+// durata e battito incollati dal Comando rapido di fine allenamento.
+
+/** Giocatori piu' frequenti in un ruolo, dal piu' ricorrente. */
+function frequent(keys, limit = 4) {
+  const count = new Map();
+  for (const m of db.matches) for (const k of keys) if (m[k]) count.set(m[k], (count.get(m[k]) || 0) + 1);
+  return [...count.entries()].sort((a, b) => b[1] - a[1]).map(([id]) => playerName(id)).filter((n) => n && n !== 'Giocatore eliminato').slice(0, limit);
+}
+
+function renderQuick() {
+  const last = [...db.matches].sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+  const clubs = [...new Set(db.matches.map((m) => m.club).filter(Boolean))];
+  const d = { date: new Date(), minutes: '', calories: '', avg: '', max: '' };
+  const local = (t) => new Date(t - new Date(t).getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+  const chips = (field, names) => names.length
+    ? `<div class="chips">${names.map((n) => `<button type="button" class="chip-btn" data-fill="${field}" data-name="${esc(n)}">${esc(n)}</button>`).join('')}</div>` : '';
+
+  $('#main').innerHTML = `
+    <header class="bar"><a class="btn small ghost" href="#/partite">Annulla</a><h1>Aggiungi veloce</h1><button class="btn small" id="qsave">Salva</button></header>
+    <form class="form" id="qf" autocomplete="off">
+      <fieldset><legend>Punteggio</legend>
+        <input name="score" id="score" class="score-input" placeholder="6-4 3-6 7-5" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="done">
+        <p class="small muted">Set separati da spazi. Tie-break: <b>7-6(5)</b>. Super tie-break: <b>[10-8]</b>. Il primo numero è sempre il vostro.</p>
+        <div id="preview" class="preview"></div>
+      </fieldset>
+      <fieldset><legend>Dal Watch</legend>
+        <button type="button" class="btn wide watch-btn" id="paste">⌚ Incolla dal Watch</button>
+        <p class="small muted" id="pastemsg">Dopo la partita lancia il Comando rapido di fine allenamento, poi tocca qui.</p>
+        <div id="manualpaste" hidden>
+          <textarea id="pastebox" rows="4" placeholder="Incolla qui il testo copiato dal Comando rapido"></textarea>
+          <button type="button" class="btn small" id="pasteread">Leggi</button>
+        </div>
+        <label>Data e ora <input type="datetime-local" name="date" value="${local(d.date.getTime())}"></label>
+        <div class="grid2">
+          <label>Durata (min) <input type="number" inputmode="numeric" min="0" max="360" name="minutes"></label>
+          <label>Calorie <input type="number" inputmode="numeric" min="0" max="3000" name="calories"></label>
+          <label>FC media <input type="number" inputmode="numeric" min="0" max="250" name="avg"></label>
+          <label>FC max <input type="number" inputmode="numeric" min="0" max="250" name="max"></label>
+        </div>
+      </fieldset>
+      <fieldset><legend>Giocatori</legend>
+        <label>Compagno <input name="partner" list="players"></label>${chips('partner', frequent(['partnerID']))}
+        <label>Avversario 1 <input name="opp1" list="players"></label>
+        <label>Avversario 2 <input name="opp2" list="players"></label>${chips('opp', frequent(['opponent1ID', 'opponent2ID'], 6))}
+        <datalist id="players">${db.players.map((p) => `<option value="${esc(p.name)}">`).join('')}</datalist>
+        <label>Circolo <input name="club" list="clubs" value="${esc(last?.club ?? '')}"></label>
+        <datalist id="clubs">${clubs.map((c) => `<option value="${esc(c)}">`).join('')}</datalist>
+      </fieldset>
+    </form>`;
+
+  const f = $('#qf');
+  let parsed = null;
+  const showPreview = () => {
+    const text = f.score.value;
+    parsed = text.trim() ? parseScore(text) : null;
+    const box = $('#preview');
+    if (!parsed) { box.innerHTML = ''; return; }
+    if (parsed.error) { box.innerHTML = `<p class="err">${esc(parsed.error)}</p>`; return; }
+    const w = E.setsWon(parsed.sets), l = E.setsLost(parsed.sets);
+    box.innerHTML = `
+      <div class="pv-sets">${badge(parsed.sets)}${parsed.sets.map((st) => `<span class="${E.setWinner(st) === US ? 'win' : 'loss'}">${esc(E.setDisplay(st))}</span>`).join('')}</div>
+      <p>${parsed.winner === US ? `Vittoria ${w}-${l}` : parsed.winner === THEM ? `Sconfitta ${w}-${l}` : 'Partita non conclusa'}${parsed.format === 'twoSetsSuperTiebreak' ? ' · con super tie-break' : ''}</p>
+      ${parsed.warning ? `<p class="warn">${esc(parsed.warning)}</p>` : ''}`;
+  };
+  f.score.addEventListener('input', showPreview);
+  f.score.focus();
+
+  f.querySelectorAll('[data-fill]').forEach((b) => b.onclick = () => {
+    if (b.dataset.fill === 'partner') { f.partner.value = b.dataset.name; return; }
+    // Avversari: riempie il primo campo libero (o sostituisce il secondo).
+    const name = b.dataset.name;
+    if (f.opp1.value === name || f.opp2.value === name) return;
+    if (!f.opp1.value) f.opp1.value = name; else f.opp2.value = name;
+  });
+
+  const applyWatch = (text) => {
+    const r = parseWatchPaste(text);
+    const msg = $('#pastemsg');
+    if (r.error) { msg.innerHTML = `<span class="err">${esc(r.error)}</span>`; return false; }
+    if (r.start) {
+      f.date.value = local(r.start);
+      f.minutes.value = Math.round(r.duration / 60);
+      f.avg.value = r.avg;
+      f.max.value = r.max;
+    }
+    if (r.calories != null) f.calories.value = r.calories;
+    msg.innerHTML = r.start
+      ? `<span class="ok">✓ ${fmtLong(r.duration)} dalle ${new Date(r.start).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })} · FC media ${r.avg}, max ${r.max}${r.calories != null ? ` · ${r.calories} kcal` : ''}</span>`
+      : `<span class="ok">✓ ${r.calories} kcal</span>`;
+    $('#manualpaste').hidden = true;
+    return true;
+  };
+  $('#paste').onclick = async () => {
+    try {
+      // Su iPhone Safari chiede conferma con il pulsante "Incolla".
+      const text = await navigator.clipboard.readText();
+      if (applyWatch(text)) return;
+    } catch { /* appunti non concessi: si incolla a mano */ }
+    $('#manualpaste').hidden = false;
+    $('#pastebox').focus();
+  };
+  $('#pasteread').onclick = () => applyWatch($('#pastebox').value);
+
+  $('#qsave').onclick = () => {
+    showPreview();
+    if (!parsed || parsed.error) {
+      if (!parsed) $('#preview').innerHTML = '<p class="err">Scrivi il punteggio, per esempio 6-4 3-6 7-5.</p>';
+      f.score.focus();
+      return;
+    }
+    const num = (v) => (v === '' || v == null ? undefined : Math.max(0, Number(v)));
+    const setup = load(SETUP, E.defaultRules());
+    const match = {
+      id: E.newId(),
+      date: new Date(f.date.value || Date.now()).toISOString(),
+      club: f.club.value.trim(), court: '',
+      partnerID: playerIdFor(f.partner.value),
+      opponent1ID: playerIdFor(f.opp1.value),
+      opponent2ID: playerIdFor(f.opp2.value),
+      rules: { deuceRule: setup.deuceRule, format: parsed.format, firstServer: US, indoor: !!setup.indoor },
+      sets: parsed.sets,
+      duration: (num(f.minutes.value) ?? 0) * 60,
+      activeCalories: num(f.calories.value),
+      averageHeartRate: num(f.avg.value),
+      maxHeartRate: num(f.max.value),
+      notes: '', source: 'manual',
+    };
+    for (const k of Object.keys(match)) if (match[k] === undefined) delete match[k];
+    db.matches.push(match);
+    persist();
+    location.hash = '#/partite';
+  };
 }
 
 // ---- Segnapunti ------------------------------------------------------------
