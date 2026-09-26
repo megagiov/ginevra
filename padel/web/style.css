@@ -10,6 +10,10 @@
   --ball: #edff33;
   --win: #29c766;
   --loss: #ed433d;
+  --tile: #333;
+  --danger: #ff4566;
+  --info: #40b3ff;
+  --navy: #1f2b45;
   --radius: 16px;
   --nav-h: 64px;
   color-scheme: dark;
@@ -123,17 +127,20 @@ h2 { font-size: 17px; margin: 0 0 12px; }
   color: #000; font: inherit; text-align: left; cursor: pointer; touch-action: manipulation;
 }
 .team:active { transform: scale(.985); filter: brightness(1.08); }
-.team.us { background: var(--us); }
-.team.them { background: var(--them); }
-.team.serving { border-color: var(--ball); box-shadow: 0 0 0 2px #000 inset; }
+.team.us, .team.them { background: var(--tile); color: #fff; }
+.team.us { border-top: 10px solid var(--us); }
+.team.them { border-top: 10px solid var(--them); }
+.team.serving { border-left-color: var(--ball); border-right-color: var(--ball); border-bottom-color: var(--ball); }
+.team.us .tname { color: var(--us); }
+.team.them .tname { color: var(--them); }
 .tname { grid-column: 1 / -1; font-weight: 900; font-size: 22px; letter-spacing: .04em; }
-.ball { display: inline-block; color: var(--ball); -webkit-text-stroke: 2px #000; font-size: 26px; vertical-align: -2px; }
+.ball { display: inline-block; color: var(--ball); font-size: 26px; vertical-align: -2px; }
 .pts { font-size: clamp(72px, 22vw, 150px); font-weight: 900; line-height: 1; font-variant-numeric: tabular-nums; }
 .gms { font-size: 44px; font-weight: 900; text-align: right; font-variant-numeric: tabular-nums; }
 .gms small { display: block; font-size: 14px; font-weight: 700; opacity: .8; }
 .dots { grid-column: 1 / -1; display: flex; gap: 6px; }
-.dots i { width: 14px; height: 14px; border-radius: 50%; background: rgba(0, 0, 0, .2); }
-.dots i.on { background: #000; }
+.dots i { width: 14px; height: 14px; border-radius: 50%; background: rgba(255, 255, 255, .18); }
+.dots i.on { background: var(--ball); }
 .controls { display: grid; grid-template-columns: 1fr 1.3fr 1fr; gap: 8px; }
 .controls .btn { padding: 0 8px; font-size: 15px; }
 
@@ -165,3 +172,26 @@ h2 { font-size: 17px; margin: 0 0 12px; }
 .rank b { min-width: 52px; text-align: right; font-variant-numeric: tabular-nums; }
 .rank.best { background: rgba(41, 199, 102, .16); font-weight: 800; }
 .form legend + * { clear: both; }
+
+/* Azioni in partita: Indietro rosso, Servizio blu (sfondo tenue). */
+#undo.btn.ghost { background: rgba(255, 69, 102, .22); color: var(--danger); }
+#server.btn.ghost { background: rgba(64, 179, 255, .2); color: var(--info); }
+
+/* Scheda partita: una riga per squadra, game vincenti in verde. */
+.mcard { display: block; padding: 12px 14px; margin-bottom: 10px; background: var(--surface); border-radius: var(--radius); color: inherit; text-decoration: none; }
+.mhead { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+.mhead .tag { background: var(--navy); color: #fff; font-weight: 800; font-size: 11px; padding: 2px 6px; border-radius: 4px; }
+.mhead .grow { flex: 1; }
+.mrow { display: flex; align-items: center; gap: 8px; padding: 6px 0; }
+.mrow + .mrow { border-top: 1px solid var(--surface-2); }
+.mrow .who { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mrow .cup { width: 20px; color: var(--ball); }
+.mrow b { width: 30px; text-align: center; font-size: 24px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.mrow b.w { color: var(--win); }
+.mrow.winner .who { font-weight: 800; }
+.overview { background: var(--navy); border-radius: 14px; padding: 16px; margin-bottom: 14px; }
+.overview .top2 { display: flex; align-items: baseline; gap: 8px; }
+.overview .n { font-size: 44px; font-weight: 800; }
+.overview .wl { margin-left: auto; text-align: right; font-weight: 700; font-size: 14px; }
+.overview .bar2 { display: flex; gap: 2px; height: 6px; margin-top: 10px; }
+.overview .bar2 i { border-radius: 3px; }

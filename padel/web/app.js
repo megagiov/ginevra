@@ -68,16 +68,26 @@ function renderList() {
   $('#main').innerHTML = `
     <header class="bar"><h1>Partite</h1><a class="btn small" href="#/partita/nuova">+ Nuova</a></header>
     ${matches.length === 0 ? `<p class="empty">Nessuna partita. Tocca <b>Gioca</b> per il segnapunti oppure <b>+ Nuova</b> per inserirla a mano.</p>` : ''}
-    <ul class="list">
-      ${matches.map((m) => {
-        const opps = [m.opponent1ID, m.opponent2ID].filter(Boolean).map(playerName);
-        return `<li><a href="#/partita/${m.id}">
-          ${badge(m.sets)}
-          <div><div class="sets">${esc(m.sets.map(E.setDisplay).join('  ') || 'Nessun set')}</div>
-          <div class="muted">${opps.length ? 'contro ' + esc(opps.join(' e ')) : 'Avversari non indicati'}</div>
-          <div class="muted small">${fmtDate(m.date)}${m.club ? ' · ' + esc(m.club) : ''}</div></div></a></li>`;
-      }).join('')}
-    </ul>`;
+    ${matches.map(matchCard).join('')}`;
+}
+
+function matchCard(m) {
+  const r = E.winnerBySets(m.sets);
+  const val = (s, t) => (s.isSuperTiebreak ? (t === US ? s.tiebreakUs : s.tiebreakThem) ?? 0 : (t === US ? s.us : s.them));
+  const row = (t, who) => `
+    <div class="mrow ${r === t ? 'winner' : ''}"><span class="cup">${r === t ? '🏆' : ''}</span>
+      <span class="who">${esc(who)}</span>
+      ${m.sets.map((s) => `<b class="${E.setWinner(s) === t ? 'w' : ''}">${val(s, t)}</b>`).join('')}</div>`;
+  const opps = [m.opponent1ID, m.opponent2ID].filter(Boolean).map(playerName);
+  const d = new Date(m.date);
+  return `<a class="mcard" href="#/partita/${m.id}">
+    <div class="mhead"><span class="tag">PARTITA</span><span class="grow"></span>
+      <span>📅 ${d.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric' })}</span>
+      ${m.duration ? `<span>⏱ ${Math.round(m.duration / 60)}′</span>` : ''}</div>
+    ${row(US, m.partnerID ? `Noi · ${playerName(m.partnerID)}` : 'Noi')}
+    ${row(THEM, opps.length ? opps.join(' e ') : 'Avversari')}
+    ${m.club ? `<div class="muted small">${esc(m.club)}${m.court ? ' · ' + esc(m.court) : ''}</div>` : ''}
+  </a>`;
 }
 
 // ---- Modifica / inserimento ------------------------------------------------
@@ -322,9 +332,12 @@ function renderStats() {
     <div class="segs period">${[['allTime', 'Sempre'], ['last12Months', '12 mesi'], ['last3Months', '3 mesi']].map(([k, l]) =>
       `<label class="seg"><input type="radio" name="p" value="${k}" ${k === period ? 'checked' : ''}><span>${l}</span></label>`).join('')}</div>
     ${st.played === 0 ? '<p class="empty">Nessuna partita con un vincitore nel periodo.</p>' : `
+    <div class="overview">
+      <div class="top2"><span class="n">${st.played}</span><b>${st.played === 1 ? 'PARTITA' : 'PARTITE'}</b>
+        <span class="wl">${st.won} VINTE<br>${st.lost} PERSE</span></div>
+      <div class="bar2"><i style="flex:${st.won};background:var(--win)"></i><i style="flex:${st.lost};background:var(--loss)"></i></div>
+    </div>
     <div class="tiles">
-      ${tile('Partite', st.played)}
-      ${tile('Vinte – Perse', `${st.won} – ${st.lost}`)}
       ${tile('% vittorie', Math.round(st.winPct) + '%', st.winPct >= 50 ? 'win' : 'loss')}
       ${tile('Set vinti – persi', `${st.setsWon} – ${st.setsLost}`)}
       ${tile('Ore in campo', (st.duration / 3600).toLocaleString('it-IT', { maximumFractionDigits: 1 }))}
