@@ -94,7 +94,7 @@ struct MatchRow: View {
                         .background(Theme.them, in: RoundedRectangle(cornerRadius: 4))
                 }
                 Spacer()
-                Label(match.date.formatted(.dateTime.day().month(.twoDigits).year()), systemImage: "calendar")
+                Label(match.date.formatted(.dateTime.day(.twoDigits).month(.twoDigits).year()), systemImage: "calendar")
                 if match.duration > 0 {
                     Label("\(Int(match.duration / 60))′", systemImage: "timer")
                 }
