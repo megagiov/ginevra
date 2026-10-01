@@ -33,6 +33,11 @@
 
   --tabbar-h: 60px;
 
+  /* misura del testo: tutto e' in rem, quindi basta cambiare la radice.
+     Si sceglie in Altro; "grande" e' la predefinita, da leggere in piedi
+     col fiatone a un braccio di distanza. */
+  --text-scale: 1.25;
+
   color-scheme: dark;
 }
 
@@ -42,16 +47,21 @@
  * lascia il fondale della modale sopra la pagina e si mangia i tocchi. */
 [hidden] { display: none !important; }
 
+html[data-testo="normale"] { --text-scale: 1; }
+html[data-testo="molto"] { --text-scale: 1.5; }
+
 html, body {
   margin: 0;
   background: var(--bg);
   color: var(--fg);
   font-family: var(--font-body);
-  font-size: 16px;
   line-height: 1.5;
   -webkit-text-size-adjust: 100%;
   overscroll-behavior-y: contain;
 }
+
+html { font-size: calc(16px * var(--text-scale)); }
+body { font-size: 1rem; }
 
 body {
   min-height: 100dvh;
@@ -203,7 +213,7 @@ body.rest-on #view { padding-bottom: calc(var(--tabbar-h) + env(safe-area-inset-
 
 input, select, textarea {
   font-family: var(--font-body);
-  font-size: 16px;                 /* sotto i 16px iOS zooma da solo */
+  font-size: max(16px, 1rem);      /* sotto i 16px iOS zooma da solo */
   color: var(--fg);
   background: var(--surface-2);
   border: 1px solid var(--border);
@@ -289,7 +299,7 @@ textarea { min-height: 80px; resize: vertical; }
 .sets .load { flex: 1; font-size: 1.05rem; }
 .sets .load b { font-family: var(--font-head); font-size: 1.25rem; }
 .sets .tag {
-  font-size: .75rem;
+  font-size: .85rem;
   padding: 2px var(--s2);
   border-radius: 999px;
   background: var(--border);
@@ -308,7 +318,7 @@ textarea { min-height: 80px; resize: vertical; }
   display: flex;
   flex-direction: column;
   gap: var(--s1);
-  font-size: .8rem;
+  font-size: .85rem;
   color: var(--fg-muted);
   text-transform: uppercase;
   letter-spacing: .04em;
@@ -373,7 +383,7 @@ textarea { min-height: 80px; resize: vertical; }
   color: var(--primary);
   line-height: 1.1;
 }
-.stats span { font-size: .78rem; color: var(--fg-muted); }
+.stats span { font-size: .85rem; color: var(--fg-muted); }
 
 .seg {
   display: flex;
@@ -402,7 +412,7 @@ textarea { min-height: 80px; resize: vertical; }
 
 .chart { width: 100%; height: 170px; display: block; margin-top: var(--s3); }
 .chart .grid { stroke: var(--border); stroke-width: 1; }
-.chart .axis { fill: var(--fg-muted); font-size: 9px; font-family: var(--font-body); }
+.chart .axis { fill: var(--fg-muted); font-size: 12px; font-family: var(--font-body); }
 .chart .line { fill: none; stroke: var(--primary); stroke-width: 2.2; stroke-linejoin: round; stroke-linecap: round; }
 .chart .area { fill: color-mix(in srgb, var(--primary) 16%, transparent); stroke: none; }
 .chart .dot { fill: var(--primary); stroke: var(--bg); stroke-width: 1.5; }
@@ -434,7 +444,7 @@ textarea { min-height: 80px; resize: vertical; }
   display: inline-block;
   padding: 2px var(--s2);
   border-radius: 999px;
-  font-size: .78rem;
+  font-size: .85rem;
   font-weight: 600;
   background: color-mix(in srgb, var(--hr) 22%, transparent);
   color: var(--hr);
@@ -541,7 +551,7 @@ textarea { min-height: 80px; resize: vertical; }
   background: transparent;
   color: var(--fg-muted);
   font-family: var(--font-body);
-  font-size: .7rem;
+  font-size: .85rem;
   font-weight: 600;
   cursor: pointer;
   transition: color var(--t-fast) var(--ease);
@@ -721,7 +731,7 @@ textarea { min-height: 80px; resize: vertical; }
   background: var(--surface-2);
   border-radius: 999px;
   padding: 1px var(--s2);
-  font-size: .8rem;
+  font-size: .85rem;
   letter-spacing: 0;
 }
 
@@ -757,7 +767,7 @@ textarea { min-height: 80px; resize: vertical; }
   white-space: nowrap;
 }
 .ex-last { font-size: 1.05rem; color: var(--fg); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.ex-meta { font-size: .82rem; color: var(--fg-muted); }
+.ex-meta { font-size: .85rem; color: var(--fg-muted); }
 
 .ex-badge {
   flex: none;
@@ -799,12 +809,19 @@ textarea { min-height: 80px; resize: vertical; }
 .stepper-block { margin-bottom: var(--s4); }
 .stepper-label {
   display: block;
-  font-size: .8rem;
+  font-size: .85rem;
   letter-spacing: .1em;
   color: var(--fg-muted);
   margin-bottom: var(--s1);
 }
 .stepper { display: flex; align-items: stretch; gap: var(--s2); }
+.sr-only {
+  position: absolute !important;
+  width: 1px; height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
 .step-btn {
   flex: none;
   width: 68px;
@@ -837,7 +854,7 @@ textarea { min-height: 80px; resize: vertical; }
   padding: var(--s2);
 }
 .step-val .num { font-family: var(--font-head); font-size: 2.6rem; font-weight: 700; line-height: 1.2; }
-.step-val .su { color: var(--fg-muted); font-size: .95rem; }
+.step-val .su { color: var(--fg-muted); font-size: 1.1rem; }
 .step-val.editing .num, .step-val.editing .su { display: none; }
 .step-val .num-input {
   font-family: var(--font-head);
@@ -890,7 +907,7 @@ textarea { min-height: 80px; resize: vertical; }
 
 .test-out {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: .8rem;
+  font-size: .85rem;
   color: var(--fg-muted);
   background: var(--surface-2);
   border-radius: var(--radius-sm);
@@ -917,7 +934,7 @@ textarea { min-height: 80px; resize: vertical; }
 .scheda-box.muted-box { border-color: var(--border); }
 .scheda-box b { font-family: var(--font-head); font-size: 1.25rem; }
 .scheda-box .row { min-height: 28px; }
-.sb-label { font-size: .8rem; letter-spacing: .08em; text-transform: uppercase; color: var(--fg-muted); }
+.sb-label { font-size: .85rem; letter-spacing: .08em; text-transform: uppercase; color: var(--fg-muted); }
 .sb-track { height: 6px; background: var(--border); border-radius: 999px; margin: var(--s2) 0 var(--s1); overflow: hidden; }
 .sb-fill { height: 100%; background: var(--primary); border-radius: 999px; transition: width var(--t-base) var(--ease); }
 .sb-count { font-size: .9rem; color: var(--fg-muted); }
@@ -1044,6 +1061,15 @@ textarea { min-height: 80px; resize: vertical; }
 .rpe-head .chk { min-height: var(--tap); font-size: .95rem; color: var(--fg); }
 .btn.huge { margin: var(--s2) 0; }
 
+/* Col testo grande il pannello puo' superare lo schermo: "Registra serie"
+   resta comunque attaccato in fondo, sempre a portata di pollice. */
+.btn.huge[data-act="log-save"] {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  box-shadow: 0 -10px 16px var(--surface);
+}
+
 /* Condivisione col personal */
 .share-btn { margin-top: var(--s3); margin-bottom: 0; display: flex; align-items: center; justify-content: center; gap: var(--s2); }
 .share-preview {
@@ -1080,4 +1106,15 @@ textarea { min-height: 80px; resize: vertical; }
   border-color: color-mix(in srgb, var(--hr) 45%, var(--border));
   color: var(--hr);
   margin-top: calc(var(--s2) * -1);
+}
+
+/* Schermi stretti (iPhone SE e simili) col testo grande: foto un po' piu'
+   piccola e nome che si adatta, se no "AFFONDI" diventa "AFF...". */
+@media (max-width: 380px) {
+  .ex-row .ex-thumb { width: 76px; height: 76px; }
+  .ex-row { min-height: 104px; }
+  .ex-name { font-size: min(1.4rem, 7vw); overflow-wrap: anywhere; }
+  .session-bar { flex-wrap: wrap; }
+  .session-bar .sb-main { flex-basis: 100%; }
+  .session-bar .btn { flex: 1; }
 }

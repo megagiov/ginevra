@@ -342,6 +342,7 @@ const App = (function () {
     return Promise.all([DB.getSettings(), DB.listExercises(), DB.listRoutines()])
       .then(([settings, exercises, routines]) => {
         state.settings = settings;
+        applicaTesto(settings.textSize);
         state.exercises = exercises;
         state.exMap = {};
         exercises.forEach((e) => { state.exMap[e.id] = e; });
@@ -774,6 +775,12 @@ const App = (function () {
       '<button class="btn" data-act="test-sound" type="button">' + icon('timer', 'sm') + ' Prova suono e segnale</button>' +
       '<div id="test-out"></div></section>';
 
+    h += '<section class="card"><h3>Testo</h3>' +
+      '<label class="field">Misura del testo<select data-act="set-textsize">' +
+      [['normale', 'Normale'], ['grande', 'Grande'], ['molto', 'Molto grande']].map((o) =>
+        '<option value="' + o[0] + '"' + ((s.textSize || 'grande') === o[0] ? ' selected' : '') + '>' + o[1] + '</option>').join('') +
+      '</select></label></section>';
+
     h += '<section class="card"><h3>' + icon('dumbbell') + ' Registrazione</h3>' +
       '<label class="field">Di quanto salgono i pulsanti + e \u2212' +
       '<select data-act="set-step">' +
@@ -1038,8 +1045,11 @@ const App = (function () {
     const unita = field === 'reps'
       ? (ex.unit === 'time' ? 'sec' : 'reps')
       : (ex.unit === 'bw' ? 'kg' : 'kg');
-    return '<div class="stepper-block"><span class="stepper-label">' + esc(label) + '</span>' +
-      '<div class="stepper">' +
+    // L'etichetta (KG, REPS) la legge solo VoiceOver: l'unita' e' gia'
+    // scritta grande dentro il riquadro, e la riga in piu' col testo grande
+    // spingeva "Registra serie" fuori dallo schermo.
+    return '<div class="stepper-block"><span class="stepper-label sr-only">' + esc(label) + '</span>' +
+      '<div class="stepper" role="group" aria-label="' + esc(label) + '">' +
       '<button class="step-btn" data-act="step" data-f="' + field + '" data-d="-1" type="button" aria-label="Meno ' + step + '">−</button>' +
       '<div class="step-val" data-act="edit-num" data-f="' + field + '" role="button" tabindex="0">' +
         '<span class="num" id="val-' + field + '">' + num(value) + '</span>' +
@@ -1962,6 +1972,7 @@ const App = (function () {
     else if (act === 'set-step') patch.weightStep = Number(t.value) || 2.5;
     else if (act === 'set-soundmode') patch.soundMode = t.value;
     else if (act === 'set-autoclose') patch.autoCloseMinutes = Number(t.value) || 15;
+    else if (act === 'set-textsize') { patch.textSize = t.value; applicaTesto(t.value); }
     else if (act === 'log-warmup') {
       state.logDraft.warmup = t.checked;
       renderLog();
@@ -1969,6 +1980,14 @@ const App = (function () {
     }
     else return;
     DB.saveSettings(patch).then((s) => { state.settings = s; toast('Salvato'); });
+  }
+
+  // Misura del testo: la salvo anche in localStorage perche' index.html la
+  // applichi prima di disegnare la pagina, senza il salto all'avvio.
+  function applicaTesto(v) {
+    const val = v || 'grande';
+    document.documentElement.dataset.testo = val;
+    try { localStorage.setItem('palestra-testo', val); } catch (e) { /* niente */ }
   }
 
   /* ================= avvio ================= */
