@@ -118,7 +118,9 @@ const DB = (function () {
     // L'allenamento si chiude da solo dopo questi minuti senza registrare nulla.
     autoCloseMinutes: 15,
     // Di quanto salgono e scendono i pulsanti +/- nel pannello di registrazione.
-    weightStep: 2.5
+    weightStep: 2.5,
+    // Misura del testo: normale, grande, molto.
+    textSize: 'grande'
   };
 
   function getSettings() {

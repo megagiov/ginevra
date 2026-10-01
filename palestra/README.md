@@ -30,6 +30,9 @@ il pannello di registrazione, premi + o − e registri. Tre tocchi.
   esercizi vanno in cima al pannello sotto "Ancora da fare".
 - **876 esercizi con foto**, ricercabili in italiano ("panca", "stacco",
   "trazioni"), ognuno con un riassunto in italiano di come si esegue.
+- **Testo grande**, da leggere a un braccio di distanza fra una serie e
+  l'altra. In Altro → Testo si sceglie Normale, Grande (predefinito) o Molto
+  grande; tutta l'app si ridimensiona, e "Registra serie" resta sempre in vista.
 - **Timer di recupero** che parte da solo quando registri una serie, con suono e
   vibrazione. Il conto alla rovescia si vede anche dentro il pannello.
 - **Suggerimento carico e record**: sotto ogni esercizio l'ultima volta, e la

@@ -2,7 +2,7 @@
  * quindi funziona anche senza rete. Restituisce una stringa SVG. */
 const Chart = (function () {
   const W = 320, H = 170;
-  const PAD = { top: 12, right: 10, bottom: 22, left: 34 };
+  const PAD = { top: 12, right: 10, bottom: 26, left: 42 };
 
   function esc(s) {
     return String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -56,7 +56,7 @@ const Chart = (function () {
       const y = sy(t);
       out += '<line x1="' + PAD.left + '" y1="' + y.toFixed(1) + '" x2="' + (W - PAD.right) +
         '" y2="' + y.toFixed(1) + '" class="grid"/>';
-      out += '<text x="' + (PAD.left - 5) + '" y="' + (y + 3.5).toFixed(1) + '" class="axis" text-anchor="end">' +
+      out += '<text x="' + (PAD.left - 5) + '" y="' + (y + 4.5).toFixed(1) + '" class="axis" text-anchor="end">' +
         esc(t) + '</text>';
     });
 

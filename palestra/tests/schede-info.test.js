@@ -45,8 +45,10 @@ const check = (n, c, x) => { if (!c) bad++; console.log((c ? '  ok  ' : ' FAIL '
   check('le istruzioni inglesi sono a parte, chiuse', (await p.locator('.ex-info .ex-en:not([open])').count()) === 1);
   const bt = await p.evaluate(() => {
     const b = document.querySelector('[data-act="log-save"]').getBoundingClientRect();
-    return { basso: Math.round(b.bottom), schermo: window.innerHeight };
+    const rpe = Math.max.apply(null, Array.from(document.querySelectorAll('.rpe-row .chip')).map((c) => c.getBoundingClientRect().bottom));
+    return { basso: Math.round(b.bottom), alto: Math.round(b.top), rpe: Math.round(rpe), schermo: window.innerHeight };
   });
+  check('anche con la scheda in vista il pulsante non copre lo sforzo (RPE)', bt.rpe <= bt.alto, 'RPE fino a ' + bt.rpe + ', pulsante da ' + bt.alto);
   check('"Registra serie" sta nello schermo senza scorrere', bt.basso <= bt.schermo, bt.basso + ' su ' + bt.schermo + ' px');
   await p.screenshot({ path: require('os').tmpdir() + '/palestra-shots/F2-registrazione-foto.png' });
   // registro una serie: parte l'allenamento libero
