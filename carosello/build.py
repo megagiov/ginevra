@@ -43,16 +43,19 @@ def font(size):
     return ImageFont.load_default(size)
 
 
-def riempi(foto, w, h):
+def riempi(foto, w, h, margine=0.92):
     """Foto con fondo bianco: la scala per intero dentro il pannello (contain)
     se e' un packshot, altrimenti la ritaglia al centro (cover)."""
     im = Image.open(foto).convert("RGB")
     angoli = [im.getpixel(p) for p in [(0, 0), (im.width - 1, 0),
                                        (0, im.height - 1), (im.width - 1, im.height - 1)]]
-    packshot = all(min(c) > 235 for c in angoli)
+    packshot = all(min(c) > 220 for c in angoli)
     pannello = Image.new("RGB", (w, h), (255, 255, 255))
     if packshot:
-        s = min(w * 0.92 / im.width, h * 0.92 / im.height)
+        # via il bianco attorno al prodotto, cosi' riempie il pannello
+        maschera = im.convert("L").point(lambda v: 255 if v < 225 else 0)
+        im = im.crop(maschera.getbbox())
+        s = min(w * margine / im.width, h * margine / im.height)
         im = im.resize((round(im.width * s), round(im.height * s)), Image.LANCZOS)
         pannello.paste(im, ((w - im.width) // 2, (h - im.height) // 2))
     else:
@@ -77,9 +80,7 @@ def pannelli(layout, n):
     raise ValueError(layout)
 
 
-def scrivi(img, testo, centro, size, larghezza_max):
-    f = font(size)
-    d = ImageDraw.Draw(img)
+def a_capo(d, testo, f, larghezza_max):
     righe, riga = [], ""
     for parola in testo.split():
         prova = (riga + " " + parola).strip()
@@ -88,16 +89,24 @@ def scrivi(img, testo, centro, size, larghezza_max):
             riga = parola
         else:
             riga = prova
-    righe.append(riga)
+    return righe + [riga]
+
+
+def scrivi(img, testo, centro, size, larghezza_max):
+    f = font(size)
+    d = ImageDraw.Draw(img)
+    righe = []
+    for blocco in testo.split("\n"):
+        righe += a_capo(d, blocco, f, larghezza_max)
     passo = round(size * 1.25)
     y0 = centro[1] - passo * len(righe) // 2
     # ombra morbida: il bianco resta leggibile anche sui fondi chiari
     ombra = Image.new("L", img.size, 0)
     do = ImageDraw.Draw(ombra)
     for i, r in enumerate(righe):
-        do.text((centro[0], y0 + i * passo), r, font=f, fill=200, anchor="ma")
-    ombra = ombra.filter(ImageFilter.GaussianBlur(size // 6))
-    img.paste((0, 0, 0), (0, 0), ombra.point(lambda v: min(255, v * 0.8)))
+        do.text((centro[0], y0 + i * passo), r, font=f, fill=255, anchor="ma")
+    ombra = ombra.filter(ImageFilter.GaussianBlur(size // 8))
+    img.paste((0, 0, 0), (0, 0), ombra.point(lambda v: min(255, v * 0.9)))
     for i, r in enumerate(righe):
         d.text((centro[0], y0 + i * passo), r, font=f, fill="white", anchor="ma")
 
@@ -106,11 +115,11 @@ def slide(s):
     img = Image.new("RGB", (LATO, LATO), BLU)
     box = pannelli(s["layout"], len(s["foto"]))
     for (x, y, w, h), foto in zip(box, s["foto"]):
-        img.paste(riempi(foto, w, h), (x, y))
+        img.paste(riempi(foto, w, h, 0.8 if s["layout"] == "pieno" else 0.92), (x, y))
     for (x, y, w, h), t in zip(box, s.get("titoli", [])):
         scrivi(img, t, (x + w // 2, y + 30 + TESTO_TITOLO), TESTO_TITOLO, w - 60)
     if s.get("testo"):
-        scrivi(img, s["testo"], (LATO // 2, LATO // 2), TESTO, LATO - 2 * 120)
+        scrivi(img, s["testo"], (LATO // 2, LATO // 2), s.get("size", TESTO), LATO - 2 * 80)
     img.paste(Image.open(QUI / "assets/logo_gmvegasi_tiktokshop.png").convert("RGB"), LOGO_BOX)
     return img
 
