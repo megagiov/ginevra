@@ -1,2 +1,2 @@
 /* Generato da tools/versione.js: non modificare a mano. */
-window.APP_VERSION = '5bc1b7af1a';
+window.APP_VERSION = '3dcab2c49d';

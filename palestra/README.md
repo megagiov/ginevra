@@ -33,6 +33,11 @@ il pannello di registrazione, premi + o − e registri. Tre tocchi.
 - **Testo grande**, da leggere a un braccio di distanza fra una serie e
   l'altra. In Altro → Testo si sceglie Normale, Grande (predefinito) o Molto
   grande; tutta l'app si ridimensiona, e "Registra serie" resta sempre in vista.
+- **Schermo sempre acceso** finche' l'app e' aperta (in Altro → Schermo:
+  sempre, solo durante l'allenamento, mai). Se il telefono si blocca o passi a
+  un'altra app, al ritorno lo schermo torna a restare acceso da solo. Su
+  iPhone, oltre al Wake Lock, gira un video nero muto di 4 secondi in loop:
+  nelle app aggiunte alla Home prima di iOS 18.4 il Wake Lock non basta.
 - **Timer di recupero** che parte da solo quando registri una serie, con suono e
   vibrazione. Il conto alla rovescia si vede anche dentro il pannello.
 - **Suggerimento carico e record**: sotto ogni esercizio l'ultima volta, e la

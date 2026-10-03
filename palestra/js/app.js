@@ -306,22 +306,93 @@ const App = (function () {
 
   /* ================= schermo acceso ================= */
 
-  let wakeLock = null;
-  function keepAwake(on) {
-    try {
-      if (on && 'wakeLock' in navigator) {
-        navigator.wakeLock.request('screen').then((w) => { wakeLock = w; }).catch(() => {});
-      } else if (wakeLock) {
-        wakeLock.release().catch(() => {});
-        wakeLock = null;
+  // Lo schermo non deve spegnersi mentre ti alleni. Due strade insieme:
+  // - Wake Lock, il modo ufficiale. Il sistema lo toglie da solo appena
+  //   l'app va in secondo piano o il telefono si blocca: va richiesto di
+  //   nuovo ogni volta che torni nell'app.
+  // - Su iPhone anche un video nero di 4 secondi, muto e senza traccia
+  //   audio, che gira in loop: nelle app aggiunte alla Home prima di
+  //   iOS 18.4 il Wake Lock risponde "fatto" ma lo schermo si spegne lo
+  //   stesso. Il video non tocca la musica e non compare in Riproduzione.
+  //   Sta qui dentro e non in un file: dal service worker Safari non sa
+  //   leggere i video a pezzi e non lo farebbe partire.
+  const Awake = (() => {
+    const VIDEO = 'data:video/mp4;base64,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';
+    const iOS = /iPhone|iPad|iPod/.test(navigator.userAgent) ||
+      (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    let lock = null;
+    let video = null;
+    let chiesto = false;
+
+    function voluto() {
+      const modo = (state.settings && state.settings.screenAwake) || 'sempre';
+      if (modo === 'mai') return false;
+      if (modo === 'allenamento') return !!state.session;
+      return true;
+    }
+
+    function chiediLock() {
+      if (lock || chiesto || !('wakeLock' in navigator) || document.visibilityState !== 'visible') return;
+      chiesto = true;
+      navigator.wakeLock.request('screen').then((l) => {
+        chiesto = false;
+        if (!voluto()) { l.release().catch(() => {}); return; }
+        lock = l;
+        // tolto dal sistema (schermo bloccato, app in secondo piano):
+        // al ritorno si richiede
+        l.addEventListener('release', () => { if (lock === l) lock = null; });
+      }).catch(() => { chiesto = false; });
+    }
+
+    function avviaVideo() {
+      if (!iOS && 'wakeLock' in navigator) return;      // non serve
+      if (!video) {
+        video = document.createElement('video');
+        video.setAttribute('playsinline', '');
+        video.setAttribute('muted', '');
+        video.setAttribute('aria-hidden', 'true');
+        video.muted = true;
+        video.loop = true;
+        video.className = 'sveglia';
+        video.src = VIDEO;
+        document.body.appendChild(video);
       }
-    } catch (e) { /* non supportato */ }
-  }
+      if (video.paused) {
+        const p = video.play();
+        if (p && p.catch) p.catch(() => { /* serve un tocco: riprovo al prossimo */ });
+      }
+    }
+
+    function aggiorna() {
+      if (voluto()) {
+        chiediLock();
+        avviaVideo();
+      } else {
+        if (lock) { const l = lock; lock = null; l.release().catch(() => {}); }
+        if (video && !video.paused) video.pause();
+      }
+    }
+
+    function stato() {
+      if (!voluto()) return 'spento';
+      const v = video && !video.paused;
+      if (lock && v) return 'acceso (Wake Lock e video)';
+      if (lock) return 'acceso (Wake Lock)';
+      if (v) return 'acceso (video)';
+      return 'in attesa di un tocco sullo schermo';
+    }
+
+    return { aggiorna, stato, attivo: () => !!lock || !!(video && !video.paused) };
+  })();
+
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState !== 'visible') return;
-    if (state.session && !wakeLock) keepAwake(true);
+    Awake.aggiorna();
     Rest.resync();
   });
+  // Safari fa partire il video solo dopo un tocco: ogni tocco e' buono per
+  // riprovare, e non costa niente se e' gia' tutto acceso.
+  document.addEventListener('pointerdown', () => { if (!Awake.attivo()) Awake.aggiorna(); }, true);
 
   /* ================= modale ================= */
 
@@ -380,7 +451,7 @@ const App = (function () {
   function finishLoad(session, sets) {
     state.session = session;
     state.sets = sets;
-    keepAwake(!!session);
+    Awake.aggiorna();
     return loadHistory().then(() => (session ? null : loadResumable()));
   }
 
@@ -771,9 +842,18 @@ const App = (function () {
         'Al suo posto, a fine recupero lo schermo lampeggia di verde.</p>';
     }
     h += '<p class="note-ios">Il segnale arriva solo se l\u2019app \u00e8 aperta e lo schermo acceso: col telefono bloccato in tasca il browser si ferma. ' +
-      'Durante l\u2019allenamento l\u2019app chiede di tenere lo schermo acceso.</p>' +
+      'Per questo l\u2019app tiene acceso lo schermo (si regola qui sotto, in Schermo).</p>' +
       '<button class="btn" data-act="test-sound" type="button">' + icon('timer', 'sm') + ' Prova suono e segnale</button>' +
       '<div id="test-out"></div></section>';
+
+    const sveglio = s.screenAwake || 'sempre';
+    h += '<section class="card"><h3>Schermo</h3>' +
+      '<label class="field">Tieni acceso lo schermo<select data-act="set-awake">' +
+      [['sempre', 'Sempre, finch\u00e9 l\u2019app \u00e8 aperta'], ['allenamento', 'Solo durante l\u2019allenamento'], ['mai', 'Mai']].map((o) =>
+        '<option value="' + o[0] + '"' + (sveglio === o[0] ? ' selected' : '') + '>' + o[1] + '</option>').join('') +
+      '</select></label>' +
+      '<p class="muted small">Adesso: <b id="awake-stato">' + esc(Awake.stato()) + '</b>. ' +
+      'Lo schermo acceso consuma batteria: quando hai finito chiudi l\u2019app o blocca il telefono col tasto laterale.</p></section>';
 
     h += '<section class="card"><h3>Testo</h3>' +
       '<label class="field">Misura del testo<select data-act="set-textsize">' +
@@ -879,7 +959,7 @@ const App = (function () {
     return DB.startSession({ name: 'Allenamento' }).then((s) => {
       state.session = s;
       state.sets = [];
-      keepAwake(true);
+      Awake.aggiorna();
       return s;
     });
   }
@@ -1973,6 +2053,12 @@ const App = (function () {
     else if (act === 'set-soundmode') patch.soundMode = t.value;
     else if (act === 'set-autoclose') patch.autoCloseMinutes = Number(t.value) || 15;
     else if (act === 'set-textsize') { patch.textSize = t.value; applicaTesto(t.value); }
+    else if (act === 'set-awake') {
+      patch.screenAwake = t.value;
+      state.settings.screenAwake = t.value;
+      Awake.aggiorna();
+      setTimeout(() => { const b = $('#awake-stato'); if (b) b.textContent = Awake.stato(); }, 400);
+    }
     else if (act === 'log-warmup') {
       state.logDraft.warmup = t.checked;
       renderLog();

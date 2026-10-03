@@ -1118,3 +1118,13 @@ textarea { min-height: 80px; resize: vertical; }
   .session-bar .sb-main { flex-basis: 100%; }
   .session-bar .btn { flex: 1; }
 }
+
+/* Il video che tiene acceso lo schermo su iPhone: deve stare nella pagina,
+   ma non si vede e non si tocca. */
+.sveglia {
+  position: fixed;
+  left: 0; bottom: 0;
+  width: 1px; height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
