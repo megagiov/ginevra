@@ -23,6 +23,14 @@ commit e spiegazioni in italiano.
   non sono accessibili dal web. La strada e' l'automazione di fine
   allenamento + "Incolla dal Watch", oppure un'app nativa (serve un Mac).
 
+## Schermo acceso
+
+Il Wake Lock il sistema lo toglie a ogni blocco del telefono o cambio di app:
+va richiesto di nuovo al ritorno (`visibilitychange`) e a ogni tocco. Su
+iPhone c'e' anche un video nero muto in loop, in base64 dentro `js/app.js`:
+non spostarlo in un file, dal service worker Safari non legge i video
+(richieste a pezzi) e non lo farebbe partire. Prova: `tests/schermo.test.js`.
+
 ## Catalogo
 
 I nomi italiani stanno in `tools/nomi-it.json`, i riassunti di esecuzione in

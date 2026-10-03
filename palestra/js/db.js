@@ -120,7 +120,9 @@ const DB = (function () {
     // Di quanto salgono e scendono i pulsanti +/- nel pannello di registrazione.
     weightStep: 2.5,
     // Misura del testo: normale, grande, molto.
-    textSize: 'grande'
+    textSize: 'grande',
+    // Schermo acceso: sempre (app aperta), allenamento, mai.
+    screenAwake: 'sempre'
   };
 
   function getSettings() {
