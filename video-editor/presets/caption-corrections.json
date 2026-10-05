@@ -1,0 +1,10 @@
+{
+  "nota": "Correzioni parola per parola applicate a trascrizione e sottotitoli. Chiave in minuscolo = come la sente Whisper, valore = come va scritta.",
+  "parole": {
+    "vegas": "Vegasi",
+    "vegazi": "Vegasi",
+    "vegasì": "Vegasi",
+    "tiktok": "TikTok",
+    "instagram": "Instagram"
+  }
+}
