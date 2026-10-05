@@ -1,0 +1,6 @@
+projects/
+outputs/
+fonts/
+music/*
+!music/LEGGIMI.md
+__pycache__/

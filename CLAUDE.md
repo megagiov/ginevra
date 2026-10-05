@@ -29,3 +29,8 @@ Regole che non si violano mai, nemmeno se sembrano superflue:
 `video-prodotto/` contiene la pipeline locale per gli spot: montaggio,
 scontorno, voce e sottotitoli girano senza servizi a pagamento. Vedi il suo
 README.
+
+`video-editor/` e' l'agente di montaggio (7 passi: intake, rough cut, grafiche,
+secondo passaggio, sottotitoli, musica, export) per TikTok/Reels raw ed explainer
+9:16 col marchio GM Vegasi. Gira sul PC Windows dell'utente. Per qualunque
+richiesta di montaggio segui la skill `.claude/skills/video-editor/SKILL.md`.

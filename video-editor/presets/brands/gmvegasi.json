@@ -1,0 +1,19 @@
+{
+  "nome": "GM Vegasi",
+  "nota": "Colori letti dagli screenshot del sito e dei loghi (ottobre 2026). Per la conferma esatta: py ve.py colors assets/gmvegasi-logo.png",
+  "colors": {
+    "primary": "#0071BC",
+    "accent": "#FFC20E",
+    "dark": "#0B0B0D",
+    "light": "#FFFFFF",
+    "muted": "#3C4650"
+  },
+  "fonts": {
+    "heading": "Montserrat-ExtraBold.woff",
+    "body": "OpenSans-Bold.woff",
+    "caption": "Montserrat-ExtraBold.woff"
+  },
+  "logo": "assets/gmvegasi-logo-bianco.png",
+  "sito": "gmvegasi.com",
+  "glossario": ["GM Vegasi", "Vegasi", "Chicco", "Disney", "Bellamica", "TikTok Shop"]
+}
