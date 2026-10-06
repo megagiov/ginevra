@@ -17,6 +17,9 @@ L'agente lo scrive dopo il rough cut, leggendo i tempi in `work/words_cut.json`
 - `*parole*` tra asterischi = evidenziate su fascia blu del marchio (in hook e text).
 - `y` (0–1) sposta verticalmente qualsiasi beat; `size` cambia il corpo del testo.
 - `logo`: `false`, `"top"` o `"bottom"` (serve il PNG in `assets/`).
+- Le foto aggiunte a mano vanno in `projects/<job>/img/`: restano anche se rifai `new --force`.
+- `hook` con `full: true` è una scheda a tutto schermo blu: ottima come chiusura, con
+  sopra `logo`, `image` scontornate e `badge` numerati (vedi `projects/` di esempio nel README).
 
 ## Tipi
 
@@ -30,6 +33,8 @@ L'agente lo scrive dopo il rough cut, leggendo i tempi in `work/words_cut.json`
 | `cta` | invito finale | `text`, `sub`, `style` (default accent) | 0,54 |
 | `text` | testo libero | `text`, `color` (light/dark/primary/accent), `heading` | 0,20 |
 | `image` | foto o screenshot in scheda arrotondata | `src` (relativo al progetto, es. `raw/02_foto.jpg`), `h` | metà alta |
+| `image` + `cutout: true` | prodotto scontornato da foto su fondo bianco, con ombra | `src` (es. `img/foto-nero.jpg`), `x`, `y`, `w`, `h` | — |
+| `logo` | logo del marchio dal PNG in `assets/` | `x`, `y`, `w`, `variant` (`blu` per fondi chiari) | alto, 0,12 |
 
 `style` per label, badge e cta: `primary` (blu, testo bianco), `accent` (giallo, testo
 scuro), `light` (bianco), `dark` (nero).
@@ -84,3 +89,11 @@ Girano dentro `gfx`, prima delle grafiche, e si ricalcolano solo se cambiano.
 - `grade` (default sì): un po' più di contrasto e saturazione, più nitidezza, vignetta.
 - Su video compressi (WhatsApp) non superare zoom 1,4–1,5: oltre si vedono i quadretti.
 - Stacchi tipici: `flash` + `punch` sullo stesso istante.
+
+## Suoni — voce `"sfx"`
+
+`"sfx": true` aggiunge suoni sintetizzati in locale (nessuna licenza): fruscio quando entra
+un testo, pop per foto, bollini e logo, colpo sugli stacchi con `flash` e sulle schede a
+tutto schermo, disturbo sui `glitch`. Con `"mute": true` resta solo questa traccia; senza,
+si somma all'audio originale. Per aggiungerne a mano o cambiare il volume:
+`"sfx": {"extra": [{"type": "pop", "at": 2.0}], "gain": -3}` (tipi: whoosh, pop, impact, glitch).

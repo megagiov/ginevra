@@ -82,7 +82,11 @@ def cmd_new(a):
     if job.dir.exists():
         if not a.force:
             die(f'il progetto {a.job} esiste gia\'. Usa --force per ricrearlo.')
+        # il piano e le immagini aggiunte a mano sono lavoro gia' fatto: si salvano
+        keep = {p.name: p.read_bytes() for p in [job.dir / 'plan.json', *job.dir.glob('img/*')] if p.is_file()}
         shutil.rmtree(job.dir)
+    else:
+        keep = {}
     job.raw.mkdir(parents=True)
     (job.work / 'parts').mkdir(parents=True)
 
@@ -117,6 +121,10 @@ def cmd_new(a):
         'source.mkv'], cwd=job.work)
     save(job.dir / 'job.json', dict(name=a.job, format=a.format, brand=a.brand, parts=log,
                                     kind='unknown', duration=round(total, 3)))
+    for name, data in keep.items():
+        dst = job.dir / ('plan.json' if name == 'plan.json' else f'img/{name}')
+        dst.parent.mkdir(exist_ok=True)
+        dst.write_bytes(data)
     if not (job.dir / 'plan.json').exists():
         save(job.dir / 'plan.json', {'logo': False, 'beats': []})
     print(f'Progetto {a.job}: {len(log)} pezzi, {total:.1f}s, formato {a.format}.')
