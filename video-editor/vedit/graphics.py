@@ -308,6 +308,58 @@ def resolve_times(b, total):
     return max(0.0, s), min(total, e)
 
 
+# Tempo di lettura: 0,8 s per accorgersi del testo + 15 caratteri al secondo, mai sotto 1,2 s.
+# Misurato sul primo video vero: a 0,65 s "1 · Beige" si leggeva a fatica e
+# "Quale scegli? + Nuovi arrivi ICON autunno-inverno" in 1,5 s non si finiva.
+READ_BASE, READ_CPS, READ_MIN = 0.8, 15, 1.2
+
+
+def beat_text(b):
+    parts = [b.get(k, '') for k in ('title', 'text', 'sub')] + list(b.get('items', []))
+    return ' '.join(p for p in parts if p).replace('*', '')
+
+
+def reading_time(text):
+    n = len(text.strip())
+    return max(READ_MIN, READ_BASE + n / READ_CPS) if n > 3 else 0.0
+
+
+def reading_report(plan, total, quiet=False):
+    """Controlla che ogni testo resti a schermo abbastanza da essere letto. Ritorna i beat troppo brevi."""
+    short = []
+    for i, b in enumerate(plan.get('beats', []), 1):
+        if b.get('type') not in ('hook', 'card', 'list', 'label', 'cta', 'text', 'badge'):
+            continue
+        txt = beat_text(b)
+        need = reading_time(txt)
+        s, e = resolve_times(b, total)
+        shown = e - s - 0.15  # entrata e uscita in dissolvenza tolgono un po' di lettura
+        if need and shown < need:
+            short.append((i, b['type'], txt, shown, need))
+    if short and not quiet:
+        print('  ATTENZIONE, testi che non si fanno in tempo a leggere:')
+        for i, t, txt, shown, need in short:
+            print(f'    beat {i:02d} {t:6s} "{txt[:40]}"  a schermo {shown:.2f}s, ne servono {need:.1f}'
+                  f' (+{need - shown:.1f}s)')
+        print('  -> allunga il beat (anche oltre lo stacco), allunga il pezzo nell\'edl, o accorcia il testo.')
+    return short
+
+
+def cmd_tempi(a):
+    job = Job(a.job)
+    base = job.w('cut.mp4')
+    total = duration(base) if base.exists() else job.meta.get('duration', 0)
+    plan = load(job.dir / 'plan.json', {})
+    for i, b in enumerate(plan.get('beats', []), 1):
+        txt = beat_text(b)
+        if txt and reading_time(txt):
+            s, e = resolve_times(b, total)
+            print(f'  beat {i:02d} {b["type"]:6s} {s:5.2f}-{e:5.2f}s  a schermo {e - s - 0.15:4.2f}s'
+                  f'  servono {reading_time(txt):3.1f}s  "{txt[:40]}"')
+    if not reading_report(plan, total):
+        print('Tempi di lettura: tutti a posto.')
+
+
 def render_beats(job, total):
     br = job.brand()
     plan = load(job.dir / 'plan.json', {'beats': []})
@@ -335,6 +387,7 @@ def render_beats(job, total):
         out.append(dict(png=p.name, s=0, e=total, anim=False, type='logobug', full=False))
     elif plan.get('logo'):
         print('  logo richiesto ma assente: metti il file indicato in presets/brands/<marchio>.json')
+    reading_report(plan, total)
     return out
 
 

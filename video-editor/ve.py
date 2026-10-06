@@ -4,6 +4,7 @@
     py ve.py transcribe JOB
     py ve.py cut JOB [--drop 3,5] [--keep 2]
     py ve.py gfx JOB
+    py ve.py tempi JOB        (ogni testo resta a schermo il tempo di leggerlo?)
     py ve.py music JOB [--track nome.mp3 | --list]
     py ve.py export JOB
     py ve.py check JOB [--src composite|final|source|cut]
@@ -122,6 +123,9 @@ def main():
     p.add_argument('job')
     p.add_argument('--no-captions', action='store_true')
 
+    p = sp.add_parser('tempi', help='controlla che ogni testo resti a schermo il tempo di leggerlo')
+    p.add_argument('job')
+
     p = sp.add_parser('music', help='passo 6: musica sotto la voce')
     p.add_argument('job')
     p.add_argument('--track')
@@ -160,6 +164,8 @@ def main():
         from vedit.roughcut import cmd_cut as f
     elif a.cmd == 'gfx':
         from vedit.graphics import cmd_gfx as f
+    elif a.cmd == 'tempi':
+        from vedit.graphics import cmd_tempi as f
     elif a.cmd == 'music':
         from vedit.finish import cmd_music as f
     elif a.cmd == 'export':

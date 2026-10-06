@@ -26,6 +26,12 @@ seguendo il suggerimento prima di andare avanti.
    `video-prodotto/ARTLIST.md`** e rispetta le regole del `CLAUDE.md` principale.
 6. **Prima di montare si chiede**, con domande a scelta multipla già pronte (sezione
    sotto). Mai partire con un piano deciso da soli, mai domande aperte se bastano opzioni.
+7. **Ogni testo resta a schermo il tempo di leggerlo**: 0,8 s + 1 s ogni 15 caratteri
+   (titolo + sottotitolo), mai meno di 1,2 s. Dopo aver scritto il piano lancia
+   `py ve.py tempi NOME`: nessun video si consegna con avvisi aperti. Se il pezzo è troppo
+   corto si allunga il pezzo nell'edl, si fa continuare il testo oltre lo stacco, oppure si
+   accorcia il testo. Mai ridurre il tempo a schermo sotto la soglia per far tornare la
+   durata del video.
 
 ## Prima di montare: domande a risposta rapida
 
@@ -111,6 +117,15 @@ dettaglio, colpo di zoom e flash sugli stacchi, tremolio, glitch, colore (schema
 fondo a `PIANO.md`). Per una **versione muta** aggiungi `"mute": true`; per i **suoni sui testi** `"sfx": true`. Le foto prodotto su fondo bianco vanno in `projects/NOME/img/` e si usano scontornate (`image` con `cutout: true`), per esempio in una scheda finale blu con `logo` e prodotti numerati. Su riprese senza
 voce di prodotti: veduta d'insieme come aggancio, poi un primo piano per prodotto con
 un'etichetta (colore/nome) e uno zoom su un dettaglio, e chiusura con una domanda o la CTA.
+
+Poi, **sempre**, controlla i tempi di lettura prima di costruire:
+```
+py ve.py tempi NOME
+```
+Per ogni testo stampa quanto resta a schermo e quanto serve. Pianifica la durata dei pezzi
+**a partire dai testi**: un primo piano con nome e dettaglio ("1 · Beige" + "Logo con strass")
+deve durare almeno la somma dei due tempi, circa 3,2 s, quindi i pezzi nell'edl si scelgono
+di conseguenza.
 
 ### 4. Secondo passaggio (con l'utente)
 ```
