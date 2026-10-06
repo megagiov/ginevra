@@ -19,7 +19,7 @@ L'agente lo scrive dopo il rough cut, leggendo i tempi in `work/words_cut.json`
 - `logo`: `false`, `"top"` o `"bottom"` (serve il PNG in `assets/`).
 - Le foto aggiunte a mano vanno in `projects/<job>/img/`: restano anche se rifai `new --force`.
 - `hook` con `full: true` è una scheda a tutto schermo blu: ottima come chiusura, con
-  sopra `logo`, `image` scontornate e `badge` numerati (vedi `projects/` di esempio nel README).
+  sopra `logo`, `image` scontornate e `badge` numerati.
 
 ## Tipi
 
