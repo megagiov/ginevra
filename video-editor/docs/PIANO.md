@@ -55,6 +55,11 @@ scuro), `light` (bianco), `dark` (nero).
   che lo introduce e resta finché se ne parla. Il volto resta nella metà bassa.
 - Una grafica entra **sulla parola** (tempo `s` in `words_cut.json`), non a caso.
 - Due grafiche nella stessa zona non si sovrappongono mai nel tempo.
+- **Tempo di lettura** (lo controlla `py ve.py tempi JOB`, e `gfx` avvisa): 0,8 s + 1 s ogni
+  15 caratteri di titolo, testo e sottotitolo, minimo 1,2 s. Esempi: "2 · Nero" 1,3 s,
+  "Logo con strass" 1,8 s, hook "Quale scegli?" + sottotitolo di 33 caratteri 3,9 s.
+  Il testo può continuare sopra lo stacco successivo: meglio che chiuderlo a metà lettura.
+  Si parte dai testi per decidere quanto durano i pezzi, non il contrario.
 
 ## Effetti sul video — voce `"fx"`
 
