@@ -7,9 +7,10 @@ piano e rilanciare rifa' solo questo passo: il montato resta com'e'.
 Lo schema dei beat e' in docs/PIANO.md.
 """
 import re, shutil
+import numpy as np
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
-from .common import Job, ff, die, duration, load, W, H, VENC, FONTS
-from . import captions
+from .common import Job, ff, die, duration, load, W, H, SR, VENC, AENC, FONTS
+from . import captions, fx, sfx
 
 SAFE_X = 80          # margine laterale: a destra TikTok mette i pulsanti
 TOP = 250            # sopra ci sono "Seguiti / Per te"
@@ -101,14 +102,14 @@ def b_hook(img, b, br):
     head = br['font_files']['heading']
     if b.get('full'):
         ImageDraw.Draw(img).rectangle((0, 0, W, H), fill=c['primary'] + (255,))
-        y = H * 0.36
+        y = b.get('y', 0.36) * H
     else:
         y = b.get('y', 0.15) * H
     f = font(head, b.get('size', 124))
     hb, hf = (c['light'], c['primary']) if b.get('full') else (c['primary'], c['light'])
     y = text_block(img, W / 2, y, b['text'].upper(), f, W - 2 * SAFE_X, c['light'], hb, hf, gap=1.08)
     if b.get('sub'):
-        text_block(img, W / 2, y + 20, b['sub'], font(br['font_files']['body'], 50), W - 2 * SAFE_X,
+        text_block(img, W / 2, y + 20, b['sub'], font(br['font_files']['body'], b.get('sub_size', 58)), W - 2 * SAFE_X,
                    c['light'], hb, hf)
 
 
@@ -228,24 +229,67 @@ def b_badge(img, b, br):
     img.alpha_composite(tile, (x, y))
 
 
+def cutout(path, thr=212):
+    """Scontorna una foto prodotto su fondo bianco: via il bianco collegato ai bordi, bordo ammorbidito."""
+    src = Image.open(path).convert('RGB')
+    w, h = src.size
+    g = np.asarray(src.convert('L'))
+    rgb = np.asarray(src).astype(np.int16)
+    sat = rgb.max(axis=2) - rgb.min(axis=2)
+    # fondo = quasi bianco, oppure grigio chiaro senza colore (l'ombra sotto la suola)
+    bg = (g > thr) | ((g > 178) & (sat < 16))
+    # .copy() indispensabile: floodfill non scrive su un'immagine che condivide il buffer
+    # di sola lettura di numpy, e fallisce in silenzio riempiendo zero pixel
+    m = Image.fromarray((bg.astype(np.uint8) * 255), 'L').copy()
+    for xy in [(0, 0), (w - 1, 0), (0, h - 1), (w - 1, h - 1)]:
+        if m.getpixel(xy) == 255:
+            ImageDraw.floodfill(m, xy, 128, thresh=0)
+    alpha = Image.fromarray(np.where(np.asarray(m) == 128, 0, 255).astype(np.uint8), 'L')
+    alpha = alpha.filter(ImageFilter.MinFilter(3)).filter(ImageFilter.GaussianBlur(0.8))
+    out = src.convert('RGBA')
+    out.putalpha(alpha)
+    return out.crop(alpha.getbbox())
+
+
 def b_image(img, b, br, jobdir):
-    """Immagine (foto prodotto, screenshot) in una scheda arrotondata nella meta' alta."""
+    """Immagine: foto o screenshot in scheda arrotondata, oppure prodotto scontornato (cutout: true)."""
     src = jobdir / b['src']
     if not src.exists():
         die(f'immagine del beat non trovata: {src}')
-    pic = Image.open(src).convert('RGBA')
-    maxw, maxh = W - 2 * SAFE_X, int(b.get('h', 0.38) * H)
-    pic.thumbnail((maxw, maxh))
-    x, y = (W - pic.width) // 2, int(b.get('y', 0.13) * H)
-    box = (x, y, x + pic.width, y + pic.height)
-    shadow(img, box, 36)
-    m = Image.new('L', pic.size, 0)
-    ImageDraw.Draw(m).rounded_rectangle((0, 0, *pic.size), 36, fill=255)
-    pic.putalpha(m)
+    pic = cutout(src) if b.get('cutout') else Image.open(src).convert('RGBA')
+    maxw, maxh = int(b.get('w', 1.0) * (W - 2 * SAFE_X)), int(b.get('h', 0.38) * H)
+    pic.thumbnail((maxw, maxh), Image.LANCZOS)
+    x = int(b.get('x', 0.5) * W - pic.width / 2)
+    y = int(b.get('y', 0.13) * H)
+    if b.get('cutout'):
+        # ombra morbida presa dalla sagoma stessa, un po' sotto
+        sh = Image.new('RGBA', img.size, (0, 0, 0, 0))
+        sil = Image.new('RGBA', pic.size, (0, 0, 0, 120))
+        sil.putalpha(pic.getchannel('A').point(lambda v: v * 120 // 255))
+        sh.alpha_composite(sil, (x, y + 22))
+        img.alpha_composite(sh.filter(ImageFilter.GaussianBlur(18)))
+    else:
+        box = (x, y, x + pic.width, y + pic.height)
+        shadow(img, box, 36)
+        m = Image.new('L', pic.size, 0)
+        ImageDraw.Draw(m).rounded_rectangle((0, 0, *pic.size), 36, fill=255)
+        pic.putalpha(m)
     img.alpha_composite(pic, (x, y))
 
 
-KINDS = dict(hook=b_hook, card=b_card, list=b_list, label=b_label, cta=b_cta, text=b_text, badge=b_badge)
+def b_logo(img, b, br):
+    """Logo del marchio dal PNG in assets/ (mai ridisegnato): bianco di default, "variant": "blu" per fondi chiari."""
+    path = br['logo_alt_path'] if b.get('variant') == 'blu' else br['logo_path']
+    if not path:
+        die('logo mancante: metti il PNG indicato in presets/brands/<marchio>.json dentro assets/')
+    lg = Image.open(path).convert('RGBA')
+    w = int(b.get('w', 0.22) * W)
+    lg = lg.resize((w, int(lg.height * w / lg.width)), Image.LANCZOS)
+    img.alpha_composite(lg, (int(b.get('x', 0.5) * W - w / 2), int(b.get('y', 0.12) * H)))
+
+
+KINDS = dict(hook=b_hook, card=b_card, list=b_list, label=b_label, cta=b_cta, text=b_text, badge=b_badge,
+             logo=b_logo)
 
 
 def logo_png(br, where):
@@ -283,12 +327,12 @@ def render_beats(job, total):
         b_image(img, b, br, job.dir) if t == 'image' else KINDS[t](img, b, br)
         p = gdir / f'{i:02d}_{t}.png'
         img.save(p)
-        out.append(dict(png=p.name, s=s, e=e, anim=not b.get('full')))
+        out.append(dict(png=p.name, s=s, e=e, anim=not b.get('full'), type=t, full=bool(b.get('full'))))
         print(f'  beat {i:02d} {t:6s} {s:6.2f}-{e:6.2f}s')
     if plan.get('logo') and br['logo_path']:
         p = gdir / 'logo.png'
         logo_png(br, plan['logo'] if isinstance(plan['logo'], str) else 'top').save(p)
-        out.append(dict(png=p.name, s=0, e=total, anim=False))
+        out.append(dict(png=p.name, s=0, e=total, anim=False, type='logobug', full=False))
     elif plan.get('logo'):
         print('  logo richiesto ma assente: metti il file indicato in presets/brands/<marchio>.json')
     return out
@@ -300,8 +344,10 @@ def cmd_gfx(a):
     if not base.exists():
         die('manca il montato: lancia prima py ve.py cut ' + a.job)
     total = duration(base)
+    plan = load(job.dir / 'plan.json', {})
+    src = fx.render(job, plan['fx']) if plan.get('fx') else 'cut.mp4'
     beats = render_beats(job, total)
-    inputs, chain, last = ['-i', 'cut.mp4'], [], '0:v'
+    inputs, chain, last = ['-i', src], [], '0:v'
     for k, g in enumerate(beats, 1):
         inputs += ['-loop', 1, '-framerate', 30, '-t', f"{g['e']:.3f}", '-i', f"gfx/{g['png']}"]
         s, e = g['s'], g['e']
@@ -324,7 +370,24 @@ def cmd_gfx(a):
         chain.append(f'[{last}]ass=captions.ass:fontsdir=fonts[vout]')
     else:
         chain.append(f'[{last}]null[vout]')
+    n_in = len(beats) + 1
+    if plan.get('sfx'):
+        sfx.build(job.w('sfx.wav'), plan, beats, total)
+        inputs += ['-i', 'sfx.wav']
+        lim = f'alimiter=limit=0.8:level=false,aresample={SR}'
+        if plan.get('mute'):  # solo i suoni, niente audio originale
+            chain.append(f'[{n_in}:a]{lim}[aout]')
+        else:
+            chain.append(f'[0:a][{n_in}:a]amix=inputs=2:duration=first:normalize=0,{lim}[aout]')
+        audio = ['[aout]', *AENC]
+    elif plan.get('mute'):
+        # versione muta: traccia silenziosa invece dell'audio originale (TikTok vuole comunque un audio)
+        inputs += ['-f', 'lavfi', '-t', f'{total:.3f}', '-i', f'anullsrc=r={SR}:cl=stereo']
+        audio = [f'{n_in}:a', *AENC]
+    else:
+        audio = ['0:a', '-c:a', 'copy']
     job.w('compose_filter.txt').write_text(';\n'.join(chain), encoding='utf-8')
-    ff([*inputs, '-filter_complex', ';'.join(chain), '-map', '[vout]', '-map', '0:a',
-        *VENC, '-c:a', 'copy', '-t', f'{total:.3f}', 'composite.mp4'], cwd=job.work)
-    print(f'Composto: {job.w("composite.mp4")}  ({len(beats)} grafiche, sottotitoli: {"si" if use_caps else "no"})')
+    ff([*inputs, '-filter_complex', ';'.join(chain), '-map', '[vout]', '-map', audio[0],
+        *VENC, *audio[1:], '-t', f'{total:.3f}', 'composite.mp4'], cwd=job.work)
+    print(f'Composto: {job.w("composite.mp4")}  ({len(beats)} grafiche, sottotitoli: {"si" if use_caps else "no"}'
+          f'{", muto" if plan.get("mute") else ""}{", con suoni" if plan.get("sfx") else ""})')

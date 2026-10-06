@@ -24,15 +24,48 @@ seguendo il suggerimento prima di andare avanti.
 4. **Musica solo con licenza**, dalla cartella `music/`. Mai scaricare brani dal web.
 5. Se l'utente vuole riprese generate con l'AI (Artlist): **prima leggi per intero
    `video-prodotto/ARTLIST.md`** e rispetta le regole del `CLAUDE.md` principale.
+6. **Prima di montare si chiede**, con domande a scelta multipla già pronte (sezione
+   sotto). Mai partire con un piano deciso da soli, mai domande aperte se bastano opzioni.
 
-## Cosa chiedere all'inizio (solo ciò che manca)
+## Prima di montare: domande a risposta rapida
 
-- I file: percorso di cartella o file (video, foto o misti).
-- Il formato: `tiktok` (raw: aggancio, poi la persona, sottotitoli bassi) o `explainer`
-  (schede nella metà alta, sottotitoli centrali). Per lo **spot prodotto 10 s** dalle foto
-  del catalogo si usa invece la pipeline in `video-prodotto/` (vedi il suo README).
-- I testi a schermo che l'utente vuole (offerta, prezzo, CTA). Se non li dà, proponili
-  **solo** sulla base di ciò che dice nel video o di ciò che si vede.
+**Obbligatorio.** Prima di scrivere il piano, chiedi all'utente come sviluppare il video con
+domande già pronte, a scelta multipla, così risponde in pochi tocchi. Mai domande aperte
+quando si possono dare delle opzioni.
+
+Come:
+1. **Prima guarda il materiale.** Importa e apri i provini (`check --src source --every 0.7`):
+   le opzioni devono nascere da ciò che c'è davvero nel video ("le 3 ciabatte in basso",
+   "il cartello Nuovi arrivi"), non essere generiche.
+2. **Usa lo strumento delle domande a scelta** (`AskUserQuestion`): massimo 4 domande per
+   giro, 2–4 opzioni ciascuna, etichette brevi, una riga di spiegazione per opzione.
+   Metti per prima l'opzione che consigli, con "(Consigliato)". Usa la scelta multipla
+   quando le risposte si sommano (es. quali prodotti mostrare).
+3. **Chiedi solo ciò che manca**: se l'utente l'ha già detto o si ricava dai file, non
+   chiederlo. Se dopo il primo giro serve altro, fai un secondo giro breve, non di più.
+4. Dopo le risposte, riassumi in 2–3 righe il piano che segue e parti.
+
+Domande tipiche (scegli quelle che servono, adatta le opzioni al video):
+
+| Tema | Domanda | Opzioni di esempio |
+|---|---|---|
+| Focus | Su cosa concentro il video? | i prodotti che si vedono (uno per opzione, scelta multipla) · tutto il negozio |
+| Formato | Che formato? | TikTok raw 9:16 · Explainer 9:16 · Spot prodotto 10 s |
+| Durata | Quanto lungo? | 8–12 s (Consigliato per prodotti) · 15–20 s · come il grezzo |
+| Aggancio | Come si apre? | domanda ("Quale scegli?") · novità ("Nuovi arrivi") · offerta (solo se l'utente dà sconto o prezzo) |
+| Stile | Quanto movimento? | dinamico: zoom, flash, glitch · pulito: solo zoom lenti · nessun effetto |
+| Audio | Che audio? | muto con suoni sui testi · muto senza nulla · musica da `music/` · voce originale |
+| Testi | Cosa scrivo sui prodotti? | colore/nome · dettagli visibili (logo, suola…) · prezzo e taglie (chiedili) |
+| Chiusura | Come chiudo? | domanda nei commenti · scheda col logo e i prodotti · link in bio / sito |
+| Materiale | Hai altro? | foto su fondo bianco · logo · prezzi · nessuno, vai così |
+
+Vincoli che le domande non superano:
+- **Nessuna affermazione inventata.** Prezzi, sconti, taglie, materiali, "più venduto":
+  solo quelli scritti dall'utente o letti sulla scheda prodotto. Se una risposta li
+  richiede (es. "offerta"), chiedi il dato preciso. Nel dubbio il testo descrive solo ciò
+  che si vede ("effetto pelliccia", "logo con strass").
+- Lo **spot prodotto 10 s** dalle foto del catalogo usa la pipeline in `video-prodotto/`
+  (vedi il suo README), non questa.
 
 ## I 7 passi
 
@@ -72,6 +105,12 @@ py ve.py cut NOME
 Scrivi `projects/NOME/plan.json` seguendo **`video-editor/docs/PIANO.md`** (tipi, campi,
 zone sicure, ritmo). I tempi li prendi da `work/words_cut.json`, che è già sulla timeline
 del montato: ogni grafica entra sulla parola che la introduce.
+
+Nello stesso file, alla voce `"fx"`, vanno gli **effetti sul video**: zoom che seguono un
+dettaglio, colpo di zoom e flash sugli stacchi, tremolio, glitch, colore (schema in
+fondo a `PIANO.md`). Per una **versione muta** aggiungi `"mute": true`; per i **suoni sui testi** `"sfx": true`. Le foto prodotto su fondo bianco vanno in `projects/NOME/img/` e si usano scontornate (`image` con `cutout: true`), per esempio in una scheda finale blu con `logo` e prodotti numerati. Su riprese senza
+voce di prodotti: veduta d'insieme come aggancio, poi un primo piano per prodotto con
+un'etichetta (colore/nome) e uno zoom su un dettaglio, e chiusura con una domanda o la CTA.
 
 ### 4. Secondo passaggio (con l'utente)
 ```

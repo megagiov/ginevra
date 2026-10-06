@@ -15,5 +15,13 @@
   },
   "logo": "assets/gmvegasi-logo-bianco.png",
   "sito": "gmvegasi.com",
-  "glossario": ["GM Vegasi", "Vegasi", "Chicco", "Disney", "Bellamica", "TikTok Shop"]
+  "glossario": [
+    "GM Vegasi",
+    "Vegasi",
+    "Chicco",
+    "Disney",
+    "Bellamica",
+    "TikTok Shop"
+  ],
+  "logo_alt": "assets/gmvegasi-logo-blu.png"
 }

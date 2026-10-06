@@ -141,6 +141,7 @@ def load_brand(slug):
     b['slug'] = slug
     b['rgb'] = {k: hex_rgb(v) for k, v in b['colors'].items()}
     b['font_files'] = {k: font_path(v) for k, v in b['fonts'].items()}
-    logo = b.get('logo')
-    b['logo_path'] = str(ROOT / logo) if logo and (ROOT / logo).exists() else None
+    for k in ('logo', 'logo_alt'):
+        f = b.get(k)
+        b[f'{k}_path'] = str(ROOT / f) if f and (ROOT / f).exists() else None
     return b
