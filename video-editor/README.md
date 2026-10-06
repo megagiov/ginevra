@@ -30,8 +30,10 @@ Apri Claude Code nella cartella del repository e scrivi, per esempio:
 
 > Fai un explainer da questo video in cui spiego come fare un reso.
 
-Claude segue i 7 passi descritti in `.claude/skills/video-editor/SKILL.md` e ti
-consegna due file in `video-editor/outputs/`:
+Prima di montare, Claude guarda il materiale e ti fa qualche domanda a scelta multipla
+(su cosa concentrarsi, durata, stile, audio, chiusura): rispondi con un tocco. Poi segue i
+7 passi descritti in `.claude/skills/video-editor/SKILL.md` e ti consegna due file in
+`video-editor/outputs/`:
 
 - `NOME.final.mp4`: con musica
 - `NOME.nomusic.mp4`: senza musica, per mettere un brano di tendenza dall'app
