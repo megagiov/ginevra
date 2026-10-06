@@ -30,8 +30,8 @@ seguendo il suggerimento prima di andare avanti.
    (titolo + sottotitolo), mai meno di 1,2 s. Dopo aver scritto il piano lancia
    `py ve.py tempi NOME`: nessun video si consegna con avvisi aperti. Se il pezzo è troppo
    corto si allunga il pezzo nell'edl, si fa continuare il testo oltre lo stacco, oppure si
-   accorcia il testo. Mai il contrario, cioè mai stringere il testo sotto la soglia per far
-   tornare i tempi.
+   accorcia il testo. Mai ridurre il tempo a schermo sotto la soglia per far tornare la
+   durata del video.
 
 ## Prima di montare: domande a risposta rapida
 
