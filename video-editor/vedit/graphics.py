@@ -8,8 +8,8 @@ Lo schema dei beat e' in docs/PIANO.md.
 """
 import re, shutil
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
-from .common import Job, ff, die, duration, load, W, H, VENC, FONTS
-from . import captions
+from .common import Job, ff, die, duration, load, W, H, SR, VENC, AENC, FONTS
+from . import captions, fx
 
 SAFE_X = 80          # margine laterale: a destra TikTok mette i pulsanti
 TOP = 250            # sopra ci sono "Seguiti / Per te"
@@ -108,7 +108,7 @@ def b_hook(img, b, br):
     hb, hf = (c['light'], c['primary']) if b.get('full') else (c['primary'], c['light'])
     y = text_block(img, W / 2, y, b['text'].upper(), f, W - 2 * SAFE_X, c['light'], hb, hf, gap=1.08)
     if b.get('sub'):
-        text_block(img, W / 2, y + 20, b['sub'], font(br['font_files']['body'], 50), W - 2 * SAFE_X,
+        text_block(img, W / 2, y + 20, b['sub'], font(br['font_files']['body'], b.get('sub_size', 58)), W - 2 * SAFE_X,
                    c['light'], hb, hf)
 
 
@@ -300,8 +300,10 @@ def cmd_gfx(a):
     if not base.exists():
         die('manca il montato: lancia prima py ve.py cut ' + a.job)
     total = duration(base)
+    plan = load(job.dir / 'plan.json', {})
+    src = fx.render(job, plan['fx']) if plan.get('fx') else 'cut.mp4'
     beats = render_beats(job, total)
-    inputs, chain, last = ['-i', 'cut.mp4'], [], '0:v'
+    inputs, chain, last = ['-i', src], [], '0:v'
     for k, g in enumerate(beats, 1):
         inputs += ['-loop', 1, '-framerate', 30, '-t', f"{g['e']:.3f}", '-i', f"gfx/{g['png']}"]
         s, e = g['s'], g['e']
@@ -325,6 +327,13 @@ def cmd_gfx(a):
     else:
         chain.append(f'[{last}]null[vout]')
     job.w('compose_filter.txt').write_text(';\n'.join(chain), encoding='utf-8')
-    ff([*inputs, '-filter_complex', ';'.join(chain), '-map', '[vout]', '-map', '0:a',
-        *VENC, '-c:a', 'copy', '-t', f'{total:.3f}', 'composite.mp4'], cwd=job.work)
-    print(f'Composto: {job.w("composite.mp4")}  ({len(beats)} grafiche, sottotitoli: {"si" if use_caps else "no"})')
+    if plan.get('mute'):
+        # versione muta: traccia silenziosa invece dell'audio originale (TikTok vuole comunque un audio)
+        inputs += ['-f', 'lavfi', '-t', f'{total:.3f}', '-i', f'anullsrc=r={SR}:cl=stereo']
+        audio = [f'{len(beats) + 1}:a', *AENC]
+    else:
+        audio = ['0:a', '-c:a', 'copy']
+    ff([*inputs, '-filter_complex', ';'.join(chain), '-map', '[vout]', '-map', audio[0],
+        *VENC, *audio[1:], '-t', f'{total:.3f}', 'composite.mp4'], cwd=job.work)
+    print(f'Composto: {job.w("composite.mp4")}  ({len(beats)} grafiche, sottotitoli: {"si" if use_caps else "no"}'
+          f'{", muto" if plan.get("mute") else ""})')

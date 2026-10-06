@@ -50,3 +50,37 @@ scuro), `light` (bianco), `dark` (nero).
   che lo introduce e resta finché se ne parla. Il volto resta nella metà bassa.
 - Una grafica entra **sulla parola** (tempo `s` in `words_cut.json`), non a caso.
 - Due grafiche nella stessa zona non si sovrappongono mai nel tempo.
+
+## Effetti sul video — voce `"fx"`
+
+Girano dentro `gfx`, prima delle grafiche, e si ricalcolano solo se cambiano.
+`"mute": true` nel piano toglie l'audio (versione muta, traccia silenziosa).
+
+```json
+"fx": {
+  "grade": true,
+  "moves": [
+    {"type": "punch", "at": 0.0, "amount": 0.18},
+    {"type": "flash", "at": 0.9},
+    {"type": "zoom",  "start": 1.6, "end": 3.0, "to": 1.45,
+     "at": [[1.4, 0.51, 0.55], [2.2, 0.66, 0.58], [3.0, 0.45, 0.48]]}
+  ]
+}
+```
+
+| tipo | effetto | campi |
+|---|---|---|
+| `zoom` | entra sul dettaglio e resta (`out: true` per uscire) | `start`, `end`, `to`, `ramp`, `at` |
+| `push` | avvicinamento lento per tutta la durata | `start`, `end`, `from`, `to`, `at` |
+| `punch` | colpo di zoom sullo stacco, si apre in `dur` | `at`, `amount`, `dur` |
+| `shake` | tremolio | `start`, `end`, `amp` (px) |
+| `flash` | lampo bianco, picco su `at` | `at`, `dur`, `peak` |
+| `glitch` | sdoppiamento dei colori | `start`, `end`, `amp` (px) |
+
+- `at` è il punto da inquadrare (0–1 sul fotogramma): `[x, y]` fisso, oppure
+  `[[t, x, y], ...]` per seguire il dettaglio mentre la camera si muove. I punti si
+  leggono dai provini del montato (`check --src cut`); poi si verifica sui provini del
+  composto che il dettaglio sia davvero al centro.
+- `grade` (default sì): un po' più di contrasto e saturazione, più nitidezza, vignetta.
+- Su video compressi (WhatsApp) non superare zoom 1,4–1,5: oltre si vedono i quadretti.
+- Stacchi tipici: `flash` + `punch` sullo stesso istante.

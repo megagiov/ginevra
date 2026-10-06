@@ -73,6 +73,12 @@ Scrivi `projects/NOME/plan.json` seguendo **`video-editor/docs/PIANO.md`** (tipi
 zone sicure, ritmo). I tempi li prendi da `work/words_cut.json`, che è già sulla timeline
 del montato: ogni grafica entra sulla parola che la introduce.
 
+Nello stesso file, alla voce `"fx"`, vanno gli **effetti sul video**: zoom che seguono un
+dettaglio, colpo di zoom e flash sugli stacchi, tremolio, glitch, colore (schema in
+fondo a `PIANO.md`). Per una **versione muta** aggiungi `"mute": true`. Su riprese senza
+voce di prodotti: veduta d'insieme come aggancio, poi un primo piano per prodotto con
+un'etichetta (colore/nome) e uno zoom su un dettaglio, e chiusura con una domanda o la CTA.
+
 ### 4. Secondo passaggio (con l'utente)
 ```
 py ve.py gfx NOME
