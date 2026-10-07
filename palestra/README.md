@@ -14,7 +14,8 @@ il pannello di registrazione, premi + o − e registri. Tre tocchi.
 
 - **L'allenamento parte da solo** con la prima serie: nessun pulsante "Inizia"
   da ricordarsi. Si chiude da solo dopo 15 minuti che non registri niente (il
-  tempo e' regolabile in **Altro**).
+  tempo e' regolabile in **Altro**). Prima della prima serie aspetta fino a 2
+  ore: spogliatoio e riscaldamento non lo chiudono.
 - Se si chiude mentre ti stai ancora allenando — capita, un recupero lungo
   basta — in cima al pannello compare **Riprendi**, che lo riapre dov'era
   invece di spezzarlo in due nello storico.
@@ -26,8 +27,12 @@ il pannello di registrazione, premi + o − e registri. Tre tocchi.
 
 - **Pulsanti + e − grandi** per peso e ripetizioni, a passi di 2,5 kg
   (regolabili). Se tocchi il numero si apre la tastiera per il valore esatto.
-- **Schede** (Push / Pull / Gambe gia' pronte): quando ne apri una, i suoi
-  esercizi vanno in cima al pannello sotto "Ancora da fare".
+- **Schede** (Push / Pull / Gambe gia' pronte): entri nella scheda, tocchi
+  l'esercizio e registri subito, oppure premi **Allenati** e si apre il primo
+  ancora da fare. L'allenamento parte da solo con quella scheda; ogni
+  esercizio mostra le serie fatte su quelle previste e si spunta quando lo
+  finisci. Frecce, matita e X per cambiarla stanno dietro a **Modifica**. Gli
+  esercizi della scheda compaiono anche in Oggi, sotto "Ancora da fare".
 - **876 esercizi con foto**, ricercabili in italiano ("panca", "stacco",
   "trazioni"), ognuno con un riassunto in italiano di come si esegue.
 - **Testo grande**, da leggere a un braccio di distanza fra una serie e

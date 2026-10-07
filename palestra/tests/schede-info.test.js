@@ -70,10 +70,16 @@ const check = (n, c, x) => { if (!c) bad++; console.log((c ? '  ok  ' : ' FAIL '
   console.log('\n== apro una scheda ad allenamento gia iniziato ==');
   await p.locator('#tabbar button[data-view="schede"]').click();
   await p.waitForTimeout(700);
-  const et = await p.locator('[data-act="start-routine"]').first().innerText();
-  check('il pulsante dice che si aggiunge all allenamento in corso', /in corso/i.test(et), et);
+  await p.locator('[data-act="routine-open"]', { hasText: 'Push' }).click();
+  await p.waitForTimeout(500);
+  const et = await p.locator('.scheda-nota').innerText().catch(() => '');
+  check('la scheda dice che si aggiunge all allenamento in corso', /in corso/i.test(et), et);
   await p.locator('[data-act="start-routine"]').first().click();
   await p.waitForTimeout(1200);
+  const primo = await p.locator('#modal-title').innerText().catch(() => '');
+  check('Allenati apre la panca, gia iniziata ma non finita', /panca piana/i.test(primo), primo);
+  await p.locator('[data-act="close-log"]').click();
+  await p.waitForTimeout(400);
   const n = await p.evaluate(async () => {
     const db = await new Promise((r) => { const q = indexedDB.open('palestra'); q.onsuccess = () => r(q.result); });
     const all = await new Promise((r) => { const q = db.transaction('sessions').objectStore('sessions').getAll(); q.onsuccess = () => r(q.result); });
@@ -81,6 +87,8 @@ const check = (n, c, x) => { if (!c) bad++; console.log((c ? '  ok  ' : ' FAIL '
   });
   check('niente secondo allenamento: resta uno solo', n.totali === 1 && n.aperte === 1, JSON.stringify(n));
   check('la sessione prende il nome della scheda', (await p.locator('.session-bar').innerText()).includes('Push'));
+  await p.locator('#tabbar button[data-view="oggi"]').click();
+  await p.waitForTimeout(700);
   const g = await p.evaluate(() => Array.from(document.querySelectorAll('.group-title')).map((e) => e.textContent.trim().toLowerCase()));
   check('la panca gia fatta resta in "Fatti oggi", il resto della scheda in "Ancora da fare"', g[0].startsWith('fatti oggi') && g[1].startsWith('ancora da fare'), JSON.stringify(g.slice(0, 3)));
 

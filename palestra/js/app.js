@@ -15,6 +15,8 @@ const App = (function () {
     bestPrior: {},
     lastUsed: {},          // exerciseId -> quando l'hai toccato l'ultima volta
     muscleFilter: '',
+    routineOpen: null,     // scheda in cui sei entrato (vista Schede)
+    routineEdit: null,     // scheda aperta in modifica
     logExId: null,         // esercizio aperto nel pannello di registrazione
     resumable: null,       // sessione chiusa da poco che si puo' riprendere
     progressEx: null,
@@ -37,12 +39,13 @@ const App = (function () {
     try {
       const m = JSON.parse(localStorage.getItem(MEM_KEY) || '{}');
       if (typeof m.muscleFilter === 'string') state.muscleFilter = m.muscleFilter;
+      if (typeof m.routineOpen === 'string') state.routineOpen = m.routineOpen;
       if (m.pick && typeof m.pick === 'object') state.pick = Object.assign(state.pick, m.pick);
     } catch (e) { /* niente memoria: si riparte dai valori normali */ }
   }
   function memSave() {
     try {
-      localStorage.setItem(MEM_KEY, JSON.stringify({ muscleFilter: state.muscleFilter, pick: state.pick }));
+      localStorage.setItem(MEM_KEY, JSON.stringify({ muscleFilter: state.muscleFilter, pick: state.pick, routineOpen: state.routineOpen }));
     } catch (e) { /* navigazione privata o spazio pieno */ }
   }
   const $$ = (sel, root) => Array.prototype.slice.call((root || document).querySelectorAll(sel));
@@ -430,13 +433,21 @@ const App = (function () {
     return t;
   }
 
+  // Dopo quanto tempo fermo l'allenamento si chiude da solo. Prima della
+  // prima serie si aspetta fino a due ore: fra l'avvio della scheda e la
+  // prima serie ci stanno spogliatoio e riscaldamento, e chiudere dopo 15
+  // minuti faceva sparire la scheda prima di cominciare.
+  function closeLimit(sets) {
+    const limit = (state.settings.autoCloseMinutes || 15) * 60000;
+    return sets && sets.length ? limit : Math.max(limit, 2 * 3600000);
+  }
+
   function loadSession() {
     return DB.activeSession().then((s) => {
       if (!s) return finishLoad(null, []);
       return DB.setsOfSession(s.id).then((sets) => {
-        const limit = (state.settings.autoCloseMinutes || 15) * 60000;
         const idle = Date.now() - lastActivity(s, sets);
-        if (idle > limit) {
+        if (idle > closeLimit(sets)) {
           // La chiudo all'ora dell'ultima serie, non adesso: cosi' la durata
           // nello storico resta quella vera.
           s.endedAt = lastActivity(s, sets);
@@ -661,38 +672,129 @@ const App = (function () {
 
   /* ================= vista: Schede ================= */
 
+  // Prima le schede erano tutte aperte una sotto l'altra, buone solo per
+  // modificarle: gli esercizi non si toccavano e "Allenati" stava in fondo,
+  // fuori dallo schermo. Adesso si entra in una scheda e ci si allena da li'.
   function viewSchede() {
-    let h = '<button class="btn primary wide" data-act="routine-new" type="button">' + icon('plus') + ' Nuova scheda</button>';
+    const aperta = state.routines.filter((r) => r.id === state.routineOpen)[0];
+    if (aperta) return viewScheda(aperta);
+
+    let h = state.session ? sessionBar() : '';
+    h += '<button class="btn primary wide" data-act="routine-new" type="button">' + icon('plus') + ' Nuova scheda</button>';
     if (!state.routines.length) return h + '<p class="empty">Nessuna scheda. Creane una con gli esercizi che ripeti sempre.</p>';
 
+    h += '<ul class="ex-list">';
     state.routines.forEach((r) => {
-      h += '<section class="card"><div class="row between"><h3>' + esc(r.name) + '</h3><div class="row gap">' +
-        '<button class="icon-btn" data-act="routine-rename" data-id="' + r.id + '" aria-label="Rinomina" type="button">' + icon('pencil') + '</button>' +
-        '<button class="icon-btn danger" data-act="routine-del" data-id="' + r.id + '" aria-label="Elimina" type="button">' + icon('trash') + '</button>' +
-        '</div></div>';
-      if (!(r.items || []).length) {
-        h += '<p class="muted">Ancora nessun esercizio.</p>';
-      } else {
-        h += '<ol class="list ordered">';
-        r.items.forEach((it, i) => {
-          const ex = state.exMap[it.exerciseId];
-          h += '<li><div style="flex:1;min-width:0"><b>' + esc(ex ? ex.name : 'Esercizio rimosso') + '</b>' +
-            '<div class="muted small">' + esc(it.sets) + ' × ' + esc(it.reps) + '</div></div><div class="row gap">' +
-            '<button class="icon-btn" data-act="item-up" data-id="' + r.id + '" data-i="' + i + '" aria-label="Su" type="button"' + (i === 0 ? ' disabled' : '') + '>' + icon('up') + '</button>' +
-            '<button class="icon-btn" data-act="item-down" data-id="' + r.id + '" data-i="' + i + '" aria-label="Giu" type="button"' + (i === r.items.length - 1 ? ' disabled' : '') + '>' + icon('down') + '</button>' +
-            '<button class="icon-btn" data-act="item-edit" data-id="' + r.id + '" data-i="' + i + '" aria-label="Serie e ripetizioni" type="button">' + icon('pencil') + '</button>' +
-            '<button class="icon-btn danger" data-act="item-del" data-id="' + r.id + '" data-i="' + i + '" aria-label="Togli" type="button">' + icon('close') + '</button>' +
-            '</div></li>';
-        });
-        h += '</ol>';
-      }
-      h += '<div class="row gap wrap"><button class="btn" data-act="routine-add-ex" data-id="' + r.id + '" type="button">' +
-        icon('plus', 'sm') + ' Esercizio</button>' +
-        '<button class="btn primary" data-act="start-routine" data-id="' + r.id + '" type="button">' +
-          (state.session ? 'Aggiungi all\u2019allenamento in corso' : 'Allenati con questa') + '</button>' +
-        '</div></section>';
+      const nomi = (r.items || []).map((it) => state.exMap[it.exerciseId]).filter(Boolean).map((e) => e.name);
+      h += '<li class="ex-row routine-row" data-act="routine-open" data-id="' + r.id + '">' +
+        '<span class="ex-row-main">' +
+          '<span class="ex-name">' + esc(r.name) + '</span>' +
+          '<span class="ex-last">' + (nomi.length
+            ? nomi.length + (nomi.length === 1 ? ' esercizio' : ' esercizi') + ' · ' + esc(nomi.join(', '))
+            : 'ancora vuota') + '</span>' +
+          (schedaInCorso(r) ? '<span class="ex-meta in-corso">in corso</span>' : '') +
+        '</span>' +
+        '<span class="ex-go">' + icon('go') + '</span></li>';
     });
+    return h + '</ul>';
+  }
+
+  // Dentro la scheda: gli esercizi si toccano e si registra subito.
+  // Frecce, matita e X stanno dietro a "Modifica".
+  function viewScheda(r) {
+    const items = (r.items || []).filter((it) => state.exMap[it.exerciseId]);
+    const modifica = state.routineEdit === r.id || !items.length;
+
+    let h = state.session ? sessionBar() : '';
+    h += '<div class="row between scheda-head">' +
+      '<button class="btn" data-act="routine-close" type="button">' + icon('go', 'sm back') + ' Schede</button>' +
+      (items.length
+        ? '<button class="btn" data-act="routine-edit" data-id="' + r.id + '" type="button">' +
+          (modifica ? icon('check', 'sm') + ' Fine modifiche' : icon('pencil', 'sm') + ' Modifica') + '</button>'
+        : '') +
+      '</div>';
+    h += '<h2 class="scheda-title">' + esc(r.name) + '</h2>';
+
+    if (modifica) return h + schedaModifica(r);
+
+    const inCorso = schedaInCorso(r);
+    const prossimo = prossimoDaFare(r);
+    if (inCorso && !prossimo) {
+      h += '<p class="hint">Scheda completata. Chiudi l’allenamento con <b>Termina</b>.</p>';
+    } else {
+      h += '<button class="btn primary huge" data-act="start-routine" data-id="' + r.id + '" type="button">' +
+        (inCorso ? 'Continua' : 'Allenati') + '</button>';
+      if (state.session && !inCorso) {
+        h += '<p class="muted small scheda-nota">Si aggiunge all’allenamento in corso.</p>';
+      }
+    }
+    h += '<ul class="ex-list">' + items.map((it) => schedaRow(r, it)).join('') + '</ul>';
     return h;
+  }
+
+  function schedaRow(r, it) {
+    const ex = state.exMap[it.exerciseId];
+    const thumb = thumbFor(ex);
+    const oggi = state.sets.filter((x) => x.exerciseId === ex.id);
+    const fatte = oggi.filter((x) => !x.warmup).length;
+    const obiettivo = Number(it.sets) || 0;
+    const fatto = obiettivo ? fatte >= obiettivo : fatte > 0;
+    const last = state.lastPerf[ex.id];
+    const meta = oggi.length ? 'oggi ' + describeSets(oggi)
+      : last ? 'ultima volta ' + describeSets(last.sets) : 'mai registrato';
+    return '<li class="ex-row' + (fatto ? ' done' : '') + '" data-act="routine-log" data-id="' + r.id +
+      '" data-ex="' + ex.id + '">' +
+      (thumb
+        ? '<img class="ex-thumb" src="' + esc(thumb) + '" alt="" loading="lazy" decoding="async">'
+        : '<span class="ex-thumb ph">' + icon('dumbbell') + '</span>') +
+      '<span class="ex-row-main">' +
+        '<span class="ex-name">' + esc(ex.name) + '</span>' +
+        '<span class="ex-last">' + esc(it.sets) + ' × ' + esc(it.reps) + '</span>' +
+        '<span class="ex-meta">' + esc(meta) + '</span>' +
+      '</span>' +
+      (fatte ? '<span class="ex-badge">' + (fatto ? icon('check', 'sm') : fatte + (obiettivo ? '/' + obiettivo : '')) + '</span>' : '') +
+      '<span class="ex-go">' + icon('go') + '</span></li>';
+  }
+
+  function schedaModifica(r) {
+    let h = '';
+    if (!(r.items || []).length) {
+      h += '<p class="muted">Ancora nessun esercizio: aggiungi quelli che fai sempre.</p>';
+    } else {
+      h += '<ol class="list ordered">';
+      r.items.forEach((it, i) => {
+        const ex = state.exMap[it.exerciseId];
+        h += '<li><div style="flex:1;min-width:0"><b>' + esc(ex ? ex.name : 'Esercizio rimosso') + '</b>' +
+          '<div class="muted small">' + esc(it.sets) + ' × ' + esc(it.reps) + '</div></div><div class="row gap">' +
+          '<button class="icon-btn" data-act="item-up" data-id="' + r.id + '" data-i="' + i + '" aria-label="Su" type="button"' + (i === 0 ? ' disabled' : '') + '>' + icon('up') + '</button>' +
+          '<button class="icon-btn" data-act="item-down" data-id="' + r.id + '" data-i="' + i + '" aria-label="Giu" type="button"' + (i === r.items.length - 1 ? ' disabled' : '') + '>' + icon('down') + '</button>' +
+          '<button class="icon-btn" data-act="item-edit" data-id="' + r.id + '" data-i="' + i + '" aria-label="Serie e ripetizioni" type="button">' + icon('pencil') + '</button>' +
+          '<button class="icon-btn danger" data-act="item-del" data-id="' + r.id + '" data-i="' + i + '" aria-label="Togli" type="button">' + icon('close') + '</button>' +
+          '</div></li>';
+      });
+      h += '</ol>';
+    }
+    return h + '<div class="row gap wrap scheda-azioni">' +
+      '<button class="btn primary" data-act="routine-add-ex" data-id="' + r.id + '" type="button">' + icon('plus', 'sm') + ' Esercizio</button>' +
+      '<button class="btn" data-act="routine-rename" data-id="' + r.id + '" type="button">' + icon('pencil', 'sm') + ' Rinomina</button>' +
+      '<button class="btn danger" data-act="routine-del" data-id="' + r.id + '" type="button">' + icon('trash', 'sm') + ' Elimina scheda</button>' +
+      '</div>';
+  }
+
+  // La scheda fa gia' parte dell'allenamento aperto?
+  function schedaInCorso(r) {
+    const s = state.session;
+    return !!s && (s.routineId === r.id || (s.plan || []).some((p) => p.routineId === r.id));
+  }
+
+  // Il primo esercizio della scheda che non hai ancora finito oggi.
+  function prossimoDaFare(r) {
+    return (r.items || []).filter((it) => {
+      if (!state.exMap[it.exerciseId]) return false;
+      const fatte = state.sets.filter((x) => x.exerciseId === it.exerciseId && !x.warmup).length;
+      const obiettivo = Number(it.sets) || 0;
+      return obiettivo ? fatte < obiettivo : fatte === 0;
+    })[0] || null;
   }
 
   /* ================= vista: Storico ================= */
@@ -871,7 +973,8 @@ const App = (function () {
       [15, 30, 60, 120, 240].map((v) => '<option value="' + v + '"' + (Number(s.autoCloseMinutes) === v ? ' selected' : '') +
         '>' + v + ' minuti' + (v === 15 ? ' (corto: un recupero lungo pu\u00f2 bastare a chiuderlo)' : '') + '</option>').join('') +
       '</select></label>' +
-      '<p class="muted small">Se si chiude mentre ti stai ancora allenando, il tasto Riprendi in cima al pannello lo riapre dov\u2019era.</p>' +
+      '<p class="muted small">Prima della prima serie aspetta fino a 2 ore, per lasciarti il tempo di cambiarti e scaldarti. ' +
+      'Se si chiude mentre ti stai ancora allenando, il tasto Riprendi in cima al pannello lo riapre dov\u2019era.</p>' +
       '</section>';
 
     h += '<section class="card"><h3>' + icon('pulse') + ' Battito cardiaco</h3>' +
@@ -963,6 +1066,15 @@ const App = (function () {
       return s;
     });
   }
+  // Entra in una scheda (o torna all'elenco con null).
+  function apriScheda(id) {
+    state.routineOpen = id;
+    state.routineEdit = null;
+    memSave();
+    render();
+    window.scrollTo(0, 0);
+  }
+
   const go = (view) => {
     state.scrollByView[state.view] = window.scrollY;
     state.view = view;
@@ -1677,24 +1789,42 @@ const App = (function () {
 
   // Se un allenamento e' gia' aperto la scheda si aggiunge a quello: prima ne
   // apriva un secondo e lasciava il primo aperto per sempre.
+  // Si resta nella scheda: e' da li' che ci si allena.
   function startRoutine(routineId) {
     const r = state.routines.filter((x) => x.id === routineId)[0];
-    if (!r) return;
+    if (!r) return Promise.resolve();
     const piano = (r.items || []).map((i) => ({ exerciseId: i.exerciseId, sets: i.sets, reps: i.reps, routineId: r.id }));
     const s = state.session;
     if (s) {
       s.plan = s.plan || [];
-      piano.forEach((pl) => { if (!s.plan.some((x) => x.exerciseId === pl.exerciseId)) s.plan.push(pl); });
+      const giaDentro = schedaInCorso(r);
+      const nuovi = piano.filter((pl) => !s.plan.some((x) => x.exerciseId === pl.exerciseId));
+      if (giaDentro && !nuovi.length) return Promise.resolve();
+      nuovi.forEach((pl) => s.plan.push(pl));
       s.routineId = s.routineId || r.id;
       if (!s.name || s.name === 'Allenamento' || s.name === 'Allenamento libero') s.name = r.name;
       return DB.put('sessions', s).then(() => {
-        state.view = 'oggi';
-        toast('Scheda aggiunta all\u2019allenamento in corso');
+        if (!giaDentro) toast('Scheda aggiunta all\u2019allenamento in corso');
         return refresh();
       });
     }
-    DB.startSession({ name: r.name, routineId: r.id, plan: piano })
-      .then(() => { state.view = 'oggi'; HR.resetLive(); toast('Buon allenamento'); return refresh(); });
+    return DB.startSession({ name: r.name, routineId: r.id, plan: piano })
+      .then(() => { HR.resetLive(); toast('Buon allenamento'); return refresh(); });
+  }
+
+  // Dalla scheda si registra subito: tocchi l'esercizio (o "Allenati" per
+  // il primo ancora da fare), l'allenamento parte con questa scheda se non
+  // era gia' partito, e si apre il pannello di registrazione.
+  function trainFromRoutine(routineId, exerciseId) {
+    const r = state.routines.filter((x) => x.id === routineId)[0];
+    if (!r) return;
+    state.routineOpen = r.id;
+    memSave();
+    startRoutine(r.id).then(() => {
+      const it = exerciseId ? { exerciseId } : prossimoDaFare(r);
+      if (it && state.exMap[it.exerciseId]) openLog(it.exerciseId);
+      else toast('Scheda completata');
+    });
   }
 
   // Mette l'esercizio in programma. Se non c'e' una sessione aperta non la
@@ -1894,7 +2024,22 @@ const App = (function () {
         DB.startSession({ name: 'Allenamento libero' }).then(() => { state.view = 'oggi'; HR.resetLive(); return refresh(); });
         break;
       case 'start-routine':
-        startRoutine(id);
+        Rest.unlock();
+        trainFromRoutine(id, null);
+        break;
+      case 'routine-log':
+        Rest.unlock();
+        trainFromRoutine(id, t.dataset.ex);
+        break;
+      case 'routine-open':
+        apriScheda(id);
+        break;
+      case 'routine-close':
+        apriScheda(null);
+        break;
+      case 'routine-edit':
+        state.routineEdit = state.routineEdit === id ? null : id;
+        render();
         break;
       case 'end-session': {
         if (!confirm('Chiudere l\u2019allenamento?')) break;
@@ -1950,7 +2095,8 @@ const App = (function () {
       case 'routine-new': {
         const name = prompt('Nome della scheda', 'Nuova scheda');
         if (!name) break;
-        DB.createRoutine(name).then(() => loadCore()).then(render);
+        DB.createRoutine(name)
+          .then((r) => loadCore().then(() => { apriScheda(r.id); state.routineEdit = r.id; render(); }));
         break;
       }
       case 'routine-rename': {
@@ -1963,7 +2109,7 @@ const App = (function () {
       }
       case 'routine-del':
         if (!confirm('Eliminare la scheda? Gli allenamenti registrati restano.')) break;
-        DB.del('routines', id).then(() => loadCore()).then(render);
+        DB.del('routines', id).then(() => loadCore()).then(() => apriScheda(null));
         break;
       case 'routine-add-ex':
         pickExerciseModal((exId) => addExerciseToRoutine(id, exId), 'Aggiungi alla scheda');
@@ -2133,7 +2279,11 @@ const App = (function () {
 
     $('#tabbar').addEventListener('click', (ev) => {
       const b = ev.target.closest('button[data-view]');
-      if (b) { Rest.unlock(); go(b.dataset.view); }
+      if (!b) return;
+      Rest.unlock();
+      // Toccare Schede quando sei gia' in Schede riporta all'elenco.
+      if (b.dataset.view === 'schede' && state.view === 'schede' && state.routineOpen) apriScheda(null);
+      else go(b.dataset.view);
     });
 
     $('#modal-close').addEventListener('click', () => { pickHandler = null; pickTitle = null; closeModal(); });
@@ -2150,8 +2300,7 @@ const App = (function () {
       if (line && state.session) line.textContent = sessionStatsLine();
       // Se resti fermo troppo a lungo l'allenamento si chiude da solo.
       if (state.session) {
-        const limit = (state.settings.autoCloseMinutes || 15) * 60000;
-        if (Date.now() - lastActivity(state.session, state.sets) > limit) refresh();
+        if (Date.now() - lastActivity(state.session, state.sets) > closeLimit(state.sets)) refresh();
       }
     }, 30000);
 
