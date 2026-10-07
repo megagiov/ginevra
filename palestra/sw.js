@@ -8,7 +8,7 @@
  *
  * VERSION e DATA_VERSION li scrive tools/versione.js: sono l'impronta dei
  * file. Se non cambiano, il telefono non scarica mai la versione nuova. */
-const VERSION = '3dcab2c49d';
+const VERSION = '15c0bae082';
 const DATA_VERSION = '30ce017edc';
 const SHELL = 'palestra-shell-' + VERSION;
 const DATA = 'palestra-data-' + DATA_VERSION;

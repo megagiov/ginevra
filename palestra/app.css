@@ -1128,3 +1128,30 @@ textarea { min-height: 80px; resize: vertical; }
   opacity: 0;
   pointer-events: none;
 }
+
+/* ============================================================
+   Schede: si entra in una scheda e ci si allena da li'.
+   ============================================================ */
+
+.routine-row { min-height: 96px; padding: var(--s3) var(--s4); }
+.routine-row .ex-meta.in-corso { color: var(--accent); font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+
+.scheda-head { margin-bottom: var(--s3); }
+.scheda-head .btn { display: inline-flex; align-items: center; gap: var(--s1); }
+.ico.back { transform: rotate(180deg); }
+.scheda-title {
+  font-family: var(--font-head);
+  font-size: 1.9rem;
+  line-height: 1.1;
+  text-transform: uppercase;
+  margin: 0 0 var(--s2);
+  overflow-wrap: anywhere;
+}
+.scheda-nota { margin: calc(var(--s2) * -1) 0 var(--s3); text-align: center; }
+.scheda-azioni { margin-top: var(--s3); }
+
+/* esercizio finito: resta toccabile (una serie in piu' si puo' sempre fare)
+   ma si vede che e' fatto */
+.ex-row.done { border-color: color-mix(in srgb, var(--accent) 55%, var(--border)); }
+.ex-row.done .ex-name { color: var(--fg-muted); }
+.ex-badge .ico { width: 18px; height: 18px; }
