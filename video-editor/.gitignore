@@ -4,3 +4,5 @@ fonts/
 music/*
 !music/LEGGIMI.md
 __pycache__/
+grezzi/*
+!grezzi/LEGGIMI.md
