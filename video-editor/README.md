@@ -20,6 +20,11 @@ fotogrammi e ti mostra il risultato.
 
 ## Come si usa
 
+Metti il video del telefono (e le eventuali foto dei prodotti) in
+`video-editor\grezzi\`: per aprirla, da PowerShell nella cartella `ginevra` scrivi
+`explorer video-editor\grezzi`. Non c'è limite di peso. Poi in Claude Code basta scrivere
+"monta il nuovo video".
+
 Apri Claude Code nella cartella del repository e scrivi, per esempio:
 
 > Monta per TikTok il video in C:\Users\Marco\Desktop\tute.mp4. In sovrimpressione:

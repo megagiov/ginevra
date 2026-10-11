@@ -39,6 +39,10 @@ seguendo il suggerimento prima di andare avanti.
 domande già pronte, a scelta multipla, così risponde in pochi tocchi. Mai domande aperte
 quando si possono dare delle opzioni.
 
+Dove sono i file: se l'utente non dà un percorso ("monta il nuovo video"), prendili da
+`video-editor/grezzi/` (i più recenti, o la sottocartella più recente). Elenca cosa hai
+trovato (nome, durata, peso) e chiedi conferma con una domanda a scelta.
+
 Come:
 1. **Prima guarda il materiale.** Importa e apri i provini (`check --src source --every 0.7`):
    le opzioni devono nascere da ciò che c'è davvero nel video ("le 3 ciabatte in basso",
