@@ -88,7 +88,7 @@ def trova_prodotto(img, log=print):
         buoni.append((area, y0, y1, x0, x1))
     if not buoni:
         log('non trovo la foto del prodotto: uso tutta la pagina')
-        return (0, 0) + img.size
+        return (0, 0) + img.size, (0, 0) + img.size
     buoni.sort(reverse=True)
     grande = buoni[0][0]
     # si parte dal pezzo piu' grande e si aggiungono quelli grossi che lo
@@ -108,11 +108,14 @@ def trova_prodotto(img, log=print):
                 y0, y1 = min(y0, b[1]), max(y1, b[2])
                 x0, x1 = min(x0, b[3]), max(x1, b[4])
                 cambiato = True
-    m = 3  # un filo di fondo attorno, in celle
+    m = 6  # un po' di fondo attorno, in celle
     box = (max(0, (x0 - m) * passo), max(0, (y0 - m) * passo),
            min(img.width, (x1 + m) * passo), min(img.height, (y1 + m) * passo))
-    log(f'prodotto in {box}, {len(tenuti)} pezzi')
-    return box
+    # il riquadro stretto, con appena un filo: fuori da qui non c'e' prodotto
+    stretto = (max(0, (x0 - 1) * passo), max(0, (y0 - 1) * passo),
+               min(img.width, (x1 + 1) * passo), min(img.height, (y1 + 1) * passo))
+    log(f'prodotto in {stretto}, {len(tenuti)} pezzi')
+    return box, stretto
 
 
 def su_tela(rgba, lato=800, margine=0.045, sfondo=(255, 255, 255)):
@@ -131,9 +134,21 @@ def su_tela(rgba, lato=800, margine=0.045, sfondo=(255, 255, 255)):
 
 
 def da_cartellino(img, lato=800, sfondo=(255, 255, 255), modo='misto', log=print):
-    box = trova_prodotto(img, log=log)
+    box, stretto = trova_prodotto(img, log=log)
     pezzo = img.crop(box)
-    out, strada = S.scontorna(pezzo, modo=modo, ombra='via', log=log)
+    # sul cartellino non ci sono ombre vere: col test dell'ombra un prodotto
+    # grigio sembrerebbe ombra e perderebbe i bordi
+    out, strada = S.scontorna(pezzo, modo=modo, ombra='tieni', log=log)
+    # il ritaglio largo serve a non tagliare il prodotto, ma puo' prendere il
+    # bordo del cartellino o un pezzo di testo: quello fuori dal riquadro
+    # stretto si cancella
+    a = np.asarray(out.getchannel('A')).copy()
+    sx0, sy0 = stretto[0] - box[0], stretto[1] - box[1]
+    sx1, sy1 = stretto[2] - box[0], stretto[3] - box[1]
+    tieni = np.zeros_like(a, bool)
+    tieni[sy0:sy1, sx0:sx1] = True
+    a[~tieni] = 0
+    out.putalpha(Image.fromarray(a, 'L'))
     return su_tela(out, lato=lato, sfondo=sfondo), strada
 
 
