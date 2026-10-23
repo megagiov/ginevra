@@ -15,7 +15,7 @@ if not exist "venv\Scripts\python.exe" (
   %PY% -m venv venv || goto storto
 )
 
-echo   [2/3] installo Pillow, numpy e onnxruntime...
+echo   [2/3] installo Pillow, numpy, onnxruntime e il lettore PDF...
 venv\Scripts\python -m pip install --quiet --upgrade pip
 venv\Scripts\python -m pip install --quiet -r requirements.txt || goto storto
 

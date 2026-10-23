@@ -69,6 +69,18 @@ Ci si possono anche **trascinare le foto sopra l'icona**: partono da sole.
 Se il Python installato è senza `tkinter` (capita con certe versioni dallo
 Store), l'icona apre la stessa cosa nel browser invece che in una finestra.
 
+## Dal cartellino scansionato
+
+Bottone **Da cartellino…** nella finestra (prende PDF o foto dello scanner).
+Trova la foto del prodotto stampata sul cartellino, scarta logo, QR e testi,
+toglie il fondo e la mette centrata su una tela bianca quadrata: 800×800 JPG,
+pronta per il sito. La riga **misura** cambia il lato della tela.
+
+```bash
+./venv/bin/python cartellino.py scansione.pdf            # -> scansione-sito.jpg
+./venv/bin/python cartellino.py *.pdf -o sito/ --misura 1000
+```
+
 ## Cambio formato
 
 Lo stesso programma converte e basta, senza toccare lo sfondo: il bottone

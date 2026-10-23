@@ -105,6 +105,12 @@ class Finestra:
                                   font=('Segoe UI', 11), relief='flat',
                                   cursor='hand2', pady=14, padx=14)
         self.bottone2.pack(side='left', padx=(8, 0))
+        self.bottone3 = tk.Button(bottoni, text='Da cartellino…',
+                                  command=lambda: self.scegli('cartellino'),
+                                  bg='#e8e8e4', fg=INCHIOSTRO, activebackground='#e8e8e4',
+                                  font=('Segoe UI', 11), relief='flat',
+                                  cursor='hand2', pady=14, padx=14)
+        self.bottone3.pack(side='left', padx=(8, 0))
         tk.Label(root, text='o trascina le foto sopra l’icona sul desktop', bg=FONDO,
                  fg=TENUE, font=('Segoe UI', 9)).pack()
 
@@ -218,9 +224,10 @@ class Finestra:
     def scegli(self, modo):
         import converti as C
         files = filedialog.askopenfilenames(
-            title='Scegli le foto da scontornare' if modo == 'scontorna'
-                  else 'Scegli le foto da convertire',
-            filetypes=[('Immagini', ' '.join('*' + e for e in C.LEGGIBILI)),
+            title={'scontorna': 'Scegli le foto da scontornare',
+                   'cartellino': 'Scegli le scansioni dei cartellini'}.get(
+                       modo, 'Scegli le foto da convertire'),
+            filetypes=[('Immagini e PDF', ' '.join('*' + e for e in C.LEGGIBILI) + ' *.pdf'),
                        ('Tutti i file', '*.*')])
         if files:
             self.accoda(list(files), modo)
@@ -246,6 +253,7 @@ class Finestra:
             self.al_lavoro = True
             self.bottone.configure(state='disabled', text='sto lavorando…')
             self.bottone2.configure(state='disabled')
+            self.bottone3.configure(state='disabled')
             self.avanzamento.pack(fill='x', padx=22, pady=(2, 8), before=self.stato.master)
             self.fatte = 0
             self.inizio = time.time()
@@ -260,7 +268,7 @@ class Finestra:
             self._segnala(f'{os.path.basename(src)} …',
                           avanzamento=(self.fatte, totale),
                           stato=('preparo il modello, solo la prima volta'
-                                 if primo and self.modo == 'scontorna'
+                                 if primo and self.modo != 'converti'
                                  else f'{self.fatte + 1} di {totale}'))
             primo = False
             t = time.time()
@@ -268,7 +276,18 @@ class Finestra:
             try:
                 opz = self.opzioni
                 formato, sfondo = opz['formato'], opz['sfondo']
-                if self.modo == 'scontorna':
+                if self.modo == 'cartellino':
+                    import cartellino as K
+                    lato = max(opz['misura']) if opz['misura'] else 800
+                    if formato not in ('JPG', 'WEBP', 'PNG', 'AVIF'):
+                        formato = 'JPG'
+                    for i, pagina in enumerate(K.apri_scansione(src)):
+                        out, strada = K.da_cartellino(pagina, lato, sfondo or (255, 255, 255),
+                                                      log=lambda *x: None)
+                        dest = self._salva(out, src, formato,
+                                           '-sito' + (f'-{i+1}' if i else ''))
+                    nota = f'   {strada}, {out.width}×{out.height}, {time.time() - t:.1f}s'
+                elif self.modo == 'scontorna':
                     import scontorno as S
                     out, strada = S.scontorna(C.apri(src),
                                               ombra=opz['ombra'],
@@ -341,6 +360,7 @@ class Finestra:
             self.al_lavoro = False
             self.bottone.configure(state='normal', text='Scontorna le foto…')
             self.bottone2.configure(state='normal')
+            self.bottone3.configure(state='normal')
             self.avanzamento.pack_forget()
             quante = self.fatte
             durata = time.time() - self.inizio
