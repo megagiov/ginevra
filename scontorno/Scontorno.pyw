@@ -142,6 +142,18 @@ class Finestra:
         tk.Label(mis, text='vuoto = le lascia come sono; non ingrandisce mai',
                  bg=FONDO, fg=TENUE, font=('Segoe UI', 9)).pack(side='left')
 
+        prec = tk.Frame(root, bg=FONDO); prec.pack(fill='x', padx=22, pady=(0, 4))
+        tk.Label(prec, text='precisione cartellini', bg=FONDO, fg=TENUE,
+                 font=('Segoe UI', 9)).pack(side='left', padx=(0, 5))
+        self.precisione = tk.IntVar(value=int(self.scelte.get('precisione', 7)))
+        tk.Scale(prec, from_=1, to=10, orient='horizontal', variable=self.precisione,
+                 length=170, showvalue=True, bg=FONDO, fg=INCHIOSTRO,
+                 highlightthickness=0, troughcolor='#e8e8e4', relief='flat',
+                 font=('Segoe UI', 9),
+                 command=lambda _: self.ricorda()).pack(side='left')
+        tk.Label(prec, text='alza se taglia il prodotto (capi chiari), abbassa se lascia sporco',
+                 bg=FONDO, fg=TENUE, font=('Segoe UI', 9)).pack(side='left', padx=(8, 0))
+
         dove = tk.Frame(root, bg=FONDO); dove.pack(fill='x', padx=22, pady=(0, 4))
         tk.Label(dove, text='le salvo in', bg=FONDO, fg=TENUE,
                  font=('Segoe UI', 9)).pack(side='left', padx=(0, 5))
@@ -217,7 +229,8 @@ class Finestra:
         scrivi_scelte({'cartella': self.cartella, 'formato': self.formato.get(),
                        'ombra': self.ombra.get(), 'sfondo': self.sfondo.get(),
                        'ritaglia': bool(self.ritaglia.get()),
-                       'misura': self.misura.get().strip(), 'come': self.come.get()})
+                       'misura': self.misura.get().strip(), 'come': self.come.get(),
+                       'precisione': int(self.precisione.get())})
 
     # ------------------------------------------------------------ lavoro
 
@@ -244,6 +257,7 @@ class Finestra:
         # fatto per essere interrogato da un altro thread e prima o poi si pianta
         self.opzioni = dict(formato=FORMATI[self.formato.get()],
                             ombra=OMBRE[self.ombra.get()],
+                            precisione=int(self.precisione.get()),
                             sfondo=SFONDI[self.sfondo.get()],
                             ritaglia=bool(self.ritaglia.get()),
                             misura=misura, tela=MISURE[self.come.get()],
@@ -283,10 +297,12 @@ class Finestra:
                         formato = 'JPG'
                     for i, pagina in enumerate(K.apri_scansione(src)):
                         out, strada = K.da_cartellino(pagina, lato, sfondo or (255, 255, 255),
-                                                      log=lambda *x: None)
+                                                      log=lambda *x: None,
+                                                      precisione=opz['precisione'])
                         dest = self._salva(out, src, formato,
                                            '-sito' + (f'-{i+1}' if i else ''))
-                    nota = f'   {strada}, {out.width}×{out.height}, {time.time() - t:.1f}s'
+                    nota = (f'   precisione {opz["precisione"]}, {out.width}×{out.height}, '
+                            f'{time.time() - t:.1f}s')
                 elif self.modo == 'scontorna':
                     import scontorno as S
                     out, strada = S.scontorna(C.apri(src),

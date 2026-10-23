@@ -76,9 +76,15 @@ Trova la foto del prodotto stampata sul cartellino, scarta logo, QR e testi,
 toglie il fondo e la mette centrata su una tela bianca quadrata: 800×800 JPG,
 pronta per il sito. La riga **misura** cambia il lato della tela.
 
+Il cursore **precisione cartellini** (1-10, di partenza 7) regola quanto deve
+staccarsi un pixel dal bianco del cartellino per contare come prodotto:
+alzalo se un capo chiaro (bianco, grigio melange) esce tagliato, abbassalo se
+attorno resta sporco della scansione.
+
 ```bash
 ./venv/bin/python cartellino.py scansione.pdf            # -> scansione-sito.jpg
 ./venv/bin/python cartellino.py *.pdf -o sito/ --misura 1000
+./venv/bin/python cartellino.py bianca.pdf --precisione 9
 ```
 
 ## Cambio formato

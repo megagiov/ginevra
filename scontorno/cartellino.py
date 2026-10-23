@@ -62,7 +62,20 @@ def _componenti(m):
     return pezzi
 
 
-def trova_prodotto(img, log=print):
+PRECISIONE = 7  # 1-10
+
+
+def soglie(precisione=PRECISIONE):
+    """Da precisione 1-10 a (stacco dal bianco per trovare il prodotto,
+    tolleranza del colore per togliere il fondo).
+
+    Alta = coglie anche i prodotti quasi bianchi e lascia piu' bordo;
+    bassa = piu' decisa, per prodotti scuri e scansioni sporche."""
+    p = min(10, max(1, float(precisione))) - 1
+    return 0.25 * 0.72 ** p, max(2, round(30 * 0.75 ** p))
+
+
+def trova_prodotto(img, log=print, precisione=PRECISIONE):
     """Riquadro (x0, y0, x1, y1) della foto prodotto dentro la scansione.
 
     Il prodotto e' la macchia colorata piu' grande che non sia una striscia:
@@ -73,7 +86,10 @@ def trova_prodotto(img, log=print):
     s, v = hsv[..., 1], hsv[..., 2]
     # tutto cio' che si stacca dal bianco del cartellino: colori, ma anche
     # grigi e neri (una felpa grigia ha saturazione zero)
-    pezzi = _componenti((s > 0.22) | (v < 0.80))
+    # lo stacco si misura dal bianco del cartellino, non da un bianco fisso
+    stacco, _ = soglie(precisione)
+    bianco = float(np.percentile(v, 90))
+    pezzi = _componenti((s > 0.22) | (bianco - v > stacco))
     buoni = []
     for area, y0, y1, x0, x1 in pezzi:
         hh, ww = y1 - y0, x1 - x0
@@ -133,12 +149,14 @@ def su_tela(rgba, lato=800, margine=0.045, sfondo=(255, 255, 255)):
     return tela.convert('RGB')
 
 
-def da_cartellino(img, lato=800, sfondo=(255, 255, 255), modo='misto', log=print):
-    box, stretto = trova_prodotto(img, log=log)
+def da_cartellino(img, lato=800, sfondo=(255, 255, 255), modo='misto', log=print,
+                  precisione=PRECISIONE):
+    box, stretto = trova_prodotto(img, log=log, precisione=precisione)
     pezzo = img.crop(box)
     # sul cartellino non ci sono ombre vere: col test dell'ombra un prodotto
     # grigio sembrerebbe ombra e perderebbe i bordi
-    out, strada = S.scontorna(pezzo, modo=modo, ombra='tieni', log=log)
+    out, strada = S.scontorna(pezzo, modo=modo, ombra='tieni', log=log,
+                              tolleranza=soglie(precisione)[1])
     # il ritaglio largo serve a non tagliare il prodotto, ma puo' prendere il
     # bordo del cartellino o un pezzo di testo: quello fuori dal riquadro
     # stretto si cancella
@@ -160,13 +178,16 @@ def main(argv=None):
     p.add_argument('--sfondo', type=S._colore, default=(255, 255, 255))
     p.add_argument('--in', dest='formato', choices=('jpg', 'png', 'webp'), default='jpg')
     p.add_argument('--modo', choices=('misto', 'rete', 'tinta', 'auto'), default='misto')
+    p.add_argument('--precisione', type=float, default=PRECISIONE,
+                   help='1-10: alta per prodotti chiari, bassa per scansioni sporche')
     a = p.parse_args(argv)
     log = lambda *x: print(*x, file=sys.stderr)
     for src in S._espandi(a.scansioni):
         t = time.time()
         pagine = apri_scansione(src)
         for i, pagina in enumerate(pagine):
-            out, strada = da_cartellino(pagina, a.misura, a.sfondo, a.modo, log=log)
+            out, strada = da_cartellino(pagina, a.misura, a.sfondo, a.modo, log=log,
+                                        precisione=a.precisione)
             base = os.path.splitext(os.path.basename(src))[0]
             base += (f'-{i+1}' if len(pagine) > 1 else '') + '-sito.' + a.formato
             cartella = a.out or os.path.dirname(src) or '.'

@@ -246,7 +246,7 @@ def maschera_tinta(img, tolleranza=14):
     return Image.fromarray((alpha * 255).astype(np.uint8), 'L')
 
 
-def matte_misto(img, modello=PREDEFINITO, ombra='via', log=print):
+def matte_misto(img, modello=PREDEFINITO, ombra='via', log=print, tolleranza=14):
     """Rete come protezione, colore come bordo: la strada per il catalogo.
 
     La rete dice grosso modo dove sta il prodotto e il flood fill non entra
@@ -261,7 +261,7 @@ def matte_misto(img, modello=PREDEFINITO, ombra='via', log=print):
     # punteggi alti (fino a 0.98 misurato). Il prodotto pero' sta a 1.00 pieno,
     # quindi a un pixel che ha anche il colore dell'ombra si chiede la certezza.
     nucleo = (rete > 0.5) & ~(ombrosi & (rete < 0.99))
-    alpha, forza = _matte_tinta(img, protezione=_dilata(nucleo, ALLARGO), nucleo=nucleo,
+    alpha, forza = _matte_tinta(img, tolleranza, protezione=_dilata(nucleo, ALLARGO), nucleo=nucleo,
                                 togli_ombra=(ombra != 'tieni'))
     return alpha, (forza if ombra == 'morbida' else None)
 
@@ -312,7 +312,7 @@ def componi(img, alpha, sfondo=None, ritaglia=False, defringe=True, ombra=None):
 
 
 def scontorna(img, modo='auto', modello=PREDEFINITO, sfondo=None, ritaglia=False,
-              taglio=0.0, sfuma=0.0, rientra=0.0, ombra='via', log=print):
+              taglio=0.0, sfuma=0.0, rientra=0.0, ombra='via', log=print, tolleranza=14):
     """Ritorna (immagine RGBA, strada usata)."""
     img = img.convert('RGB')
     strada = modo
@@ -322,10 +322,10 @@ def scontorna(img, modo='auto', modello=PREDEFINITO, sfondo=None, ritaglia=False
         log(f"fondo unito al {u*100:.0f}% -> {strada}")
     velo = None
     if strada == 'misto':
-        a, velo = matte_misto(img, modello, ombra=ombra, log=log)
+        a, velo = matte_misto(img, modello, ombra=ombra, log=log, tolleranza=tolleranza)
         alpha = Image.fromarray((a * 255).astype(np.uint8), 'L')
     elif strada == 'tinta':
-        alpha = maschera_tinta(img)
+        alpha = maschera_tinta(img, tolleranza)
     else:
         alpha = maschera_rete(img, modello, log=log)
     if strada in ('misto', 'tinta') and np.asarray(alpha).mean() > 250:
