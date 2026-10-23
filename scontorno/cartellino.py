@@ -71,15 +71,19 @@ def trova_prodotto(img, log=print):
     passo = 8
     hsv = np.asarray(img.convert('HSV').reduce(passo)).astype(np.float32) / 255
     s, v = hsv[..., 1], hsv[..., 2]
-    colore = (s > 0.22) & (v > 0.12)
-    scuro = v < 0.35                     # prodotti neri o blu notte
-    pezzi = _componenti(colore | scuro)
+    # tutto cio' che si stacca dal bianco del cartellino: colori, ma anche
+    # grigi e neri (una felpa grigia ha saturazione zero)
+    pezzi = _componenti((s > 0.22) | (v < 0.80))
     buoni = []
     for area, y0, y1, x0, x1 in pezzi:
         hh, ww = y1 - y0, x1 - x0
         allungato = max(hh, ww) / max(1, min(hh, ww))
         pieno = area / (hh * ww)
-        if area < 30 or allungato > 3.2 or (allungato > 2.2 and pieno < 0.5):
+        bordo = y0 == 0 or x0 == 0 or y1 == hsv.shape[0] or x1 == hsv.shape[1]
+        # via: briciole, strisce (fascia del marchio), cornici sparse e tutto
+        # cio' che tocca il bordo della scansione (ombra del coperchio)
+        if (area < 30 or allungato > 3.2 or (allungato > 2.2 and pieno < 0.5)
+                or pieno < 0.2 or bordo):
             continue
         buoni.append((area, y0, y1, x0, x1))
     if not buoni:
@@ -87,10 +91,23 @@ def trova_prodotto(img, log=print):
         return (0, 0) + img.size
     buoni.sort(reverse=True)
     grande = buoni[0][0]
-    # i pezzi del prodotto (felpa + pantalone) sono grossi e vicini al piu' grande
-    tenuti = [b for b in buoni if b[0] >= grande * 0.15]
-    y0 = min(b[1] for b in tenuti); y1 = max(b[2] for b in tenuti)
-    x0 = min(b[3] for b in tenuti); x1 = max(b[4] for b in tenuti)
+    # si parte dal pezzo piu' grande e si aggiungono quelli grossi che lo
+    # toccano quasi (felpa + pantalone): il QR e i testi stanno piu' lontani
+    _, y0, y1, x0, x1 = buoni[0]
+    tenuti = [buoni[0]]
+    vicino = 4
+    cambiato = True
+    while cambiato:
+        cambiato = False
+        for b in buoni:
+            if b in tenuti or b[0] < grande * 0.05:
+                continue
+            if (b[1] <= y1 + vicino and b[2] >= y0 - vicino
+                    and b[3] <= x1 + vicino and b[4] >= x0 - vicino):
+                tenuti.append(b)
+                y0, y1 = min(y0, b[1]), max(y1, b[2])
+                x0, x1 = min(x0, b[3]), max(x1, b[4])
+                cambiato = True
     m = 3  # un filo di fondo attorno, in celle
     box = (max(0, (x0 - m) * passo), max(0, (y0 - m) * passo),
            min(img.width, (x1 + m) * passo), min(img.height, (y1 + m) * passo))
