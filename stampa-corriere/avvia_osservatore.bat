@@ -1,7 +1,7 @@
 @echo off
 rem Avvia la sorveglianza automatica della cartella Download.
 rem Lascia aperta questa finestra: ogni LDV che scarichi da un corriere
-rem viene brandizzata da sola e si apre pronta per Ctrl+P.
+rem viene brandizzata e stampata da sola sulla PL50E.
 rem Per fermarla, chiudi questa finestra.
 
 if not exist "%~dp0osserva_cartella.py" (

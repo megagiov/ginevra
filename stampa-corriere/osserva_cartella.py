@@ -8,8 +8,8 @@ Uso:
     python3 osserva_cartella.py "C:\\Users\\NomeUtente\\Desktop\\LDV da stampare"
 
 Lascia questa finestra aperta. Scarichi la LDV dal corriere come sempre
-(finisce nei Download): dopo pochi secondi si apre da solo il PDF con i
-loghi già dentro, pronto per Ctrl+P. Il PDF originale non viene toccato.
+(finisce nei Download): dopo pochi secondi il PDF con i loghi già dentro
+esce da solo dalla stampante PL50E. Il PDF originale non viene toccato.
 
 Viene elaborato solo ciò che è davvero una LDV da brandizzare, in due modi:
 
@@ -33,6 +33,7 @@ from pathlib import Path
 import pymupdf
 
 from applica_maschera import applica_maschera, PT_PER_MM
+from stampa import stampa
 
 POLL_SECONDS = 2
 LATO_MASSIMO_ETICHETTA_MM = 200
@@ -110,7 +111,7 @@ def osserva(cartella: Path) -> None:
             try:
                 applica_maschera(pdf, output, tmp_dir)
                 print(f"Fatto: {output.name}")
-                apri(output)
+                stampa(output)
             except Exception as e:
                 print(f"Errore su {pdf.name}: {e}")
 

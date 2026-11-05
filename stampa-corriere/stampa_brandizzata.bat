@@ -1,7 +1,7 @@
 @echo off
 rem Trascina sopra questo file il PDF della LDV scaricato dal corriere.
-rem Genera <nome>_brandizzato.pdf nella stessa cartella e lo apre subito,
-rem pronto per Ctrl+P. Il PDF originale non viene toccato.
+rem Genera <nome>_brandizzato.pdf nella stessa cartella e lo stampa
+rem subito sulla PL50E. Il PDF originale non viene toccato.
 
 if not exist "%~dp0applica_maschera.py" (
     echo Non trovo i file che mi servono qui accanto.
@@ -48,6 +48,6 @@ if not exist "%~dp1%~n1_brandizzato.pdf" (
     exit /b
 )
 
-echo Fatto: apro "%~n1_brandizzato.pdf"
-start "" "%~dp1%~n1_brandizzato.pdf"
+echo Fatto: invio "%~n1_brandizzato.pdf" alla PL50E
+py "%~dp0stampa.py" "%~dp1%~n1_brandizzato.pdf"
 timeout /t 3 >nul

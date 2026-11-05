@@ -14,7 +14,7 @@ if errorlevel 1 (
     exit /b
 )
 
-echo [1 di 3] Installo le librerie PyMuPDF e Playwright...
+echo [1 di 4] Installo le librerie PyMuPDF e Playwright...
 echo.
 py -m pip install PyMuPDF playwright
 if errorlevel 1 (
@@ -25,7 +25,7 @@ if errorlevel 1 (
 )
 
 echo.
-echo [2 di 3] Scarico il browser Chromium, puo' richiedere qualche minuto...
+echo [2 di 4] Scarico il browser Chromium, puo' richiedere qualche minuto...
 echo.
 py -m playwright install chromium
 if errorlevel 1 (
@@ -36,7 +36,17 @@ if errorlevel 1 (
 )
 
 echo.
-echo [3 di 3] Verifico che sia tutto a posto...
+echo [3 di 4] Installo SumatraPDF, serve per la stampa diretta sulla PL50E...
+echo.
+winget install -e --id SumatraPDF.SumatraPDF --accept-source-agreements --accept-package-agreements
+if errorlevel 1 (
+    echo.
+    echo Se SumatraPDF era gia' installato va bene cosi'. Altrimenti scaricalo
+    echo da sumatrapdfreader.org e installalo a mano.
+)
+
+echo.
+echo [4 di 4] Verifico che sia tutto a posto...
 py -c "import fitz, playwright" 2>nul
 if errorlevel 1 (
     echo.

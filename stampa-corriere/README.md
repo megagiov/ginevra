@@ -89,9 +89,13 @@ Entrambi richiedono comunque l'installazione una tantum di
 Python/PyMuPDF/Playwright descritta sopra, e che `py` sia disponibile da riga
 di comando (l'installer di Python lo mette sul PATH di default).
 
-Nessuno dei due stampa da solo: aprono il risultato e la stampa la lanci tu,
-così hai sempre modo di controllarlo prima — o di chiudere senza stampare se
-quella volta non ti serve la versione brandizzata.
+Entrambi stampano da soli sulla **PL50E**, in silenzio e al 100% (dimensioni
+reali), tramite SumatraPDF (`stampa.py`). Se la stampante non è accesa o non
+viene trovata, il PDF si apre come prima e lo stampi a mano con Ctrl+P.
+
+Il nome della stampante è in `stampa.py` (`STAMPANTE = "PL50E"`): basta che
+sia contenuto nel nome che vedi in Windows. SumatraPDF lo installa
+`installa.bat`; se l'hai già installato prima di questa versione, rilancialo.
 
 ### Impostazioni di stampa
 
