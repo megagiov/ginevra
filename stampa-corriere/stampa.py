@@ -36,6 +36,13 @@ SPOSTA_Y_MM = 0
 
 PT_PER_MM = 72 / 25.4
 
+# Risoluzione della testina della PL50E (203 dpi; metti 300 se la tua è a 300).
+# Il PDF viene convertito noi a questa risoluzione esatta, in bianco e nero
+# puro senza sfumature: così il driver non retina e barcode e testi escono
+# netti invece che sgranati.
+DPI_STAMPANTE = 203
+SOGLIA_NERO = 160  # 0-255: più alto = più nero (testi più spessi)
+
 
 def prepara_per_stampa(path: Path) -> Path:
     """Crea una copia temporanea con margine e centratura applicati."""
@@ -52,6 +59,20 @@ def prepara_per_stampa(path: Path) -> Path:
         nuova = out.new_page(width=r.width, height=r.height)
         zona = pymupdf.Rect(m + dx, m + dy, r.width - m + dx, r.height - m + dy)
         nuova.show_pdf_page(zona, src, i, keep_proportion=True)
+
+    # Rasterizza noi, pixel per pixel della testina, senza antialiasing.
+    pymupdf.TOOLS.set_aa_level(0)
+    finale = pymupdf.open()
+    for pag in out:
+        pix = pag.get_pixmap(dpi=DPI_STAMPANTE, colorspace=pymupdf.csGRAY, alpha=False)
+        buf = bytearray(pix.samples)
+        for k in range(len(buf)):
+            buf[k] = 0 if buf[k] < SOGLIA_NERO else 255
+        bw = pymupdf.Pixmap(pymupdf.csGRAY, pix.width, pix.height, bytes(buf), False)
+        fp = finale.new_page(width=pag.rect.width, height=pag.rect.height)
+        fp.insert_image(fp.rect, pixmap=bw)
+    out.close()
+    out = finale
     dest = Path(tempfile.gettempdir()) / (path.stem + "_stampa.pdf")
     out.save(dest)
     out.close()
