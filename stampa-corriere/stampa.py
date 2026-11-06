@@ -24,6 +24,40 @@ STAMPANTE = "PL50E"
 # Impostazioni SumatraPDF: dimensioni reali, una copia.
 IMPOSTAZIONI = "noscale,1x"
 
+# --- Regolazioni di stampa (in mm) -----------------------------------------
+# Bordo bianco tenuto libero su tutti i lati: il contenuto viene
+# rimpicciolito in proporzione per starci dentro, centrato.
+MARGINE_MM = 4
+# Se la stampa esce ancora spostata, correggi qui.
+# SPOSTA_X_MM positivo = sposta a destra, negativo = a sinistra.
+# SPOSTA_Y_MM positivo = sposta in basso, negativo = in alto.
+SPOSTA_X_MM = 0
+SPOSTA_Y_MM = 0
+
+PT_PER_MM = 72 / 25.4
+
+
+def prepara_per_stampa(path: Path) -> Path:
+    """Crea una copia temporanea con margine e centratura applicati."""
+    import tempfile
+    import pymupdf
+
+    src = pymupdf.open(path)
+    out = pymupdf.open()
+    m = MARGINE_MM * PT_PER_MM
+    dx = SPOSTA_X_MM * PT_PER_MM
+    dy = SPOSTA_Y_MM * PT_PER_MM
+    for i, pag in enumerate(src):
+        r = pag.rect
+        nuova = out.new_page(width=r.width, height=r.height)
+        zona = pymupdf.Rect(m + dx, m + dy, r.width - m + dx, r.height - m + dy)
+        nuova.show_pdf_page(zona, src, i, keep_proportion=True)
+    dest = Path(tempfile.gettempdir()) / (path.stem + "_stampa.pdf")
+    out.save(dest)
+    out.close()
+    src.close()
+    return dest
+
 
 def trova_sumatra() -> str | None:
     qui = Path(__file__).resolve().parent
@@ -73,8 +107,13 @@ def stampa(path: Path) -> bool:
         print(f"Stampante '{STAMPANTE}' non trovata in Windows. Apro il PDF per stamparlo a mano.")
         apri(path)
         return False
+    try:
+        da_stampare = prepara_per_stampa(path)
+    except Exception as e:
+        print(f"Non riesco ad applicare il margine ({e}): stampo il file così com'è.")
+        da_stampare = path
     r = subprocess.run(
-        [sumatra, "-print-to", stampante, "-print-settings", IMPOSTAZIONI, "-silent", str(path)],
+        [sumatra, "-print-to", stampante, "-print-settings", IMPOSTAZIONI, "-silent", str(da_stampare)],
         timeout=120,
     )
     if r.returncode != 0:
