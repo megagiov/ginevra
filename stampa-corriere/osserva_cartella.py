@@ -13,9 +13,8 @@ esce da solo dalla stampante PL50E. Il PDF originale non viene toccato.
 
 Viene elaborato solo ciò che è davvero una LDV da brandizzare, in due modi:
 
-- **automatico**: i PDF che il gestionale nomina come
-  `49313-1-1-20260916143218.pdf` (numero spedizione, due contatori, data e
-  ora a 14 cifre);
+- **automatico**: i PDF che il gestionale nomina come `52314.pdf` (solo il
+  numero spedizione) o, nel vecchio formato, `49313-1-1-20260916143218.pdf`;
 - **a mano**: qualsiasi altro PDF che rinomini mettendoci dentro la parola
   `ldv`, se una volta ti serve brandizzarne uno fuori dal solito giro.
 
@@ -38,9 +37,11 @@ from stampa import stampa
 POLL_SECONDS = 2
 LATO_MASSIMO_ETICHETTA_MM = 200
 
-# Il gestionale scarica le LDV come "49313-1-1-20260916143218.pdf". La coda
-# " (1)" la aggiunge il browser quando riscarichi un file già presente.
-NOME_GESTIONALE = re.compile(r"^\d+-\d+-\d+-\d{14}(\s*\(\d+\))?$")
+# Il gestionale scarica le LDV con due formati di nome:
+#   - vecchio: "49313-1-1-20260916143218.pdf" (spedizione, contatori, data-ora)
+#   - nuovo:   "52314.pdf" (solo il numero spedizione)
+# La coda " (1)" la aggiunge il browser quando riscarichi un file già presente.
+NOME_GESTIONALE = re.compile(r"^\d+(-\d+-\d+-\d{14})?(\s*\(\d+\))?$")
 PAROLA_MANUALE = "ldv"
 
 
