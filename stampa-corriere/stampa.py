@@ -65,10 +65,8 @@ def prepara_per_stampa(path: Path) -> Path:
     finale = pymupdf.open()
     for pag in out:
         pix = pag.get_pixmap(dpi=DPI_STAMPANTE, colorspace=pymupdf.csGRAY, alpha=False)
-        buf = bytearray(pix.samples)
-        for k in range(len(buf)):
-            buf[k] = 0 if buf[k] < SOGLIA_NERO else 255
-        bw = pymupdf.Pixmap(pymupdf.csGRAY, pix.width, pix.height, bytes(buf), False)
+        tabella = bytes(0 if v < SOGLIA_NERO else 255 for v in range(256))
+        bw = pymupdf.Pixmap(pymupdf.csGRAY, pix.width, pix.height, pix.samples.translate(tabella), False)
         fp = finale.new_page(width=pag.rect.width, height=pag.rect.height)
         fp.insert_image(fp.rect, pixmap=bw)
     out.close()
@@ -78,6 +76,9 @@ def prepara_per_stampa(path: Path) -> Path:
     out.close()
     src.close()
     return dest
+
+
+_cache: dict = {}
 
 
 def trova_sumatra() -> str | None:
@@ -118,12 +119,16 @@ def apri(path: Path) -> None:
 
 def stampa(path: Path) -> bool:
     """Stampa sulla PL50E. Se non riesce apre il PDF e restituisce False."""
-    sumatra = trova_sumatra()
+    if "sumatra" not in _cache:
+        _cache["sumatra"] = trova_sumatra()
+    sumatra = _cache["sumatra"]
     if not sumatra:
         print("SumatraPDF non trovato: rilancia installa.bat. Apro il PDF per stamparlo a mano.")
         apri(path)
         return False
-    stampante = trova_stampante()
+    if "stampante" not in _cache:
+        _cache["stampante"] = trova_stampante()  # una volta sola: PowerShell e' lento
+    stampante = _cache["stampante"]
     if not stampante:
         print(f"Stampante '{STAMPANTE}' non trovata in Windows. Apro il PDF per stamparlo a mano.")
         apri(path)
@@ -138,6 +143,7 @@ def stampa(path: Path) -> bool:
         timeout=120,
     )
     if r.returncode != 0:
+        _cache.clear()  # ricontrolla la stampante al prossimo giro
         print("Stampa non riuscita. Apro il PDF per stamparlo a mano.")
         apri(path)
         return False

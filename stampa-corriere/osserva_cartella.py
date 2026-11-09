@@ -31,10 +31,10 @@ from pathlib import Path
 
 import pymupdf
 
-from applica_maschera import applica_maschera, PT_PER_MM
+from applica_maschera import applica_maschera, SessioneBrowser, PT_PER_MM
 from stampa import stampa
 
-POLL_SECONDS = 2
+POLL_SECONDS = 0.5
 LATO_MASSIMO_ETICHETTA_MM = 200
 
 # Il gestionale scarica le LDV con due formati di nome:
@@ -68,7 +68,7 @@ def is_stable(path: Path) -> bool:
         size1 = path.stat().st_size
     except OSError:
         return False
-    time.sleep(0.5)
+    time.sleep(0.2)
     try:
         size2 = path.stat().st_size
     except OSError:
@@ -88,6 +88,9 @@ def osserva(cartella: Path) -> None:
     print("Lascia aperta questa finestra. Salva qui le LDV da brandizzare.")
     visti = {p.name for p in cartella.glob("*.pdf")}
     tmp_dir = Path(os.environ.get("TEMP") or os.environ.get("TMPDIR") or "/tmp")
+    print("Avvio il motore grafico (una volta sola)...")
+    sessione = SessioneBrowser()
+    print("Pronto.")
 
     while True:
         time.sleep(POLL_SECONDS)
@@ -110,7 +113,7 @@ def osserva(cartella: Path) -> None:
 
             print(f"Nuova LDV: {pdf.name} -> elaboro...")
             try:
-                applica_maschera(pdf, output, tmp_dir)
+                applica_maschera(pdf, output, tmp_dir, sessione)
                 print(f"Fatto: {output.name}")
                 stampa(output)
             except Exception as e:

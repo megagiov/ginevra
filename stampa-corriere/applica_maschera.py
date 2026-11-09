@@ -194,16 +194,34 @@ def genera_overlay_pdf(page, width_mm: float, height_mm: float, piano: dict, out
     )
 
 
-def applica_maschera(input_pdf: Path, output_pdf: Path, tmp_dir: Path) -> int:
-    """Brandizza ogni pagina che ha spazio. Ritorna quante ne ha fatte."""
+class SessioneBrowser:
+    """Chromium tenuto aperto: evita ~2-4 secondi di avvio a ogni LDV."""
+
+    def __init__(self) -> None:
+        self._p = sync_playwright().start()
+        self._browser = self._p.chromium.launch(executable_path=CHROMIUM_PATH)
+        self.page = self._browser.new_page()
+        self.page.goto(TEMPLATE.resolve().as_uri())
+
+    def chiudi(self) -> None:
+        self._browser.close()
+        self._p.stop()
+
+
+def applica_maschera(input_pdf: Path, output_pdf: Path, tmp_dir: Path, sessione: "SessioneBrowser | None" = None) -> int:
+    """Brandizza ogni pagina che ha spazio. Ritorna quante ne ha fatte.
+
+    Se passi una `sessione` già aperta la riusa (veloce); altrimenti ne apre
+    una sola per questo file."""
     doc = pymupdf.open(input_pdf)
     overlay_paths: list[Path] = []
     brandizzate = 0
 
-    with sync_playwright() as p:
-        browser = p.chromium.launch(executable_path=CHROMIUM_PATH)
-        browser_page = browser.new_page()
-        browser_page.goto(TEMPLATE.resolve().as_uri())
+    propria = sessione is None
+    if propria:
+        sessione = SessioneBrowser()
+    if True:
+        browser_page = sessione.page
 
         for pdf_page in doc:
             if allarga_a_etichetta(pdf_page):
@@ -225,7 +243,8 @@ def applica_maschera(input_pdf: Path, output_pdf: Path, tmp_dir: Path) -> int:
             overlay_doc.close()
             brandizzate += 1
 
-        browser.close()
+    if propria:
+        sessione.chiudi()
 
     doc.save(output_pdf)
     doc.close()
