@@ -86,7 +86,7 @@ def apri(path: Path) -> None:
 def osserva(cartella: Path) -> None:
     print(f"Osservo la cartella: {cartella}")
     print("Lascia aperta questa finestra. Salva qui le LDV da brandizzare.")
-    visti = {p.name for p in cartella.glob("*.pdf")}
+    visti = {p.name: p.stat().st_mtime for p in cartella.glob("*.pdf")}
     tmp_dir = Path(os.environ.get("TEMP") or os.environ.get("TMPDIR") or "/tmp")
     print("Avvio il motore grafico (una volta sola)...")
     sessione = SessioneBrowser()
@@ -95,19 +95,20 @@ def osserva(cartella: Path) -> None:
     while True:
         time.sleep(POLL_SECONDS)
         for pdf in cartella.glob("*.pdf"):
-            if pdf.name in visti:
+            try:
+                mtime = pdf.stat().st_mtime
+            except OSError:
+                continue
+            if visti.get(pdf.name) == mtime:
                 continue
             if pdf.stem.endswith("_brandizzato"):
-                visti.add(pdf.name)
+                visti[pdf.name] = mtime
                 continue
             output = pdf.with_name(pdf.stem + "_brandizzato.pdf")
-            if output.exists():
-                visti.add(pdf.name)
-                continue
             if not is_stable(pdf):
                 continue  # non ancora scritto del tutto, ricontrolla al giro dopo
 
-            visti.add(pdf.name)
+            visti[pdf.name] = mtime
             if not da_brandizzare(pdf):
                 continue  # non è una LDV del gestionale, lo lascio stare
 

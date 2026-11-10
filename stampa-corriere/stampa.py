@@ -36,6 +36,10 @@ SPOSTA_Y_MM = 0
 
 PT_PER_MM = 72 / 25.4
 
+# Registro delle LDV già stampate (accanto agli script). Serve per avvisarti
+# se chiedi di nuovo la stessa spedizione.
+REGISTRO = Path(__file__).resolve().parent / "stampate.json"
+
 # Risoluzione della testina della PL50E (203 dpi; metti 300 se la tua è a 300).
 # Il PDF viene convertito noi a questa risoluzione esatta, in bianco e nero
 # puro senza sfumature: così il driver non retina e barcode e testi escono
@@ -110,6 +114,62 @@ def trova_stampante() -> str | None:
     return None
 
 
+def chiave_spedizione(path: Path) -> str:
+    """Numero spedizione dal nome (52314.pdf, 52314 (1).pdf, 49313-1-1-...).
+    Se il nome non lo contiene, usa l'impronta del contenuto."""
+    import hashlib
+    import re
+
+    m = re.match(r"^(\d+)", path.stem)
+    if m:
+        return m.group(1)
+    return "file-" + hashlib.sha1(path.read_bytes()).hexdigest()[:12]
+
+
+def leggi_registro() -> dict:
+    import json
+
+    try:
+        return json.loads(REGISTRO.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+
+
+def segna_stampata(chiave: str) -> None:
+    import json
+    from datetime import datetime
+
+    reg = leggi_registro()
+    reg[chiave] = datetime.now().isoformat(timespec="seconds")
+    # tieni solo le ultime 2000 per non far crescere il file all'infinito
+    if len(reg) > 2000:
+        reg = dict(sorted(reg.items(), key=lambda kv: kv[1])[-2000:])
+    try:
+        REGISTRO.write_text(json.dumps(reg, indent=1), encoding="utf-8")
+    except Exception as e:
+        print(f"Non riesco a salvare il registro delle stampe: {e}")
+
+
+def conferma_ristampa(chiave: str, quando: str) -> bool:
+    """Avviso Sì/No. Predefinito: No (meglio non sprecare un'etichetta)."""
+    from datetime import datetime
+
+    try:
+        dt = datetime.fromisoformat(quando).strftime("%d/%m alle %H:%M")
+    except Exception:
+        dt = quando
+    testo = f"La LDV {chiave} è già stata stampata il {dt}.\n\nVuoi stamparla di nuovo?"
+    try:
+        import ctypes
+
+        # 0x4 Sì/No, 0x20 punto interrogativo, 0x100 predefinito=No,
+        # 0x10000 in primo piano, 0x40000 sempre sopra le altre finestre
+        risposta = ctypes.windll.user32.MessageBoxW(0, testo, "LDV già stampata", 0x4 | 0x20 | 0x100 | 0x10000 | 0x40000)
+        return risposta == 6
+    except Exception:
+        return input(testo.replace("\n", " ") + " [s/N] ").strip().lower() in ("s", "si", "sì", "y")
+
+
 def apri(path: Path) -> None:
     try:
         os.startfile(path)  # type: ignore[attr-defined]
@@ -118,7 +178,15 @@ def apri(path: Path) -> None:
 
 
 def stampa(path: Path) -> bool:
-    """Stampa sulla PL50E. Se non riesce apre il PDF e restituisce False."""
+    """Stampa sulla PL50E. Se non riesce apre il PDF e restituisce False.
+
+    Se la stessa spedizione è già stata stampata chiede conferma: se rispondi
+    No non stampa niente (restituisce False senza aprire il PDF)."""
+    chiave = chiave_spedizione(path)
+    precedente = leggi_registro().get(chiave)
+    if precedente and not conferma_ristampa(chiave, precedente):
+        print(f"LDV {chiave} già stampata: ristampa annullata.")
+        return False
     if "sumatra" not in _cache:
         _cache["sumatra"] = trova_sumatra()
     sumatra = _cache["sumatra"]
@@ -147,6 +215,7 @@ def stampa(path: Path) -> bool:
         print("Stampa non riuscita. Apro il PDF per stamparlo a mano.")
         apri(path)
         return False
+    segna_stampata(chiave)
     print(f"Inviato a {stampante}: {path.name}")
     return True
 
