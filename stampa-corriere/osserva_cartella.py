@@ -83,10 +83,27 @@ def apri(path: Path) -> None:
         print(f"Apri manualmente: {path}")
 
 
+def elenco_pdf(cartella: Path) -> list[tuple[Path, float]]:
+    """PDF della cartella con data di modifica. scandir su Windows restituisce
+    la data insieme all'elenco, senza leggere ogni file uno per uno."""
+    risultato = []
+    try:
+        with os.scandir(cartella) as it:
+            for e in it:
+                if e.name.lower().endswith(".pdf"):
+                    try:
+                        risultato.append((Path(e.path), e.stat().st_mtime))
+                    except OSError:
+                        pass
+    except OSError:
+        pass
+    return risultato
+
+
 def osserva(cartella: Path) -> None:
     print(f"Osservo la cartella: {cartella}")
     print("Lascia aperta questa finestra. Salva qui le LDV da brandizzare.")
-    visti = {p.name: p.stat().st_mtime for p in cartella.glob("*.pdf")}
+    visti = {p.name: m for p, m in elenco_pdf(cartella)}
     tmp_dir = Path(os.environ.get("TEMP") or os.environ.get("TMPDIR") or "/tmp")
     print("Avvio il motore grafico (una volta sola)...")
     sessione = SessioneBrowser()
@@ -94,11 +111,7 @@ def osserva(cartella: Path) -> None:
 
     while True:
         time.sleep(POLL_SECONDS)
-        for pdf in cartella.glob("*.pdf"):
-            try:
-                mtime = pdf.stat().st_mtime
-            except OSError:
-                continue
+        for pdf, mtime in elenco_pdf(cartella):
             if visti.get(pdf.name) == mtime:
                 continue
             if pdf.stem.endswith("_brandizzato"):
@@ -112,11 +125,15 @@ def osserva(cartella: Path) -> None:
             if not da_brandizzare(pdf):
                 continue  # non è una LDV del gestionale, lo lascio stare
 
-            print(f"Nuova LDV: {pdf.name} -> elaboro...")
+            t0 = time.time()
+            # secondi passati da quando il download è finito a quando l'ho visto
+            print(f"Nuova LDV: {pdf.name} (vista dopo {max(0, t0 - mtime):.1f}s) -> elaboro...")
             try:
                 applica_maschera(pdf, output, tmp_dir, sessione)
-                print(f"Fatto: {output.name}")
+                t1 = time.time()
                 stampa(output)
+                t2 = time.time()
+                print(f"Tempi: brandizzazione {t1 - t0:.1f}s, invio alla stampante {t2 - t1:.1f}s, totale {t2 - t0:.1f}s")
             except Exception as e:
                 print(f"Errore su {pdf.name}: {e}")
 

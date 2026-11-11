@@ -206,10 +206,14 @@ def stampa(path: Path) -> bool:
     except Exception as e:
         print(f"Non riesco ad applicare il margine ({e}): stampo il file così com'è.")
         da_stampare = path
+    import time
+
+    t_prep = time.time()
     r = subprocess.run(
         [sumatra, "-print-to", stampante, "-print-settings", IMPOSTAZIONI, "-silent", str(da_stampare)],
         timeout=120,
     )
+    print(f"  SumatraPDF ha impiegato {time.time() - t_prep:.1f}s")
     if r.returncode != 0:
         _cache.clear()  # ricontrolla la stampante al prossimo giro
         print("Stampa non riuscita. Apro il PDF per stamparlo a mano.")
