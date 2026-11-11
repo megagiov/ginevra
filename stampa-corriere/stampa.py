@@ -114,6 +114,19 @@ def trova_stampante() -> str | None:
     return None
 
 
+def riscalda() -> None:
+    """Cerca SumatraPDF e la stampante subito, all'avvio dell'osservatore,
+    così la prima LDV non aspetta (PowerShell ci mette qualche secondo)."""
+    _cache["sumatra"] = trova_sumatra()
+    _cache["stampante"] = trova_stampante()
+    if not _cache["sumatra"]:
+        print("Attenzione: SumatraPDF non trovato (rilancia installa.bat).")
+    if not _cache["stampante"]:
+        print(f"Attenzione: stampante '{STAMPANTE}' non trovata in Windows.")
+    else:
+        print(f"Stampante: {_cache['stampante']}")
+
+
 def chiave_spedizione(path: Path) -> str:
     """Numero spedizione dal nome (52314.pdf, 52314 (1).pdf, 49313-1-1-...).
     Se il nome non lo contiene, usa l'impronta del contenuto."""

@@ -32,9 +32,10 @@ from pathlib import Path
 import pymupdf
 
 from applica_maschera import applica_maschera, SessioneBrowser, PT_PER_MM
-from stampa import stampa
+from stampa import stampa, riscalda
 
-POLL_SECONDS = 0.5
+POLL_SECONDS = 0.3
+GIORNI_RICERCA = 3  # ignora i PDF più vecchi di così
 LATO_MASSIMO_ETICHETTA_MM = 200
 
 # Il gestionale scarica le LDV con due formati di nome:
@@ -83,18 +84,33 @@ def apri(path: Path) -> None:
         print(f"Apri manualmente: {path}")
 
 
-def elenco_pdf(cartella: Path) -> list[tuple[Path, float]]:
-    """PDF della cartella con data di modifica. scandir su Windows restituisce
-    la data insieme all'elenco, senza leggere ogni file uno per uno."""
+def nome_candidato(nome: str) -> bool:
+    """Scarto subito, dal solo nome, tutto ciò che non può essere una LDV."""
+    if not nome.lower().endswith(".pdf"):
+        return False
+    stem = nome[:-4]
+    if stem.endswith("_brandizzato"):
+        return False
+    return bool(NOME_GESTIONALE.match(stem)) or PAROLA_MANUALE in stem.lower()
+
+
+def elenco_pdf(cartella: Path) -> list[tuple[Path, float, int]]:
+    """LDV candidate degli ultimi GIORNI_RICERCA giorni: (percorso, data, dimensione).
+    Filtra per nome e per data prima di guardare i file, così una cartella
+    Download piena di vecchi PDF non rallenta niente."""
+    limite = time.time() - GIORNI_RICERCA * 86400
     risultato = []
     try:
         with os.scandir(cartella) as it:
             for e in it:
-                if e.name.lower().endswith(".pdf"):
-                    try:
-                        risultato.append((Path(e.path), e.stat().st_mtime))
-                    except OSError:
-                        pass
+                if not nome_candidato(e.name):
+                    continue
+                try:
+                    st = e.stat()
+                except OSError:
+                    continue
+                if st.st_mtime >= limite:
+                    risultato.append((Path(e.path), st.st_mtime, st.st_size))
     except OSError:
         pass
     return risultato
@@ -103,23 +119,23 @@ def elenco_pdf(cartella: Path) -> list[tuple[Path, float]]:
 def osserva(cartella: Path) -> None:
     print(f"Osservo la cartella: {cartella}")
     print("Lascia aperta questa finestra. Salva qui le LDV da brandizzare.")
-    visti = {p.name: m for p, m in elenco_pdf(cartella)}
+    visti = {p.name: m for p, m, _ in elenco_pdf(cartella)}
+    dimensioni: dict[str, int] = {}
     tmp_dir = Path(os.environ.get("TEMP") or os.environ.get("TMPDIR") or "/tmp")
     print("Avvio il motore grafico (una volta sola)...")
     sessione = SessioneBrowser()
+    riscalda()
     print("Pronto.")
 
     while True:
         time.sleep(POLL_SECONDS)
-        for pdf, mtime in elenco_pdf(cartella):
+        for pdf, mtime, size in elenco_pdf(cartella):
             if visti.get(pdf.name) == mtime:
                 continue
-            if pdf.stem.endswith("_brandizzato"):
-                visti[pdf.name] = mtime
-                continue
             output = pdf.with_name(pdf.stem + "_brandizzato.pdf")
-            if not is_stable(pdf):
-                continue  # non ancora scritto del tutto, ricontrolla al giro dopo
+            if size == 0 or dimensioni.get(pdf.name) != size:
+                dimensioni[pdf.name] = size
+                continue  # sta ancora venendo scritto: ricontrollo al giro dopo
 
             visti[pdf.name] = mtime
             if not da_brandizzare(pdf):
